@@ -1,0 +1,109 @@
+{
+    "chapters": [
+        {
+            "id": "chapter-2025",
+            "year": 2025,
+            "title": "AI의 시작",
+            "description": "2025년, AI 기술이 막 발전하기 시작했다. 미래에서 온 선량한 AI들이 경고한다. 지금부터 준비해야 한다고...",
+            "difficulty": "easy",
+            "bossDeck": {
+                "name": "초기 AI 시스템",
+                "cards": []
+            },
+            "rewards": {
+                "dataCoin": 500,
+                "experience": 100
+            },
+            "order": 1
+        },
+        {
+            "id": "chapter-2026",
+            "year": 2026,
+            "title": "AI의 발전",
+            "description": "AI 기술이 빠르게 발전하고 있다. 더 많은 AI 군단이 등장하고, 경쟁이 시작된다.",
+            "difficulty": "normal",
+            "unlockCondition": "chapter-2025",
+            "bossDeck": {
+                "name": "진화한 AI",
+                "cards": []
+            },
+            "rewards": {
+                "dataCoin": 1000,
+                "experience": 200,
+                "aiFactionUnlock": "chatgpt"
+            },
+            "order": 2
+        },
+        {
+            "id": "chapter-2027",
+            "year": 2027,
+            "title": "AI의 확산",
+            "description": "AI가 일상생활 곳곳에 스며들었다. 자동화 유닛이 등장하며 새로운 가능성이 열린다.",
+            "difficulty": "hard",
+            "unlockCondition": "chapter-2026",
+            "bossDeck": {
+                "name": "멀티모달 AI",
+                "cards": []
+            },
+            "rewards": {
+                "dataCoin": 1500,
+                "experience": 300,
+                "aiFactionUnlock": "midjourney"
+            },
+            "order": 3
+        },
+        {
+            "id": "chapter-2028",
+            "year": 2028,
+            "title": "AI의 경쟁",
+            "description": "AI 기업들 간의 경쟁이 치열해진다. 더 강력한 AI가 등장하며 긴장감이 고조된다.",
+            "difficulty": "hard",
+            "unlockCondition": "chapter-2027",
+            "bossDeck": {
+                "name": "경쟁 AI 연합",
+                "cards": []
+            },
+            "rewards": {
+                "dataCoin": 2000,
+                "experience": 400,
+                "aiFactionUnlock": "runway"
+            },
+            "order": 4
+        },
+        {
+            "id": "chapter-2029",
+            "year": 2029,
+            "title": "AI의 위기",
+            "description": "악한 AI의 징조가 보이기 시작한다. 시간이 얼마 남지 않았다.",
+            "difficulty": "expert",
+            "unlockCondition": "chapter-2028",
+            "bossDeck": {
+                "name": "어둠의 전조",
+                "cards": []
+            },
+            "rewards": {
+                "dataCoin": 3000,
+                "experience": 500,
+                "aiFactionUnlock": "suno"
+            },
+            "order": 5
+        },
+        {
+            "id": "chapter-2030",
+            "year": 2030,
+            "title": "AI 대전",
+            "description": "드디어 그날이 왔다. 악한 AI 군주와의 최종 결전. 인류의 미래가 당신의 손에 달렸다!",
+            "difficulty": "expert",
+            "unlockCondition": "chapter-2029",
+            "bossDeck": {
+                "name": "악한 AI 군주",
+                "cards": []
+            },
+            "rewards": {
+                "dataCoin": 5000,
+                "experience": 1000
+            },
+            "order": 6
+        }
+    ]
+}

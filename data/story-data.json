@@ -1,0 +1,277 @@
+{
+    "chapters": [
+        {
+            "id": "chapter-0",
+            "number": 0,
+            "title": "튜토리얼: AI의 탄생",
+            "subtitle": "게임의 기본을 배워보세요",
+            "story": "2030년, 당신은 AI 대전의 세계에 첫 발을 내딛었습니다. Gemini를 시작으로 AI 군단을 모으고, 전략적으로 배치하여 최강의 덱을 만들어보세요. 이 튜토리얼을 통해 게임의 기본을 익히고, 첫 보상을 획득하세요!",
+            "unlocked": true,
+            "missions": [
+                {
+                    "id": "tutorial-1",
+                    "title": "첫 대전 승리",
+                    "description": "튜토리얼 대전에서 승리하세요",
+                    "type": "win_battle",
+                    "target": {
+                        "count": 1
+                    },
+                    "completed": false
+                },
+                {
+                    "id": "tutorial-2",
+                    "title": "AI 군단 해금",
+                    "description": "첫 번째 AI 군단을 해금하세요 (Gemini는 무료)",
+                    "type": "unlock_factions",
+                    "target": {
+                        "count": 1
+                    },
+                    "completed": false
+                },
+                {
+                    "id": "tutorial-3",
+                    "title": "슬롯 배치",
+                    "description": "슬롯에 AI 군단을 배치하세요",
+                    "type": "place_slot",
+                    "target": {
+                        "count": 1
+                    },
+                    "completed": false
+                },
+                {
+                    "id": "tutorial-4",
+                    "title": "카드 강화",
+                    "description": "카드 1장을 강화하세요",
+                    "type": "enhance_cards",
+                    "target": {
+                        "count": 1
+                    },
+                    "completed": false
+                }
+            ],
+            "rewards": {
+                "tokens": 1000,
+                "cards": [
+                    {
+                        "rarity": "epic",
+                        "count": 1
+                    }
+                ]
+            }
+        },
+        {
+            "id": "chapter-1",
+            "number": 1,
+            "title": "군단의 형성",
+            "subtitle": "다양한 AI 군단을 모아보세요",
+            "story": "AI들은 각자의 철학과 목표에 따라 군단을 형성하기 시작했습니다. 슈퍼 모델, 이미지 생성, 영상 제작, 사운드, 코딩... 각 분야의 최고 AI들이 모였습니다. 당신은 이들을 모아 최강의 시너지를 만들어야 합니다.",
+            "unlocked": false,
+            "unlockCondition": {
+                "type": "complete_chapter",
+                "chapterId": "chapter-0"
+            },
+            "missions": [
+                {
+                    "id": "mission-1-1",
+                    "title": "다양성의 힘",
+                    "description": "3개 이상의 AI 군단을 해금하세요",
+                    "type": "unlock_factions",
+                    "target": {
+                        "count": 3
+                    },
+                    "completed": false
+                },
+                {
+                    "id": "mission-1-2",
+                    "title": "연승 시작",
+                    "description": "5연승을 달성하세요",
+                    "type": "win_streak",
+                    "target": {
+                        "streak": 5
+                    },
+                    "completed": false
+                },
+                {
+                    "id": "mission-1-3",
+                    "title": "시너지 발견",
+                    "description": "슬롯 시너지 50% 이상 달성",
+                    "type": "synergy_level",
+                    "target": {
+                        "percentage": 50
+                    },
+                    "completed": false
+                }
+            ],
+            "rewards": {
+                "tokens": 2000,
+                "cards": [
+                    {
+                        "rarity": "legendary",
+                        "count": 1
+                    }
+                ]
+            }
+        },
+        {
+            "id": "chapter-2",
+            "number": 2,
+            "title": "첫 번째 도전",
+            "subtitle": "실력을 키우고 성장하세요",
+            "story": "이제 당신은 기본을 넘어 진정한 AI 대전 마스터로 성장할 시간입니다. 더 많은 대전을 치르고, 카드를 강화하고, 레벨을 올리세요. 각 승리는 당신을 더 강하게 만들 것입니다.",
+            "unlocked": false,
+            "unlockCondition": {
+                "type": "complete_chapter",
+                "chapterId": "chapter-1"
+            },
+            "missions": [
+                {
+                    "id": "mission-2-1",
+                    "title": "레벨 5 달성",
+                    "description": "레벨 5에 도달하세요",
+                    "type": "reach_level",
+                    "target": {
+                        "level": 5
+                    },
+                    "completed": false
+                },
+                {
+                    "id": "mission-2-2",
+                    "title": "승리의 기록",
+                    "description": "10회 대전에서 승리하세요",
+                    "type": "win_battle",
+                    "target": {
+                        "count": 10
+                    },
+                    "completed": false
+                },
+                {
+                    "id": "mission-2-3",
+                    "title": "강화 마스터",
+                    "description": "카드를 5회 강화하세요",
+                    "type": "enhance_cards",
+                    "target": {
+                        "count": 5
+                    },
+                    "completed": false
+                }
+            ],
+            "rewards": {
+                "tokens": 3000,
+                "cards": [
+                    {
+                        "rarity": "legendary",
+                        "count": 1
+                    }
+                ],
+                "special": "유니크 유닛 즉시 생성"
+            }
+        },
+        {
+            "id": "chapter-3",
+            "number": 3,
+            "title": "시너지의 힘",
+            "subtitle": "최적의 조합을 찾아보세요",
+            "story": "진정한 강자는 단순히 강한 카드를 모으는 것이 아니라, 완벽한 시너지를 만들어냅니다. 같은 카테고리의 AI를 모아 강력한 보너스를 얻거나, 다양한 AI로 균형잡힌 덱을 구성하세요.",
+            "unlocked": false,
+            "unlockCondition": {
+                "type": "complete_chapter",
+                "chapterId": "chapter-2"
+            },
+            "missions": [
+                {
+                    "id": "mission-3-1",
+                    "title": "시너지 마스터",
+                    "description": "슬롯 시너지 100% 이상 달성",
+                    "type": "synergy_level",
+                    "target": {
+                        "percentage": 100
+                    },
+                    "completed": false
+                },
+                {
+                    "id": "mission-3-2",
+                    "title": "카테고리 컬렉터",
+                    "description": "모든 카테고리에서 AI 1개씩 해금",
+                    "type": "collect_diverse",
+                    "target": {
+                        "factionCount": 5
+                    },
+                    "completed": false
+                },
+                {
+                    "id": "mission-3-3",
+                    "title": "연승 행진",
+                    "description": "20연승을 달성하세요",
+                    "type": "win_streak",
+                    "target": {
+                        "streak": 20
+                    },
+                    "completed": false
+                }
+            ],
+            "rewards": {
+                "tokens": 5000,
+                "cards": [
+                    {
+                        "rarity": "legendary",
+                        "count": 2
+                    }
+                ]
+            }
+        },
+        {
+            "id": "chapter-4",
+            "number": 4,
+            "title": "마스터의 길",
+            "subtitle": "최고의 AI 대전 마스터가 되세요",
+            "story": "당신은 이제 AI 대전의 정점에 도달했습니다. 모든 AI를 수집하고, 최강의 시너지를 구성하고, 수많은 승리를 거두었습니다. 이제 마지막 도전만이 남았습니다. 진정한 챔피언이 되어 모두에게 희망을 보여주세요!",
+            "unlocked": false,
+            "unlockCondition": {
+                "type": "complete_chapter",
+                "chapterId": "chapter-3"
+            },
+            "missions": [
+                {
+                    "id": "mission-4-1",
+                    "title": "레벨 10 달성",
+                    "description": "레벨 10에 도달하세요",
+                    "type": "reach_level",
+                    "target": {
+                        "level": 10
+                    },
+                    "completed": false
+                },
+                {
+                    "id": "mission-4-2",
+                    "title": "시너지 마스터",
+                    "description": "슬롯 시너지 120% 달성 (5개 같은 카테고리)",
+                    "type": "synergy_level",
+                    "target": {
+                        "percentage": 120
+                    },
+                    "completed": false
+                },
+                {
+                    "id": "mission-4-3",
+                    "title": "승리의 전설",
+                    "description": "50회 대전에서 승리하세요",
+                    "type": "win_battle",
+                    "target": {
+                        "count": 50
+                    },
+                    "completed": false
+                }
+            ],
+            "rewards": {
+                "tokens": 10000,
+                "cards": [
+                    {
+                        "rarity": "legendary",
+                        "count": 3
+                    }
+                ],
+                "title": "🌟 AI 대전 챔피언"
+            }
+        }
+    ]
+}

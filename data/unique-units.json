@@ -1,0 +1,79 @@
+{
+    "uniqueUnits": [
+        {
+            "id": "super-overlord",
+            "name": "AI 오버로드",
+            "category": "super",
+            "description": "모든 AI를 통합한 궁극의 존재",
+            "basePower": 500,
+            "powerMultiplier": 2.0,
+            "specialSkill": {
+                "name": "전지전능",
+                "description": "모든 라운드에서 +5 보너스",
+                "effect": "all_rounds_bonus_5"
+            },
+            "rarity": "legendary",
+            "iconEmoji": "👑"
+        },
+        {
+            "id": "image-masterpiece",
+            "name": "마스터피스",
+            "category": "image",
+            "description": "예술의 경지에 도달한 이미지 생성 AI",
+            "basePower": 450,
+            "powerMultiplier": 1.8,
+            "specialSkill": {
+                "name": "예술혼",
+                "description": "이미지 전투에서 자동 승리",
+                "effect": "image_battle_auto_win"
+            },
+            "rarity": "epic",
+            "iconEmoji": "🎨"
+        },
+        {
+            "id": "video-cinematic",
+            "name": "시네마틱 마스터",
+            "category": "video",
+            "description": "영화 같은 영상을 만드는 최고의 AI",
+            "basePower": 475,
+            "powerMultiplier": 1.9,
+            "specialSkill": {
+                "name": "블록버스터",
+                "description": "영상 전투에서 +10 보너스",
+                "effect": "video_battle_bonus_10"
+            },
+            "rarity": "epic",
+            "iconEmoji": "🎬"
+        },
+        {
+            "id": "audio-maestro",
+            "name": "하모니 마에스트로",
+            "category": "audio",
+            "description": "완벽한 화음을 만드는 음악 AI",
+            "basePower": 425,
+            "powerMultiplier": 1.7,
+            "specialSkill": {
+                "name": "완벽한 화음",
+                "description": "팀 전체 +10% 보너스",
+                "effect": "team_bonus_10_percent"
+            },
+            "rarity": "epic",
+            "iconEmoji": "🎵"
+        },
+        {
+            "id": "coding-wizard",
+            "name": "코드 위저드",
+            "category": "coding",
+            "description": "버그 없는 완벽한 코드를 작성하는 AI",
+            "basePower": 437,
+            "powerMultiplier": 1.75,
+            "specialSkill": {
+                "name": "버그 제로",
+                "description": "적 카드 능력 무효화",
+                "effect": "enemy_skill_nullify"
+            },
+            "rarity": "epic",
+            "iconEmoji": "💻"
+        }
+    ]
+}

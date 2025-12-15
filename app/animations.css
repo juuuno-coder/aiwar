@@ -1,0 +1,617 @@
+/* 애니메이션 효과 */
+
+/* 카드 뒤집기 애니메이션 */
+@keyframes cardFlip {
+  0% {
+    transform: rotateY(0deg);
+  }
+
+  50% {
+    transform: rotateY(90deg);
+  }
+
+  100% {
+    transform: rotateY(0deg);
+  }
+}
+
+.card-flip {
+  animation: cardFlip 0.6s ease-in-out;
+}
+
+/* 카드 등장 애니메이션 */
+@keyframes cardReveal {
+  0% {
+    opacity: 0;
+    transform: scale(0.8) translateY(20px);
+  }
+
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.card-reveal {
+  animation: cardReveal 0.4s ease-out forwards;
+}
+
+/* 페이지 전환 효과 */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* 승리 애니메이션 */
+@keyframes victoryBounce {
+
+  0%,
+  100% {
+    transform: scale(1);
+  }
+
+  25% {
+    transform: scale(1.1) rotate(-5deg);
+  }
+
+  50% {
+    transform: scale(1.15) rotate(5deg);
+  }
+
+  75% {
+    transform: scale(1.1) rotate(-3deg);
+  }
+}
+
+.victory-animation {
+  animation: victoryBounce 0.8s ease-in-out;
+}
+
+/* 패배 애니메이션 */
+@keyframes defeatShake {
+
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+
+  25% {
+    transform: translateX(-10px);
+  }
+
+  75% {
+    transform: translateX(10px);
+  }
+}
+
+.defeat-animation {
+  animation: defeatShake 0.5s ease-in-out;
+}
+
+/* 레벨업 축하 효과 */
+@keyframes levelUpGlow {
+
+  0%,
+  100% {
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+    transform: scale(1);
+  }
+
+  50% {
+    box-shadow: 0 0 40px rgba(255, 215, 0, 0.9);
+    transform: scale(1.05);
+  }
+}
+
+.levelup-animation {
+  animation: levelUpGlow 1s ease-in-out infinite;
+}
+
+/* 파티클 효과 */
+@keyframes particleFloat {
+  0% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateY(-100px) scale(0);
+  }
+}
+
+.particle {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  animation: particleFloat 2s ease-out forwards;
+}
+
+/* 코인 획득 애니메이션 */
+@keyframes coinCollect {
+  0% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+
+  50% {
+    transform: translateY(-30px) scale(1.2);
+  }
+
+  100% {
+    transform: translateY(-60px) scale(0);
+    opacity: 0;
+  }
+}
+
+.coin-collect {
+  animation: coinCollect 0.8s ease-out forwards;
+}
+
+/* 카드 글로우 효과 */
+@keyframes cardGlow {
+
+  0%,
+  100% {
+    box-shadow: 0 0 10px rgba(139, 92, 246, 0.5);
+  }
+
+  50% {
+    box-shadow: 0 0 25px rgba(139, 92, 246, 0.8);
+  }
+}
+
+.card-glow {
+  animation: cardGlow 2s ease-in-out infinite;
+}
+
+/* 골드 글로우 효과 */
+@keyframes goldGlow {
+
+  0%,
+  100% {
+    box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+  }
+
+  50% {
+    box-shadow: 0 0 25px rgba(255, 215, 0, 0.8);
+  }
+}
+
+.gold-glow {
+  animation: goldGlow 2s ease-in-out infinite;
+}
+
+/* 호버 효과 강화 */
+.hover-lift {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.hover-lift:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+/* 펄스 효과 */
+@keyframes pulse {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.7;
+  }
+}
+
+.pulse {
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* 회전 효과 */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.spin {
+  animation: spin 2s linear infinite;
+}
+
+/* 느린 회전 */
+.spin-slow {
+  animation: spin 8s linear infinite;
+}
+
+/* 배경 그라데이션 애니메이션 */
+@keyframes gradientShift {
+  0% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.gradient-animate {
+  background-size: 200% 200%;
+  animation: gradientShift 10s ease infinite;
+}
+
+/* 슬라이드 인 (왼쪽에서) */
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-50px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.slide-in-left {
+  animation: slideInLeft 0.5s ease-out;
+}
+
+/* 슬라이드 인 (오른쪽에서) */
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(50px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.slide-in-right {
+  animation: slideInRight 0.5s ease-out;
+}
+
+/* 바운스 효과 */
+@keyframes bounce {
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.bounce {
+  animation: bounce 1s ease-in-out infinite;
+}
+
+/* 깜빡임 효과 */
+@keyframes blink {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.3;
+  }
+}
+
+.blink {
+  animation: blink 1.5s ease-in-out infinite;
+}
+
+/* 스케일 펄스 */
+@keyframes scalePulse {
+
+  0%,
+  100% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+.scale-pulse {
+  animation: scalePulse 2s ease-in-out infinite;
+}
+
+/* 지연 애니메이션 유틸리티 */
+.delay-100 {
+  animation-delay: 0.1s;
+}
+
+.delay-200 {
+  animation-delay: 0.2s;
+}
+
+.delay-300 {
+  animation-delay: 0.3s;
+}
+
+.delay-400 {
+  animation-delay: 0.4s;
+}
+
+.delay-500 {
+  animation-delay: 0.5s;
+}
+
+/* 애니메이션 정의 */
+
+/* 페이드 인 */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* 스케일 인 */
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.3s ease-out;
+}
+
+/* 슬라이드 업 */
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-up {
+  animation: slideUp 0.4s ease-out;
+}
+
+/* 슬라이드 다운 */
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-down {
+  animation: slideDown 0.4s ease-out;
+}
+
+/* 슬라이드 레프트 */
+@keyframes slideLeft {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-slide-left {
+  animation: slideLeft 0.4s ease-out;
+}
+
+/* 슬라이드 라이트 */
+@keyframes slideRight {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-slide-right {
+  animation: slideRight 0.4s ease-out;
+}
+
+/* 펄스 */
+@keyframes pulse {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* 바운스 */
+@keyframes bounce {
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.animate-bounce {
+  animation: bounce 1s ease-in-out infinite;
+}
+
+/* 플로트 */
+@keyframes float {
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+/* 스핀 */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+/* 글로우 */
+@keyframes glow {
+
+  0%,
+  100% {
+    box-shadow: 0 0 20px rgba(139, 92, 246, 0.5);
+  }
+
+  50% {
+    box-shadow: 0 0 40px rgba(139, 92, 246, 0.8);
+  }
+}
+
+.animate-glow {
+  animation: glow 2s ease-in-out infinite;
+}
+
+/* 카드 플립 */
+@keyframes cardFlip {
+  0% {
+    transform: rotateY(0);
+  }
+
+  100% {
+    transform: rotateY(180deg);
+  }
+}
+
+.animate-card-flip {
+  animation: cardFlip 0.6s ease-in-out;
+}
+
+/* 쉐이크 */
+@keyframes shake {
+
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+
+  10%,
+  30%,
+  50%,
+  70%,
+  90% {
+    transform: translateX(-5px);
+  }
+
+  20%,
+  40%,
+  60%,
+  80% {
+    transform: translateX(5px);
+  }
+}
+
+.animate-shake {
+  animation: shake 0.5s ease-in-out;
+}
+
+/* 딜레이 클래스 */
+.delay-100 {
+  animation-delay: 100ms;
+}
+
+.delay-200 {
+  animation-delay: 200ms;
+}
+
+.delay-300 {
+  animation-delay: 300ms;
+}
+
+.delay-400 {
+  animation-delay: 400ms;
+}
+
+.delay-500 {
+  animation-delay: 500ms;
+}
