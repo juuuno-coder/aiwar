@@ -49,6 +49,15 @@ function BattleFightContent() {
         const cards: Card[] = [];
         for (let i = 0; i < count; i++) {
             const baseStats = 20 + Math.floor(Math.random() * 20);
+
+            const creativity = baseStats + Math.floor(Math.random() * 10);
+            const accuracy = baseStats + Math.floor(Math.random() * 10);
+            const speed = baseStats + Math.floor(Math.random() * 10);
+            const stability = baseStats + Math.floor(Math.random() * 10);
+            const ethics = baseStats + Math.floor(Math.random() * 10);
+
+            const totalPower = creativity + accuracy + speed + stability + ethics;
+
             cards.push({
                 id: `ai-card-${i}`,
                 templateId: `ai-template-${i}`,
@@ -56,22 +65,16 @@ function BattleFightContent() {
                 level: 1 + Math.floor(Math.random() * 5),
                 experience: 0,
                 stats: {
-                    creativity: baseStats + Math.floor(Math.random() * 10),
-                    accuracy: baseStats + Math.floor(Math.random() * 10),
-                    speed: baseStats + Math.floor(Math.random() * 10),
-                    stability: baseStats + Math.floor(Math.random() * 10),
-                    ethics: baseStats + Math.floor(Math.random() * 10),
-                    totalPower: 0,
+                    creativity,
+                    accuracy,
+                    speed,
+                    stability,
+                    ethics,
+                    totalPower,
                 },
                 acquiredAt: new Date(),
                 isLocked: false,
             });
-            cards[i].stats.totalPower =
-                cards[i].stats.creativity +
-                cards[i].stats.accuracy +
-                cards[i].stats.speed +
-                cards[i].stats.stability +
-                cards[i].stats.ethics;
         }
         return cards;
     };
@@ -81,11 +84,11 @@ function BattleFightContent() {
 
         const weights = battleGenre.statWeights;
         let power = Math.floor(
-            card.stats.creativity * weights.creativity +
-            card.stats.accuracy * weights.accuracy +
-            card.stats.speed * weights.speed +
-            card.stats.stability * weights.stability +
-            card.stats.ethics * weights.ethics
+            (card.stats.creativity || 0) * weights.creativity +
+            (card.stats.accuracy || 0) * weights.accuracy +
+            (card.stats.speed || 0) * weights.speed +
+            (card.stats.stability || 0) * weights.stability +
+            (card.stats.ethics || 0) * weights.ethics
         );
 
         if (applySynergy) {
