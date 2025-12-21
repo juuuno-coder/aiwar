@@ -69,6 +69,7 @@ export interface Card {
     acquiredAt: Date;
     isLocked: boolean;
     isUnique?: boolean; // 유니크 유닛 여부
+    type?: AIType; // Rock-Paper-Scissors type
     specialSkill?: {
         name: string;
         description: string;
