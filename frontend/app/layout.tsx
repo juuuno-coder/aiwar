@@ -6,6 +6,10 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 import GameSidebar from "@/components/GameSidebar";
 import GameTopBar from "@/components/GameTopBar";
 import { FirebaseProvider } from "@/components/FirebaseProvider";
+import { LanguageProvider } from "@/context/LanguageContext";
+import { AlertProvider } from "@/context/AlertContext";
+import { FooterProvider } from "@/context/FooterContext";
+import { UserProvider } from "@/context/UserContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -34,24 +38,32 @@ export default function RootLayout({
         suppressHydrationWarning
       >
         <FirebaseProvider>
-          <ThemeProvider>
-            {/* 게임 레이아웃 */}
-            <div className="flex h-screen overflow-hidden">
-              {/* 사이드바 */}
-              <GameSidebar />
+          <UserProvider>
+            <LanguageProvider>
+              <AlertProvider>
+                <FooterProvider>
+                  <ThemeProvider>
+                    {/* 게임 레이아웃 */}
+                    <div className="flex h-screen overflow-hidden">
+                      {/* 사이드바 */}
+                      <GameSidebar />
 
-              {/* 메인 영역 */}
-              <div className="flex-1 flex flex-col ml-64">
-                {/* 상단 바 */}
-                <GameTopBar />
+                      {/* 메인 영역 */}
+                      <div className="flex-1 flex flex-col ml-64">
+                        {/* 상단 바 */}
+                        <GameTopBar />
 
-                {/* 컨텐츠 */}
-                <main className="flex-1 overflow-auto mt-20 p-6 bg-gradient-to-br from-gray-900 via-purple-900/20 to-gray-900">
-                  {children}
-                </main>
-              </div>
-            </div>
-          </ThemeProvider>
+                        {/* 컨텐츠 */}
+                        <main className="flex-1 overflow-auto mt-20 p-6 bg-gradient-to-br from-gray-900 via-purple-900/20 to-gray-900">
+                          {children}
+                        </main>
+                      </div>
+                    </div>
+                  </ThemeProvider>
+                </FooterProvider>
+              </AlertProvider>
+            </LanguageProvider>
+          </UserProvider>
         </FirebaseProvider>
       </body>
     </html>
