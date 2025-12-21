@@ -217,6 +217,14 @@ class UnifiedStorage {
             await this.saveGameState({ unlockedFactions });
         }
     }
+
+    /**
+     * 카드 목록 조회
+     */
+    async getCards(): Promise<any[]> {
+        const state = await this.loadGameState();
+        return state.inventory || [];
+    }
 }
 
 // 싱글톤 인스턴스
