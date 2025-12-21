@@ -1,0 +1,167 @@
+.button {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Orbitron', sans-serif;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+    overflow: hidden;
+    color: #fff;
+    text-decoration: none;
+    border: none;
+    background: transparent;
+    user-select: none;
+}
+
+/* Sizes */
+.sm {
+    padding: 0.6rem 1.2rem;
+    font-size: 0.75rem;
+}
+
+.md {
+    padding: 0.9rem 2rem;
+    font-size: 0.9rem;
+}
+
+.lg {
+    padding: 1.2rem 3rem;
+    font-size: 1.1rem;
+}
+
+/* Base Shape with Clip-path */
+.button::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--bg-color, #222);
+    clip-path: polygon(0% 15%,
+            5% 0%,
+            95% 0%,
+            100% 15%,
+            100% 85%,
+            95% 100%,
+            5% 100%,
+            0% 85%);
+    z-index: 1;
+    transition: all 0.3s;
+}
+
+/* Variants */
+.primary {
+    --bg-color: linear-gradient(135deg, #7000ff 0%, #001aff 100%);
+    filter: drop-shadow(0 0 8px rgba(112, 0, 255, 0.6));
+}
+
+.outline {
+    --bg-color: #0d0d1a;
+}
+
+.outline::after {
+    content: '';
+    position: absolute;
+    inset: 2px;
+    background: #000;
+    clip-path: inherit;
+    z-index: 2;
+}
+
+.secondary {
+    --bg-color: #333;
+}
+
+/* Content layer to stay above clip-path */
+.content {
+    position: relative;
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+/* Technical Border Detail */
+.border {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    pointer-events: none;
+}
+
+.primary .border {
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    clip-path: inherit;
+}
+
+.outline .border {
+    background: linear-gradient(135deg, #00f2ff 0%, #7000ff 100%);
+    clip-path: inherit;
+    z-index: 1;
+}
+
+/* Hover effects */
+.button:hover {
+    transform: translateY(-2px) scale(1.02);
+}
+
+.primary:hover {
+    filter: drop-shadow(0 0 15px rgba(112, 0, 255, 0.8));
+}
+
+.outline:hover {
+    filter: drop-shadow(0 0 10px rgba(0, 242, 255, 0.5));
+}
+
+.button:active {
+    transform: translateY(1px) scale(0.98);
+}
+
+/* Glitch effect on hover */
+.glitch {
+    position: absolute;
+    inset: 0;
+    background: rgba(255, 255, 255, 0.1);
+    z-index: 4;
+    opacity: 0;
+    transition: opacity 0.1s;
+}
+
+.button:hover .glitch {
+    opacity: 1;
+    animation: glitch-anim 0.2s infinite;
+}
+
+@keyframes glitch-anim {
+    0% {
+        transform: translate(0);
+    }
+
+    20% {
+        transform: translate(-2px, 2px);
+    }
+
+    40% {
+        transform: translate(-2px, -2px);
+    }
+
+    60% {
+        transform: translate(2px, 2px);
+    }
+
+    80% {
+        transform: translate(2px, -2px);
+    }
+
+    100% {
+        transform: translate(0);
+    }
+}
+
+.button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    filter: grayscale(1);
+}

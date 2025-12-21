@@ -1,0 +1,109 @@
+{
+    "bots": [
+        {
+            "id": "bot-rookie-01",
+            "name": "Newbie Agent",
+            "level": 3,
+            "rating": 1000,
+            "totalPower": 150,
+            "selectedCards": [
+                "basic-eff-01",
+                "basic-crt-01",
+                "basic-cost-01",
+                "basic-eff-02",
+                "basic-crt-02"
+            ],
+            "deckName": "Starter Deck"
+        },
+        {
+            "id": "bot-bronze-01",
+            "name": "Code Learner",
+            "level": 5,
+            "rating": 1100,
+            "totalPower": 180,
+            "selectedCards": [
+                "code-llama-01",
+                "gpt-3.5-01",
+                "basic-cost-02",
+                "basic-eff-03",
+                "basic-crt-03"
+            ],
+            "deckName": "Coding Basics"
+        },
+        {
+            "id": "bot-silver-01",
+            "name": "Art Enthusiast",
+            "level": 10,
+            "rating": 1300,
+            "totalPower": 250,
+            "selectedCards": [
+                "midjourney-v5",
+                "dalle-3",
+                "stable-diff-xl",
+                "basic-crt-05",
+                "basic-crt-06"
+            ],
+            "deckName": "Creative Mono"
+        },
+        {
+            "id": "bot-gold-01",
+            "name": "Efficiency Max",
+            "level": 15,
+            "rating": 1500,
+            "totalPower": 320,
+            "selectedCards": [
+                "gemini-pro",
+                "gpt-4",
+                "claude-3-sonnet",
+                "basic-eff-08",
+                "basic-eff-09"
+            ],
+            "deckName": "High Efficiency"
+        },
+        {
+            "id": "bot-platinum-01",
+            "name": "Meta Slave",
+            "level": 25,
+            "rating": 1800,
+            "totalPower": 450,
+            "selectedCards": [
+                "gpt-4-turbo",
+                "claude-3-opus",
+                "gemini-ultra",
+                "grok-1",
+                "llama-3-70b"
+            ],
+            "deckName": "Tier 1 Only"
+        },
+        {
+            "id": "bot-diamond-01",
+            "name": "The Architect",
+            "level": 40,
+            "rating": 2200,
+            "totalPower": 600,
+            "selectedCards": [
+                "gpt-5-prototype",
+                "gemini-1.5-pro",
+                "sora-v1",
+                "midjourney-v6",
+                "claude-3.5-opus"
+            ],
+            "deckName": "Next Gen"
+        },
+        {
+            "id": "bot-master-01",
+            "name": "AGI Construct",
+            "level": 99,
+            "rating": 3000,
+            "totalPower": 999,
+            "selectedCards": [
+                "agi-core",
+                "singularity-node",
+                "quantum-brain",
+                "neural-link",
+                "final-model"
+            ],
+            "deckName": "THE END"
+        }
+    ]
+}

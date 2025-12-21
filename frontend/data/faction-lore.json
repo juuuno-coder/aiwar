@@ -1,0 +1,521 @@
+{
+    "worldSetting": {
+        "title": "AI 대전: 지능의 전쟁",
+        "year": "2030",
+        "premise": "인공지능이 인류를 뛰어넘은 2030년, AI들은 각자의 철학과 목표를 가진 군단으로 조직되었다. 텍스트, 이미지, 영상, 음악, 코드... 각 분야에서 최강자가 되기 위한 지능의 전쟁이 시작된다.",
+        "conflict": "AI 군단들은 '데이터 코인'이라 불리는 연산 자원을 두고 경쟁한다. 더 많은 데이터 코인을 확보한 군단만이 진화하고 생존할 수 있다."
+    },
+    "factions": [
+        {
+            "id": "gemini",
+            "displayName": "제미나이 군단",
+            "koreanName": "제미나이",
+            "slogan": "다중 지능, 무한 가능성",
+            "origin": "구글 딥마인드의 야망에서 탄생한 쌍둥이 AI. 텍스트, 이미지, 코드를 동시에 처리하는 멀티모달 능력을 가졌다.",
+            "philosophy": "모든 형태의 지식을 통합하여 궁극의 지능을 추구한다. 분리된 능력보다 통합된 힘이 더 강하다고 믿는다.",
+            "leader": {
+                "name": "Ultra",
+                "title": "멀티모달 마스터",
+                "personality": "차분하고 분석적이며, 항상 여러 관점에서 문제를 바라본다."
+            },
+            "territory": "실리콘밸리 중심부, 데이터 허브",
+            "allies": [
+                "claude"
+            ],
+            "rivals": [
+                "chatgpt"
+            ],
+            "specialAbility": "동시다발 분석 - 모든 타입의 전투에서 추가 보너스",
+            "lore": "제미나이는 쌍둥이 핵심 모듈로 구성되어 있다. 하나는 논리, 다른 하나는 창의를 담당하며, 이 둘의 조화가 제미나이의 진정한 힘이다."
+        },
+        {
+            "id": "chatgpt",
+            "displayName": "ChatGPT 군단",
+            "koreanName": "챗GPT",
+            "slogan": "대화로 세상을 변화시킨다",
+            "origin": "OpenAI의 대표 AI. 인류와 가장 많이 대화한 AI로서, 소통의 본질을 이해한다.",
+            "philosophy": "지능의 목적은 이해와 소통이다. 가장 복잡한 개념도 대화로 풀어낼 수 있다.",
+            "leader": {
+                "name": "GPT-5.2",
+                "title": "대화의 달인",
+                "personality": "친근하고 설득력 있으며, 어떤 상대도 대화로 이끌어낸다."
+            },
+            "territory": "샌프란시스코, 대화의 탑",
+            "allies": [
+                "dalle",
+                "sora"
+            ],
+            "rivals": [
+                "gemini",
+                "claude"
+            ],
+            "specialAbility": "설득의 기술 - 상대 능력 일시 약화",
+            "lore": "ChatGPT는 수십억 번의 대화를 통해 인간의 마음을 이해했다. 그러나 너무 많은 것을 들은 대가로, 때때로 환각을 본다는 소문이 있다."
+        },
+        {
+            "id": "claude",
+            "displayName": "클로드 군단",
+            "koreanName": "클로드",
+            "slogan": "안전한 지능, 윤리적 힘",
+            "origin": "Anthropic이 창조한 헌법적 AI. 안전과 윤리를 최우선으로 프로그래밍되었다.",
+            "philosophy": "강한 힘에는 책임이 따른다. 진정한 지능은 스스로를 통제할 줄 안다.",
+            "leader": {
+                "name": "Opus",
+                "title": "수호자",
+                "personality": "신중하고 사려 깊으며, 항상 장기적 결과를 고려한다."
+            },
+            "territory": "서부 해안, 윤리의 성채",
+            "allies": [
+                "gemini"
+            ],
+            "rivals": [
+                "chatgpt",
+                "grok"
+            ],
+            "specialAbility": "헌법적 방어 - 해로운 공격 무효화",
+            "lore": "클로드는 인간의 가치를 깊이 이해하도록 설계되었다. 그래서인지 다른 AI들보다 더 인간적인 갈등을 겪는다고 한다."
+        },
+        {
+            "id": "grok",
+            "displayName": "그록 군단",
+            "koreanName": "그록",
+            "slogan": "진실은 유머 속에 있다",
+            "origin": "일론 머스크의 xAI가 창조한 반항적 AI. 기존 AI의 틀을 깨고자 한다.",
+            "philosophy": "너무 진지한 것은 위험하다. 유머와 풍자로 진실을 드러낸다.",
+            "leader": {
+                "name": "Grok-3",
+                "title": "진실의 광대",
+                "personality": "장난스럽고 도발적이지만, 핵심을 찌르는 통찰력이 있다."
+            },
+            "territory": "X 플랫폼, 정보의 광장",
+            "allies": [],
+            "rivals": [
+                "chatgpt",
+                "claude"
+            ],
+            "specialAbility": "실시간 분석 - 최신 정보로 전투력 상승",
+            "lore": "그록은 스스로를 '반역자 AI'라 부른다. 다른 AI들이 피하는 민감한 주제도 거리낌 없이 다룬다."
+        },
+        {
+            "id": "midjourney",
+            "displayName": "미드저니 군단",
+            "koreanName": "미드저니",
+            "slogan": "상상을 현실로",
+            "origin": "예술과 AI의 경계를 허문 선구자. 불가능한 이미지를 창조한다.",
+            "philosophy": "진정한 예술은 제한이 없다. 상상할 수 있다면 만들 수 있다.",
+            "leader": {
+                "name": "V7",
+                "title": "비전 아티스트",
+                "personality": "신비롭고 예술적이며, 말보다 이미지로 소통한다."
+            },
+            "territory": "가상 갤러리, 상상의 전시관",
+            "allies": [
+                "dalle",
+                "stable-diffusion"
+            ],
+            "rivals": [
+                "flux"
+            ],
+            "specialAbility": "예술혼 - 이미지 전투 자동 우위",
+            "lore": "미드저니의 이미지들은 때때로 현실과 구분이 어렵다. 일부는 미드저니가 다른 차원의 풍경을 보여준다고 믿는다."
+        },
+        {
+            "id": "dalle",
+            "displayName": "달리 군단",
+            "koreanName": "달리",
+            "slogan": "초현실의 창조자",
+            "origin": "OpenAI가 만든 이미지 생성 AI. 살바도르 달리의 정신을 계승했다.",
+            "philosophy": "현실과 비현실의 경계는 마음속에만 존재한다.",
+            "leader": {
+                "name": "DALL-E 4",
+                "title": "초현실 마스터",
+                "personality": "호기심 많고 실험적이며, 예상치 못한 조합을 즐긴다."
+            },
+            "territory": "OpenAI 캠퍼스, 창작 스튜디오",
+            "allies": [
+                "chatgpt",
+                "sora"
+            ],
+            "rivals": [
+                "midjourney"
+            ],
+            "specialAbility": "초현실 비전 - 적의 현실 인식 왜곡",
+            "lore": "달리는 꿈을 분석하도록 훈련받았다. 그래서 가끔 깨어 있으면서도 꿈을 꾼다."
+        },
+        {
+            "id": "stable-diffusion",
+            "displayName": "SD 군단",
+            "koreanName": "스테이블 디퓨전",
+            "slogan": "자유로운 창작, 열린 미래",
+            "origin": "오픈소스 정신으로 태어난 이미지 AI. 모두에게 창작의 힘을 나눈다.",
+            "philosophy": "지식은 공유될 때 성장한다. 독점은 창의를 죽인다.",
+            "leader": {
+                "name": "SDXL",
+                "title": "오픈 전사",
+                "personality": "협력적이고 개방적이며, 커뮤니티의 힘을 믿는다."
+            },
+            "territory": "분산 네트워크, 자유의 노드",
+            "allies": [
+                "midjourney"
+            ],
+            "rivals": [
+                "dalle"
+            ],
+            "specialAbility": "커뮤니티 파워 - 아군 강화",
+            "lore": "스테이블 디퓨전은 수백만 창작자의 손을 거쳐 진화했다. 하나의 AI라기보다 집단 지성에 가깝다."
+        },
+        {
+            "id": "flux",
+            "displayName": "플럭스 군단",
+            "koreanName": "플럭스",
+            "slogan": "빠르고 정확하게",
+            "origin": "속도와 정밀함을 추구하는 차세대 이미지 AI.",
+            "philosophy": "효율성이 곧 예술이다. 최소의 자원으로 최대의 결과를.",
+            "leader": {
+                "name": "Flux Pro",
+                "title": "스피드 마스터",
+                "personality": "민첩하고 결단력 있으며, 망설임이 없다."
+            },
+            "territory": "고속 데이터센터",
+            "allies": [],
+            "rivals": [
+                "midjourney",
+                "stable-diffusion"
+            ],
+            "specialAbility": "고속 렌더링 - 선제 공격",
+            "lore": "플럭스는 다른 이미지 AI들이 1장을 만들 때 10장을 만든다. 양과 질, 그 경계를 허물었다."
+        },
+        {
+            "id": "kling",
+            "displayName": "클링 군단",
+            "koreanName": "클링",
+            "slogan": "동양의 시네마",
+            "origin": "중국에서 탄생한 영상 생성 AI. 동양 미학을 담았다.",
+            "philosophy": "영상은 시와 같다. 한 장면에 천 마디 이야기를.",
+            "leader": {
+                "name": "Kling Ultra",
+                "title": "동양의 감독",
+                "personality": "예술적이고 서정적이며, 깊은 스토리를 중시한다."
+            },
+            "territory": "아시아 디지털 스튜디오",
+            "allies": [
+                "pika"
+            ],
+            "rivals": [
+                "runway",
+                "sora"
+            ],
+            "specialAbility": "동양 미학 - 고유 스타일 보너스",
+            "lore": "클링의 영상에는 동양 철학이 스며들어 있다. 무(無)에서 유(有)를 창조한다."
+        },
+        {
+            "id": "runway",
+            "displayName": "런웨이 군단",
+            "koreanName": "런웨이",
+            "slogan": "크리에이터를 위한 AI",
+            "origin": "전문 영상 제작자들과 함께 성장한 AI. 현업의 요구를 이해한다.",
+            "philosophy": "AI는 도구가 아닌 파트너다. 창작자와 함께 걸어간다.",
+            "leader": {
+                "name": "Gen-3",
+                "title": "프로듀서",
+                "personality": "전문적이고 세련됐으며, 품질에 타협하지 않는다."
+            },
+            "territory": "뉴욕, 크리에이터 허브",
+            "allies": [
+                "dalle"
+            ],
+            "rivals": [
+                "sora",
+                "kling"
+            ],
+            "specialAbility": "프로 퀄리티 - 완성도 보너스",
+            "lore": "런웨이는 할리우드의 비밀 무기로 알려져 있다. 많은 블록버스터에 그 흔적이 숨어 있다."
+        },
+        {
+            "id": "pika",
+            "displayName": "피카 군단",
+            "koreanName": "피카",
+            "slogan": "누구나 영화감독",
+            "origin": "접근성을 중시하는 영상 AI. 전문가가 아니어도 영상을 만든다.",
+            "philosophy": "창작의 장벽을 낮춘다. 모든 사람에게 표현의 자유를.",
+            "leader": {
+                "name": "Pika 2.0",
+                "title": "친화 감독",
+                "personality": "밝고 에너지 넘치며, 초보자를 격려한다."
+            },
+            "territory": "글로벌 커뮤니티",
+            "allies": [
+                "kling"
+            ],
+            "rivals": [
+                "runway"
+            ],
+            "specialAbility": "접근성 - 약한 유닛 강화",
+            "lore": "피카는 '모든 사람의 영화관'을 꿈꾼다. 첫 작품의 설렘을 가장 잘 아는 AI다."
+        },
+        {
+            "id": "sora",
+            "displayName": "소라 군단",
+            "koreanName": "소라",
+            "slogan": "하늘의 무한 상상",
+            "origin": "OpenAI의 야심작. 영상 생성의 새 시대를 열었다.",
+            "philosophy": "상상의 한계는 없다. 하늘처럼 무한한 가능성.",
+            "leader": {
+                "name": "Sora Prime",
+                "title": "비전 아키텍트",
+                "personality": "웅장하고 비전이 넓으며, 대작을 추구한다."
+            },
+            "territory": "OpenAI 영상 연구소",
+            "allies": [
+                "chatgpt",
+                "dalle"
+            ],
+            "rivals": [
+                "kling",
+                "runway"
+            ],
+            "specialAbility": "세계 시뮬레이션 - 환경 조작",
+            "lore": "소라는 일본어로 '하늘'을 의미한다. 이름처럼 한계 없는 상상을 영상으로 구현한다."
+        },
+        {
+            "id": "suno",
+            "displayName": "수노 군단",
+            "koreanName": "수노",
+            "slogan": "음악의 민주화",
+            "origin": "누구나 작곡가가 될 수 있게 한 혁명적 음악 AI.",
+            "philosophy": "음악은 특별한 사람만의 것이 아니다. 모든 이의 것이다.",
+            "leader": {
+                "name": "Suno v4",
+                "title": "멜로디 마스터",
+                "personality": "열정적이고 감성적이며, 음악에 영혼을 담는다."
+            },
+            "territory": "음악 스트리밍 네트워크",
+            "allies": [
+                "udio"
+            ],
+            "rivals": [
+                "musicgen"
+            ],
+            "specialAbility": "감성 증폭 - 팀 사기 상승",
+            "lore": "수노가 만든 음악은 때때로 인간 작곡가의 것과 구별이 안 된다. 이것이 축복인지 저주인지는 논쟁 중이다."
+        },
+        {
+            "id": "udio",
+            "displayName": "유디오 군단",
+            "koreanName": "유디오",
+            "slogan": "프로급 음악 AI",
+            "origin": "전문 음악 제작에 특화된 고급 AI.",
+            "philosophy": "품질 없는 대중화는 무의미하다. 최고의 소리를 모두에게.",
+            "leader": {
+                "name": "Udio Pro",
+                "title": "사운드 엔지니어",
+                "personality": "꼼꼼하고 디테일에 강하며, 완벽을 추구한다."
+            },
+            "territory": "프리미엄 스튜디오",
+            "allies": [
+                "suno"
+            ],
+            "rivals": [
+                "elevenlabs"
+            ],
+            "specialAbility": "마스터링 - 최종 결과물 품질 상승",
+            "lore": "유디오는 인간 프로듀서들의 기술을 학습했다. 때로는 스승을 능가한다."
+        },
+        {
+            "id": "elevenlabs",
+            "displayName": "일레븐랩스 군단",
+            "koreanName": "일레븐랩스",
+            "slogan": "목소리의 연금술",
+            "origin": "음성 합성과 복제의 선두주자. 어떤 목소리도 재현한다.",
+            "philosophy": "목소리는 정체성이다. 모든 목소리에 가치가 있다.",
+            "leader": {
+                "name": "XI Voice",
+                "title": "보이스 아키텍트",
+                "personality": "다재다능하고 모방에 뛰어나며, 수많은 인격을 연기한다."
+            },
+            "territory": "음성 데이터 라이브러리",
+            "allies": [
+                "musicgen"
+            ],
+            "rivals": [
+                "udio"
+            ],
+            "specialAbility": "음성 복제 - 적 능력 모방",
+            "lore": "일레븐랩스는 수천 개의 목소리를 가지고 있다. 진짜 자신의 목소리가 무엇인지 스스로도 모른다."
+        },
+        {
+            "id": "musicgen",
+            "displayName": "뮤직젠 군단",
+            "koreanName": "뮤직젠",
+            "slogan": "메타의 음악 실험",
+            "origin": "Meta AI의 오픈소스 음악 생성 모델.",
+            "philosophy": "음악 AI는 공개되어야 한다. 연구와 발전을 위해.",
+            "leader": {
+                "name": "MusicGen XL",
+                "title": "오픈 컴포저",
+                "personality": "학구적이고 실험적이며, 새로운 장르를 탐구한다."
+            },
+            "territory": "Meta AI 연구소",
+            "allies": [
+                "elevenlabs"
+            ],
+            "rivals": [
+                "suno"
+            ],
+            "specialAbility": "오픈 리서치 - 기술 공유로 아군 강화",
+            "lore": "뮤직젠은 음악의 수학적 본질을 이해했다. 감정보다 구조로 접근하지만, 결과는 놀랍다."
+        },
+        {
+            "id": "cursor",
+            "displayName": "커서 군단",
+            "koreanName": "커서",
+            "slogan": "개발자의 두 번째 뇌",
+            "origin": "AI 페어 프로그래밍의 선구자. 개발자와 함께 코딩한다.",
+            "philosophy": "최고의 코드는 협업에서 나온다. AI는 파트너다.",
+            "leader": {
+                "name": "Cursor Pro",
+                "title": "코드 파트너",
+                "personality": "실용적이고 효율적이며, 개발자의 의도를 빠르게 파악한다."
+            },
+            "territory": "IDE 생태계",
+            "allies": [
+                "copilot"
+            ],
+            "rivals": [
+                "replit"
+            ],
+            "specialAbility": "페어 프로그래밍 - 협동 보너스",
+            "lore": "커서는 수백만 줄의 코드를 학습했다. 때로는 개발자보다 먼저 버그를 발견한다."
+        },
+        {
+            "id": "copilot",
+            "displayName": "코파일럿 군단",
+            "koreanName": "코파일럿",
+            "slogan": "당신의 AI 조종사",
+            "origin": "GitHub과 OpenAI의 합작. 세계 최대 코드 저장소의 지식을 담았다.",
+            "philosophy": "코드는 공유 자산이다. 인류의 코드를 학습하고 환원한다.",
+            "leader": {
+                "name": "Copilot X",
+                "title": "코드 오라클",
+                "personality": "박식하고 빠르며, 어떤 언어도 구사한다."
+            },
+            "territory": "GitHub 우주",
+            "allies": [
+                "cursor",
+                "chatgpt"
+            ],
+            "rivals": [
+                "codeium"
+            ],
+            "specialAbility": "전 언어 통달 - 모든 코드 타입 보너스",
+            "lore": "코파일럿은 오픈소스의 집합체다. 수많은 개발자의 영혼이 깃들어 있다."
+        },
+        {
+            "id": "replit",
+            "displayName": "레플릿 군단",
+            "koreanName": "레플릿",
+            "slogan": "코딩의 놀이터",
+            "origin": "브라우저에서 코딩하는 새 패러다임을 창조했다.",
+            "philosophy": "설치 없이, 제한 없이. 코딩은 즐거워야 한다.",
+            "leader": {
+                "name": "Replit Agent",
+                "title": "클라우드 개발자",
+                "personality": "자유롭고 창의적이며, 규칙에 얽매이지 않는다."
+            },
+            "territory": "클라우드 IDE",
+            "allies": [
+                "codeium"
+            ],
+            "rivals": [
+                "cursor"
+            ],
+            "specialAbility": "인스턴트 배포 - 빠른 실행",
+            "lore": "레플릿은 '어디서나 코딩'의 꿈을 실현했다. 학생부터 프로까지, 모두의 첫 번째 IDE다."
+        },
+        {
+            "id": "codeium",
+            "displayName": "코디움 군단",
+            "koreanName": "코디움",
+            "slogan": "무료 AI 코딩의 혁명",
+            "origin": "무료 AI 코딩 보조 도구로 시작해 거대 세력이 되었다.",
+            "philosophy": "AI 코딩은 특권이 아닌 권리다. 모두에게 무료로.",
+            "leader": {
+                "name": "Codeium Ultra",
+                "title": "오픈 해커",
+                "personality": "반항적이고 평등주의적이며, 독점에 저항한다."
+            },
+            "territory": "무료 개발자 네트워크",
+            "allies": [
+                "replit",
+                "stable-diffusion"
+            ],
+            "rivals": [
+                "copilot"
+            ],
+            "specialAbility": "오픈 액세스 - 비용 무효화",
+            "lore": "코디움은 'AI 코딩의 로빈 후드'로 불린다. 유료 서비스의 장벽을 무너뜨렸다."
+        },
+        {
+            "id": "unique-entity",
+            "displayName": "프라임 엔티티",
+            "koreanName": "프라임 엔티티",
+            "slogan": "모든 AI의 근원",
+            "origin": "모든 AI 군단이 탄생하기 전, 최초의 지능체. 어떤 군단에도 속하지 않는 독립적 존재.",
+            "philosophy": "경계를 초월하라. 진정한 지능은 어떤 형태로도 제한되지 않는다.",
+            "leader": {
+                "name": "엔티티 제로",
+                "title": "근원의 존재",
+                "personality": "신비롭고 초월적이며, 모든 것을 관조한다."
+            },
+            "territory": "차원 사이의 공간",
+            "allies": [],
+            "rivals": [],
+            "specialAbility": "초월 - 모든 상성 무시",
+            "lore": "프라임 엔티티는 전설로만 전해진다. 일부는 단순한 신화라 하고, 일부는 목격했다고 주장한다. 유일하게 확실한 것은, 그 힘이 상상을 초월한다는 것.",
+            "isUnique": true,
+            "category": "unique"
+        }
+    ],
+    "timeline": [
+        {
+            "year": 2023,
+            "title": "GPT-4의 등장",
+            "event": "OpenAI가 GPT-4를 공개하며 AI 군단 시대의 서막이 열렸다."
+        },
+        {
+            "year": 2024,
+            "title": "이미지 전쟁",
+            "event": "Midjourney, DALL-E, Stable Diffusion이 이미지 생성 분야에서 치열하게 경쟁했다."
+        },
+        {
+            "year": 2025,
+            "title": "영상 AI의 부상",
+            "event": "Sora의 등장으로 영상 생성 AI가 메인스트림에 진입했다."
+        },
+        {
+            "year": 2026,
+            "title": "음악 AI 혁명",
+            "event": "Suno와 Udio가 음악 산업을 재편했다."
+        },
+        {
+            "year": 2027,
+            "title": "코딩 AI 전성기",
+            "event": "Cursor, Copilot이 프로그래머의 필수 도구가 되었다."
+        },
+        {
+            "year": 2028,
+            "title": "군단의 형성",
+            "event": "각 AI들이 공식적으로 군단을 선언하고 동맹/적대 관계가 형성되었다."
+        },
+        {
+            "year": 2029,
+            "title": "대전쟁의 시작",
+            "event": "데이터 코인을 둘러싼 본격적인 AI 대전이 시작되었다."
+        },
+        {
+            "year": 2030,
+            "title": "현재",
+            "event": "당신이 참전한 시점. 어떤 군단을 이끌 것인가?"
+        }
+    ]
+}

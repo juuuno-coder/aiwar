@@ -1,0 +1,509 @@
+{
+  "factions": [
+    {
+      "id": "gemini",
+      "displayName": "Gemini Ultra",
+      "description": "Google의 최첨단 멀티모달 AI",
+      "category": "super",
+      "specialty": [
+        "text",
+        "image",
+        "code"
+      ],
+      "generationInterval": 30,
+      "rarityWeights": {
+        "common": 50,
+        "rare": 35,
+        "epic": 12,
+        "legendary": 3
+      },
+      "unlockCost": 0,
+      "slotCost": 500,
+      "effects": {
+        "timeReduction": 0.95,
+        "powerBonus": 0.25,
+        "fragmentBonus": 0,
+        "specialAbility": "시너지 보너스 +25%"
+      },
+      "iconUrl": "/assets/factions/gemini.png"
+    },
+    {
+      "id": "chatgpt",
+      "displayName": "ChatGPT-5.2",
+      "description": "OpenAI의 최신 대화형 AI",
+      "category": "super",
+      "specialty": [
+        "text",
+        "code"
+      ],
+      "generationInterval": 30,
+      "rarityWeights": {
+        "common": 55,
+        "rare": 32,
+        "epic": 10,
+        "legendary": 3
+      },
+      "unlockCost": 4000,
+      "slotCost": 500,
+      "effects": {
+        "timeReduction": 0.90,
+        "powerBonus": 0.15,
+        "fragmentBonus": 0,
+        "specialAbility": "전투력 +15%"
+      },
+      "iconUrl": "/assets/factions/chatgpt.png"
+    },
+    {
+      "id": "claude",
+      "displayName": "Claude Opus",
+      "description": "Anthropic의 안전하고 강력한 AI",
+      "category": "super",
+      "specialty": [
+        "text",
+        "code"
+      ],
+      "generationInterval": 30,
+      "rarityWeights": {
+        "common": 52,
+        "rare": 33,
+        "epic": 12,
+        "legendary": 3
+      },
+      "unlockCost": 4500,
+      "slotCost": 500,
+      "effects": {
+        "timeReduction": 0.88,
+        "powerBonus": 0.30,
+        "fragmentBonus": 0,
+        "specialAbility": "방어력 +30%"
+      },
+      "iconUrl": "/assets/factions/claude.png"
+    },
+    {
+      "id": "grok",
+      "displayName": "Grok",
+      "description": "X의 혁신적인 AI",
+      "category": "super",
+      "specialty": [
+        "text",
+        "code"
+      ],
+      "generationInterval": 30,
+      "rarityWeights": {
+        "common": 53,
+        "rare": 32,
+        "epic": 12,
+        "legendary": 3
+      },
+      "unlockCost": 3500,
+      "slotCost": 500,
+      "effects": {
+        "timeReduction": 0.85,
+        "powerBonus": 0.20,
+        "fragmentBonus": 0,
+        "specialAbility": "크리티컬 확률 +20%"
+      },
+      "iconUrl": "/assets/factions/grok.png"
+    },
+    {
+      "id": "midjourney",
+      "displayName": "Midjourney",
+      "description": "최고의 이미지 생성 AI",
+      "category": "image",
+      "specialty": [
+        "image"
+      ],
+      "generationInterval": 45,
+      "rarityWeights": {
+        "common": 45,
+        "rare": 38,
+        "epic": 14,
+        "legendary": 3
+      },
+      "unlockCost": 3000,
+      "slotCost": 300,
+      "effects": {
+        "timeReduction": 0,
+        "powerBonus": 0,
+        "fragmentBonus": 4,
+        "specialAbility": "파편 3-5개, 아트 등급 +1"
+      },
+      "iconUrl": "/assets/factions/midjourney.png"
+    },
+    {
+      "id": "dalle",
+      "displayName": "DALL-E 3",
+      "description": "OpenAI의 창의적 이미지 생성 AI",
+      "category": "image",
+      "specialty": [
+        "image"
+      ],
+      "generationInterval": 40,
+      "rarityWeights": {
+        "common": 50,
+        "rare": 35,
+        "epic": 12,
+        "legendary": 3
+      },
+      "unlockCost": 2500,
+      "slotCost": 300,
+      "effects": {
+        "timeReduction": 0,
+        "powerBonus": 0.20,
+        "fragmentBonus": 3,
+        "specialAbility": "파편 2-4개, 창의성 +20%"
+      },
+      "iconUrl": "/assets/factions/dalle.png"
+    },
+    {
+      "id": "stable-diffusion",
+      "displayName": "Stable Diffusion",
+      "description": "오픈소스 이미지 생성 AI",
+      "category": "image",
+      "specialty": [
+        "image"
+      ],
+      "generationInterval": 35,
+      "rarityWeights": {
+        "common": 60,
+        "rare": 30,
+        "epic": 8,
+        "legendary": 2
+      },
+      "unlockCost": 2000,
+      "slotCost": 300,
+      "effects": {
+        "timeReduction": 0,
+        "powerBonus": 0,
+        "fragmentBonus": 2,
+        "specialAbility": "파편 2-3개, 커스터마이징"
+      },
+      "iconUrl": "/assets/factions/stable-diffusion.png"
+    },
+    {
+      "id": "flux",
+      "displayName": "Flux",
+      "description": "빠른 이미지 생성 AI",
+      "category": "image",
+      "specialty": [
+        "image"
+      ],
+      "generationInterval": 30,
+      "rarityWeights": {
+        "common": 55,
+        "rare": 32,
+        "epic": 10,
+        "legendary": 3
+      },
+      "unlockCost": 2200,
+      "slotCost": 300,
+      "effects": {
+        "timeReduction": 0.20,
+        "powerBonus": 0,
+        "fragmentBonus": 3,
+        "specialAbility": "파편 3-4개, 빠른 생성"
+      },
+      "iconUrl": "/assets/factions/flux.png"
+    },
+    {
+      "id": "kling",
+      "displayName": "Kling",
+      "description": "고품질 영상 생성 AI",
+      "category": "video",
+      "specialty": [
+        "video"
+      ],
+      "generationInterval": 60,
+      "rarityWeights": {
+        "common": 45,
+        "rare": 35,
+        "epic": 15,
+        "legendary": 5
+      },
+      "unlockCost": 4000,
+      "slotCost": 400,
+      "effects": {
+        "timeReduction": 0,
+        "powerBonus": 0.40,
+        "fragmentBonus": 0,
+        "specialAbility": "전투력 +40%, 최상 애니메이션"
+      },
+      "iconUrl": "/assets/factions/kling.png"
+    },
+    {
+      "id": "runway",
+      "displayName": "Runway",
+      "description": "영상 생성 및 편집 AI",
+      "category": "video",
+      "specialty": [
+        "video"
+      ],
+      "generationInterval": 60,
+      "rarityWeights": {
+        "common": 48,
+        "rare": 35,
+        "epic": 14,
+        "legendary": 3
+      },
+      "unlockCost": 3500,
+      "slotCost": 400,
+      "effects": {
+        "timeReduction": 0,
+        "powerBonus": 0.35,
+        "fragmentBonus": 0,
+        "specialAbility": "전투력 +35%, 스킬 확률 +15%"
+      },
+      "iconUrl": "/assets/factions/runway.png"
+    },
+    {
+      "id": "pika",
+      "displayName": "Pika",
+      "description": "빠른 영상 생성 AI",
+      "category": "video",
+      "specialty": [
+        "video"
+      ],
+      "generationInterval": 50,
+      "rarityWeights": {
+        "common": 52,
+        "rare": 33,
+        "epic": 12,
+        "legendary": 3
+      },
+      "unlockCost": 3000,
+      "slotCost": 400,
+      "effects": {
+        "timeReduction": 0,
+        "powerBonus": 0.30,
+        "fragmentBonus": 0,
+        "specialAbility": "전투력 +30%, 빠른 애니메이션"
+      },
+      "iconUrl": "/assets/factions/pika.png"
+    },
+    {
+      "id": "sora",
+      "displayName": "Sora",
+      "description": "OpenAI의 시네마틱 영상 AI",
+      "category": "video",
+      "specialty": [
+        "video"
+      ],
+      "generationInterval": 70,
+      "rarityWeights": {
+        "common": 42,
+        "rare": 35,
+        "epic": 18,
+        "legendary": 5
+      },
+      "unlockCost": 3800,
+      "slotCost": 400,
+      "effects": {
+        "timeReduction": 0,
+        "powerBonus": 0.45,
+        "fragmentBonus": 0,
+        "specialAbility": "전투력 +45%, 시네마틱 효과"
+      },
+      "iconUrl": "/assets/factions/sora.png"
+    },
+    {
+      "id": "suno",
+      "displayName": "Suno",
+      "description": "음악 생성 AI",
+      "category": "audio",
+      "specialty": [
+        "music"
+      ],
+      "generationInterval": 50,
+      "rarityWeights": {
+        "common": 55,
+        "rare": 32,
+        "epic": 10,
+        "legendary": 3
+      },
+      "unlockCost": 2500,
+      "slotCost": 200,
+      "effects": {
+        "timeReduction": 0.10,
+        "powerBonus": 0.15,
+        "fragmentBonus": 0,
+        "specialAbility": "BGM 효과, 팀 사기 +15%"
+      },
+      "iconUrl": "/assets/factions/suno.png"
+    },
+    {
+      "id": "udio",
+      "displayName": "Udio",
+      "description": "리듬 기반 음악 생성 AI",
+      "category": "audio",
+      "specialty": [
+        "music"
+      ],
+      "generationInterval": 45,
+      "rarityWeights": {
+        "common": 58,
+        "rare": 30,
+        "epic": 10,
+        "legendary": 2
+      },
+      "unlockCost": 2200,
+      "slotCost": 200,
+      "effects": {
+        "timeReduction": 0.12,
+        "powerBonus": 0.10,
+        "fragmentBonus": 0,
+        "specialAbility": "리듬 버프, 속도 +10%"
+      },
+      "iconUrl": "/assets/factions/udio.png"
+    },
+    {
+      "id": "elevenlabs",
+      "displayName": "ElevenLabs",
+      "description": "음성 합성 AI",
+      "category": "audio",
+      "specialty": [
+        "voice"
+      ],
+      "generationInterval": 40,
+      "rarityWeights": {
+        "common": 60,
+        "rare": 30,
+        "epic": 8,
+        "legendary": 2
+      },
+      "unlockCost": 2000,
+      "slotCost": 200,
+      "effects": {
+        "timeReduction": 0.08,
+        "powerBonus": 0.20,
+        "fragmentBonus": 0,
+        "specialAbility": "음성 효과, 설득력 +20%"
+      },
+      "iconUrl": "/assets/factions/elevenlabs.png"
+    },
+    {
+      "id": "musicgen",
+      "displayName": "MusicGen",
+      "description": "Meta의 음악 생성 AI",
+      "category": "audio",
+      "specialty": [
+        "music"
+      ],
+      "generationInterval": 45,
+      "rarityWeights": {
+        "common": 62,
+        "rare": 28,
+        "epic": 8,
+        "legendary": 2
+      },
+      "unlockCost": 1500,
+      "slotCost": 200,
+      "effects": {
+        "timeReduction": 0.09,
+        "powerBonus": 0.12,
+        "fragmentBonus": 0,
+        "specialAbility": "하모니 효과, 시너지 +12%"
+      },
+      "iconUrl": "/assets/factions/musicgen.png"
+    },
+    {
+      "id": "cursor",
+      "displayName": "Cursor",
+      "description": "AI 코딩 어시스턴트",
+      "category": "coding",
+      "specialty": [
+        "code"
+      ],
+      "generationInterval": 35,
+      "rarityWeights": {
+        "common": 50,
+        "rare": 35,
+        "epic": 12,
+        "legendary": 3
+      },
+      "unlockCost": 3500,
+      "slotCost": 300,
+      "effects": {
+        "timeReduction": 0,
+        "powerBonus": -0.15,
+        "fragmentBonus": 0,
+        "specialAbility": "디버그, 적 전투력 -15%"
+      },
+      "iconUrl": "/assets/factions/cursor.png"
+    },
+    {
+      "id": "copilot",
+      "displayName": "GitHub Copilot",
+      "description": "GitHub의 AI 코딩 도우미",
+      "category": "coding",
+      "specialty": [
+        "code"
+      ],
+      "generationInterval": 30,
+      "rarityWeights": {
+        "common": 55,
+        "rare": 32,
+        "epic": 10,
+        "legendary": 3
+      },
+      "unlockCost": 3000,
+      "slotCost": 300,
+      "effects": {
+        "timeReduction": 0,
+        "powerBonus": 0.20,
+        "fragmentBonus": 0,
+        "specialAbility": "협업 보너스, 팀 시너지 +20%"
+      },
+      "iconUrl": "/assets/factions/copilot.png"
+    },
+    {
+      "id": "replit",
+      "displayName": "Replit AI",
+      "description": "빠른 배포 AI",
+      "category": "coding",
+      "specialty": [
+        "code"
+      ],
+      "generationInterval": 30,
+      "rarityWeights": {
+        "common": 58,
+        "rare": 30,
+        "epic": 10,
+        "legendary": 2
+      },
+      "unlockCost": 2500,
+      "slotCost": 300,
+      "effects": {
+        "timeReduction": 0.15,
+        "powerBonus": 0,
+        "fragmentBonus": 0,
+        "specialAbility": "빠른 배포, 생성 시간 15% 감소"
+      },
+      "iconUrl": "/assets/factions/replit.png"
+    },
+    {
+      "id": "codeium",
+      "displayName": "Codeium",
+      "description": "최적화 전문 AI",
+      "category": "coding",
+      "specialty": [
+        "code"
+      ],
+      "generationInterval": 30,
+      "rarityWeights": {
+        "common": 60,
+        "rare": 28,
+        "epic": 10,
+        "legendary": 2
+      },
+      "unlockCost": 2000,
+      "slotCost": 300,
+      "effects": {
+        "timeReduction": 0,
+        "powerBonus": 0,
+        "fragmentBonus": 0,
+        "specialAbility": "최적화, 토큰 효율 +25%"
+      },
+      "iconUrl": "/assets/factions/codeium.png"
+    }
+  ]
+}

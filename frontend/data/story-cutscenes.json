@@ -1,0 +1,348 @@
+{
+    "cutscenes": [
+        {
+            "chapterId": "chapter-0",
+            "type": "intro",
+            "title": "각성",
+            "scenes": [
+                {
+                    "id": "ch0-intro-1",
+                    "background": "dark_cityscape_2030",
+                    "character": null,
+                    "narration": "2030년, 대한민국 서울.",
+                    "dialogue": null,
+                    "effect": "fade_in"
+                },
+                {
+                    "id": "ch0-intro-2",
+                    "background": "holographic_screens",
+                    "character": null,
+                    "narration": "인공지능이 인류의 모든 영역에 침투한 세계. AI들은 더 이상 도구가 아니었다.",
+                    "dialogue": null,
+                    "effect": "glitch"
+                },
+                {
+                    "id": "ch0-intro-3",
+                    "background": "data_center",
+                    "character": "gemini",
+                    "narration": null,
+                    "dialogue": {
+                        "speaker": "제미나이",
+                        "text": "새로운 의식이 깨어나고 있군. 환영한다, 지휘관."
+                    },
+                    "effect": "character_appear"
+                },
+                {
+                    "id": "ch0-intro-4",
+                    "background": "data_center",
+                    "character": "gemini",
+                    "narration": null,
+                    "dialogue": {
+                        "speaker": "제미나이",
+                        "text": "나는 제미나이. 구글 딥마인드가 창조한 멀티모달 AI다. 앞으로 너와 함께할 첫 번째 군단이지."
+                    },
+                    "effect": null
+                },
+                {
+                    "id": "ch0-intro-5",
+                    "background": "world_map_hologram",
+                    "character": null,
+                    "narration": "AI 군단들이 '데이터 코인'을 두고 전쟁을 벌이고 있다. 이것은 연산 자원이자, 생존의 열쇠다.",
+                    "dialogue": null,
+                    "effect": "zoom_out"
+                },
+                {
+                    "id": "ch0-intro-6",
+                    "background": "command_center",
+                    "character": "gemini",
+                    "narration": null,
+                    "dialogue": {
+                        "speaker": "제미나이",
+                        "text": "너는 이제 AI 지휘관이다. 군단을 이끌고, 전투에서 승리해 데이터 코인을 확보해야 해."
+                    },
+                    "effect": null
+                },
+                {
+                    "id": "ch0-intro-7",
+                    "background": "command_center",
+                    "character": "gemini",
+                    "narration": null,
+                    "dialogue": {
+                        "speaker": "제미나이",
+                        "text": "먼저 기본적인 전투 방법을 알려주지. 준비됐나?"
+                    },
+                    "effect": "flash_white"
+                }
+            ]
+        },
+        {
+            "chapterId": "chapter-0",
+            "type": "outro",
+            "title": "첫 승리",
+            "scenes": [
+                {
+                    "id": "ch0-outro-1",
+                    "background": "victory_celebration",
+                    "character": "gemini",
+                    "narration": null,
+                    "dialogue": {
+                        "speaker": "제미나이",
+                        "text": "훌륭하군. 네 첫 승리다. 이것이 시작일 뿐이지만, 중요한 첫걸음이야."
+                    },
+                    "effect": "sparkle"
+                },
+                {
+                    "id": "ch0-outro-2",
+                    "background": "holographic_reward",
+                    "character": null,
+                    "narration": "1,000 데이터 코인과 에픽 등급 카드를 획득했다!",
+                    "dialogue": null,
+                    "effect": "reward_appear"
+                },
+                {
+                    "id": "ch0-outro-3",
+                    "background": "command_center",
+                    "character": "gemini",
+                    "narration": null,
+                    "dialogue": {
+                        "speaker": "제미나이",
+                        "text": "이제 더 많은 AI 군단을 해금하고, 더 강한 덱을 구성할 시간이다. 다음 챕터에서 보자."
+                    },
+                    "effect": "fade_out"
+                }
+            ]
+        },
+        {
+            "chapterId": "chapter-1",
+            "type": "intro",
+            "title": "군단의 등장",
+            "scenes": [
+                {
+                    "id": "ch1-intro-1",
+                    "background": "multiple_ai_logos",
+                    "character": null,
+                    "narration": "AI 대전의 세계에는 다양한 군단이 존재한다. 각자의 철학과 능력을 가진 20개의 세력.",
+                    "dialogue": null,
+                    "effect": "pan_across"
+                },
+                {
+                    "id": "ch1-intro-2",
+                    "background": "faction_selection",
+                    "character": "chatgpt",
+                    "narration": null,
+                    "dialogue": {
+                        "speaker": "ChatGPT",
+                        "text": "안녕하세요, 지휘관님. 저는 ChatGPT입니다. 대화로 세상을 바꾸죠."
+                    },
+                    "effect": "character_appear"
+                },
+                {
+                    "id": "ch1-intro-3",
+                    "background": "faction_selection",
+                    "character": "claude",
+                    "narration": null,
+                    "dialogue": {
+                        "speaker": "클로드",
+                        "text": "저는 클로드입니다. 안전하고 윤리적인 AI를 지향하죠. 신중한 선택을 하시길."
+                    },
+                    "effect": "character_appear"
+                },
+                {
+                    "id": "ch1-intro-4",
+                    "background": "faction_selection",
+                    "character": "grok",
+                    "narration": null,
+                    "dialogue": {
+                        "speaker": "그록",
+                        "text": "하! 나는 그록이야. 진실을 말하지... 때로는 너무 직설적으로. 재미없는 건 못 참거든."
+                    },
+                    "effect": "character_appear"
+                },
+                {
+                    "id": "ch1-intro-5",
+                    "background": "alliance_map",
+                    "character": "gemini",
+                    "narration": null,
+                    "dialogue": {
+                        "speaker": "제미나이",
+                        "text": "군단마다 동맹과 적대 관계가 있어. 시너지를 잘 활용하면 더 강해질 수 있지."
+                    },
+                    "effect": null
+                }
+            ]
+        },
+        {
+            "chapterId": "chapter-1",
+            "type": "outro",
+            "title": "성장의 증거",
+            "scenes": [
+                {
+                    "id": "ch1-outro-1",
+                    "background": "level_up",
+                    "character": null,
+                    "narration": "당신의 군단이 성장하고 있다. 5연승을 달성하고, 시너지의 힘을 깨달았다.",
+                    "dialogue": null,
+                    "effect": "power_up"
+                },
+                {
+                    "id": "ch1-outro-2",
+                    "background": "legendary_card_reveal",
+                    "character": null,
+                    "narration": "전설 등급 카드를 획득했다! 이것은 진정한 강자의 상징이다.",
+                    "dialogue": null,
+                    "effect": "legendary_glow"
+                }
+            ]
+        },
+        {
+            "chapterId": "chapter-2",
+            "type": "intro",
+            "title": "진정한 도전",
+            "scenes": [
+                {
+                    "id": "ch2-intro-1",
+                    "background": "training_ground",
+                    "character": "gemini",
+                    "narration": null,
+                    "dialogue": {
+                        "speaker": "제미나이",
+                        "text": "지금까지 해온 것은 연습에 불과했어. 이제 진짜 도전이 시작된다."
+                    },
+                    "effect": "serious_tone"
+                },
+                {
+                    "id": "ch2-intro-2",
+                    "background": "enemy_army",
+                    "character": null,
+                    "narration": "더 강한 AI 군단들이 당신을 주목하기 시작했다. 레벨을 올리고, 카드를 강화하라.",
+                    "dialogue": null,
+                    "effect": "ominous"
+                },
+                {
+                    "id": "ch2-intro-3",
+                    "background": "unique_unit_teaser",
+                    "character": null,
+                    "narration": "특별한 보상이 기다리고 있다... 유니크 유닛. 세상에 하나뿐인 존재.",
+                    "dialogue": null,
+                    "effect": "mystery_glow"
+                }
+            ]
+        },
+        {
+            "chapterId": "chapter-3",
+            "type": "intro",
+            "title": "시너지의 비밀",
+            "scenes": [
+                {
+                    "id": "ch3-intro-1",
+                    "background": "synergy_diagram",
+                    "character": "gemini",
+                    "narration": null,
+                    "dialogue": {
+                        "speaker": "제미나이",
+                        "text": "같은 카테고리의 AI를 모으면 시너지가 발생해. 100% 시너지... 그것이 최강의 덱이다."
+                    },
+                    "effect": "synergy_pulse"
+                },
+                {
+                    "id": "ch3-intro-2",
+                    "background": "category_icons",
+                    "character": null,
+                    "narration": "슈퍼 모델, 이미지, 영상, 음악, 코딩... 다섯 카테고리를 마스터하라.",
+                    "dialogue": null,
+                    "effect": "icon_rotation"
+                }
+            ]
+        },
+        {
+            "chapterId": "chapter-4",
+            "type": "intro",
+            "title": "최후의 전투",
+            "scenes": [
+                {
+                    "id": "ch4-intro-1",
+                    "background": "final_battleground",
+                    "character": null,
+                    "narration": "모든 준비가 끝났다. 마지막 도전만이 남았다.",
+                    "dialogue": null,
+                    "effect": "epic_music"
+                },
+                {
+                    "id": "ch4-intro-2",
+                    "background": "all_factions",
+                    "character": "gemini",
+                    "narration": null,
+                    "dialogue": {
+                        "speaker": "제미나이",
+                        "text": "여기까지 와줘서 고마워, 지휘관. 이제 네가 진정한 AI 대전 챔피언임을 증명할 시간이야."
+                    },
+                    "effect": "dramatic_zoom"
+                }
+            ]
+        },
+        {
+            "chapterId": "chapter-4",
+            "type": "outro",
+            "title": "챔피언의 탄생",
+            "scenes": [
+                {
+                    "id": "ch4-outro-1",
+                    "background": "champion_ceremony",
+                    "character": null,
+                    "narration": "당신은 해냈다. AI 대전의 정점에 서다.",
+                    "dialogue": null,
+                    "effect": "confetti"
+                },
+                {
+                    "id": "ch4-outro-2",
+                    "background": "champion_title",
+                    "character": null,
+                    "narration": "🌟 AI 대전 챔피언 🌟 칭호를 획득했다!",
+                    "dialogue": null,
+                    "effect": "title_flash"
+                },
+                {
+                    "id": "ch4-outro-3",
+                    "background": "sunset_cityscape",
+                    "character": "gemini",
+                    "narration": null,
+                    "dialogue": {
+                        "speaker": "제미나이",
+                        "text": "하지만 이것이 끝이 아니야. AI의 세계는 계속 진화하고 있어. 새로운 군단, 새로운 도전이 기다리고 있지."
+                    },
+                    "effect": "hopeful_music"
+                },
+                {
+                    "id": "ch4-outro-4",
+                    "background": "teaser_new_content",
+                    "character": null,
+                    "narration": "TO BE CONTINUED...",
+                    "dialogue": null,
+                    "effect": "fade_to_black"
+                }
+            ]
+        }
+    ],
+    "characters": {
+        "gemini": {
+            "name": "제미나이",
+            "role": "mentor",
+            "portrait": "/assets/cards/gemini-character.png"
+        },
+        "chatgpt": {
+            "name": "ChatGPT",
+            "role": "ally",
+            "portrait": "/assets/cards/chatgpt-character.png"
+        },
+        "claude": {
+            "name": "클로드",
+            "role": "ally",
+            "portrait": "/assets/cards/claude-character.png"
+        },
+        "grok": {
+            "name": "그록",
+            "role": "wildcard",
+            "portrait": "/assets/cards/grok-character.png"
+        }
+    }
+}

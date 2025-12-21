@@ -1,0 +1,227 @@
+{
+    "statRanges": {
+        "common": {
+            "creativity": {
+                "min": 15,
+                "max": 30
+            },
+            "accuracy": {
+                "min": 15,
+                "max": 30
+            },
+            "speed": {
+                "min": 15,
+                "max": 30
+            },
+            "stability": {
+                "min": 15,
+                "max": 30
+            },
+            "ethics": {
+                "min": 15,
+                "max": 30
+            }
+        },
+        "rare": {
+            "creativity": {
+                "min": 28,
+                "max": 45
+            },
+            "accuracy": {
+                "min": 28,
+                "max": 45
+            },
+            "speed": {
+                "min": 28,
+                "max": 45
+            },
+            "stability": {
+                "min": 28,
+                "max": 45
+            },
+            "ethics": {
+                "min": 28,
+                "max": 45
+            }
+        },
+        "epic": {
+            "creativity": {
+                "min": 42,
+                "max": 60
+            },
+            "accuracy": {
+                "min": 42,
+                "max": 60
+            },
+            "speed": {
+                "min": 42,
+                "max": 60
+            },
+            "stability": {
+                "min": 42,
+                "max": 60
+            },
+            "ethics": {
+                "min": 42,
+                "max": 60
+            }
+        },
+        "legendary": {
+            "creativity": {
+                "min": 55,
+                "max": 70
+            },
+            "accuracy": {
+                "min": 55,
+                "max": 70
+            },
+            "speed": {
+                "min": 55,
+                "max": 70
+            },
+            "stability": {
+                "min": 55,
+                "max": 70
+            },
+            "ethics": {
+                "min": 55,
+                "max": 70
+            }
+        }
+    },
+    "fusionCosts": {
+        "common": 150,
+        "rare": 400,
+        "epic": 1000
+    },
+    "battleRewards": {
+        "easy": {
+            "coins": 200,
+            "exp": 30
+        },
+        "normal": {
+            "coins": 300,
+            "exp": 50
+        },
+        "hard": {
+            "coins": 500,
+            "exp": 80
+        }
+    },
+    "battleGenres": [
+        {
+            "id": "creativity",
+            "name": "창작 대결",
+            "description": "창의성이 2배로 적용됩니다",
+            "statWeights": {
+                "creativity": 2.0,
+                "accuracy": 1.0,
+                "speed": 1.0,
+                "stability": 1.0,
+                "ethics": 1.0
+            }
+        },
+        {
+            "id": "accuracy",
+            "name": "정확도 대결",
+            "description": "정확성이 2배로 적용됩니다",
+            "statWeights": {
+                "creativity": 1.0,
+                "accuracy": 2.0,
+                "speed": 1.0,
+                "stability": 1.0,
+                "ethics": 1.0
+            }
+        },
+        {
+            "id": "speed",
+            "name": "속도 대결",
+            "description": "속도가 2배로 적용됩니다",
+            "statWeights": {
+                "creativity": 1.0,
+                "accuracy": 1.0,
+                "speed": 2.0,
+                "stability": 1.0,
+                "ethics": 1.0
+            }
+        },
+        {
+            "id": "ethics",
+            "name": "윤리 대결",
+            "description": "윤리성이 2배로 적용됩니다",
+            "statWeights": {
+                "creativity": 1.0,
+                "accuracy": 1.0,
+                "speed": 1.0,
+                "stability": 1.0,
+                "ethics": 2.0
+            }
+        },
+        {
+            "id": "total",
+            "name": "종합 대결",
+            "description": "모든 능력치가 균등하게 적용됩니다",
+            "statWeights": {
+                "creativity": 1.0,
+                "accuracy": 1.0,
+                "speed": 1.0,
+                "stability": 1.0,
+                "ethics": 1.0
+            }
+        }
+    ],
+    "synergies": {
+        "factionBonus": {
+            "2": 1.10,
+            "3": 1.20,
+            "4": 1.30,
+            "5": 1.50
+        },
+        "combos": [
+            {
+                "id": "multimedia",
+                "name": "멀티미디어 콤보",
+                "requiredSpecialties": [
+                    "image",
+                    "video",
+                    "music"
+                ],
+                "bonus": {
+                    "creativity": 1.15
+                }
+            },
+            {
+                "id": "developer",
+                "name": "개발자 콤보",
+                "requiredSpecialties": [
+                    "code",
+                    "text"
+                ],
+                "bonus": {
+                    "accuracy": 1.15
+                }
+            },
+            {
+                "id": "creator",
+                "name": "크리에이터 콤보",
+                "requiredSpecialties": [
+                    "image",
+                    "text",
+                    "music"
+                ],
+                "bonus": {
+                    "creativity": 1.15
+                }
+            }
+        ],
+        "typeAdvantage": {
+            "video": "image",
+            "image": "text",
+            "text": "code",
+            "code": "video",
+            "music": "voice",
+            "voice": "music"
+        },
+        "advantageBonus": 1.20
+    }
+}

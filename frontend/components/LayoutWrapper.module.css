@@ -1,0 +1,33 @@
+.container {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    padding-top: 5rem;
+    /* space for fixed header */
+    width: 100%;
+    padding: 0;
+}
+
+.headerContainer {
+    max-width: 1200px;
+    margin: 0 auto;
+    width: 100%;
+    padding: 0 1rem;
+}
+
+.mainArea {
+    display: flex;
+    flex: 1;
+    overflow: visible;
+    /* Changed from hidden to allow sticky children */
+    position: relative;
+}
+
+.content {
+    flex: 1;
+    min-width: 0;
+    /* Prevent flex children from overflowing */
+    padding: 1rem;
+    padding-bottom: 8rem;
+    /* Space for the sticky footer */
+}

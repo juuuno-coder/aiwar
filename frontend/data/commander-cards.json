@@ -1,0 +1,171 @@
+{
+    "commanders": [
+        {
+            "id": "gemini-commander",
+            "name": "제미나이 모델",
+            "faction": "gemini",
+            "rarity": "mythic",
+            "type": "EFFICIENCY",
+            "stats": {
+                "efficiency": 90,
+                "creativity": 85,
+                "function": 85,
+                "totalPower": 260
+            },
+            "ability": {
+                "id": "multimodal-master",
+                "name": "멀티모달 마스터",
+                "description": "모든 타입 상성에서 +20% 보너스",
+                "passive": "같은 팀 카드 전투력 +5%",
+                "type": "passive"
+            },
+            "image": "/cards/gemini-commander.png"
+        },
+        {
+            "id": "chatgpt-commander",
+            "name": "ChatGPT 모델",
+            "faction": "openai",
+            "rarity": "mythic",
+            "type": "CREATIVITY",
+            "stats": {
+                "efficiency": 85,
+                "creativity": 95,
+                "function": 80,
+                "totalPower": 260
+            },
+            "ability": {
+                "id": "conversation-master",
+                "name": "대화의 달인",
+                "description": "창의 타입 카드와 함께 사용 시 +25% 보너스",
+                "passive": "라운드 시작 시 10% 확률로 추가 드로우",
+                "type": "passive"
+            },
+            "image": "/cards/chatgpt-commander.png"
+        },
+        {
+            "id": "midjourney-commander",
+            "name": "미드저니 모델",
+            "faction": "midjourney",
+            "rarity": "mythic",
+            "type": "CREATIVITY",
+            "stats": {
+                "efficiency": 75,
+                "creativity": 100,
+                "function": 75,
+                "totalPower": 250
+            },
+            "ability": {
+                "id": "art-soul",
+                "name": "예술의 혼",
+                "description": "창의 능력치 +30%",
+                "passive": "전투 승리 시 추가 보상 +20%",
+                "type": "passive"
+            },
+            "image": "/cards/midjourney-commander.png"
+        },
+        {
+            "id": "claude-commander",
+            "name": "클로드 모델",
+            "faction": "anthropic",
+            "rarity": "mythic",
+            "type": "EFFICIENCY",
+            "stats": {
+                "efficiency": 92,
+                "creativity": 88,
+                "function": 75,
+                "totalPower": 255
+            },
+            "ability": {
+                "id": "constitutional-ai",
+                "name": "헌법적 AI",
+                "description": "효율 타입 상성에서 +35% 보너스",
+                "passive": "방어 시 데미지 -15%",
+                "type": "passive"
+            },
+            "image": "/cards/claude-commander.png"
+        },
+        {
+            "id": "grok-commander",
+            "name": "그록 모델",
+            "faction": "xai",
+            "rarity": "mythic",
+            "type": "COST",
+            "stats": {
+                "efficiency": 80,
+                "creativity": 82,
+                "function": 93,
+                "totalPower": 255
+            },
+            "ability": {
+                "id": "realtime-analysis",
+                "name": "실시간 분석",
+                "description": "기능 타입 상성에서 +30% 보너스",
+                "passive": "첫 라운드 자동 승리 10% 확률",
+                "type": "passive"
+            },
+            "image": "/cards/grok-commander.png"
+        }
+    ],
+    "heroes": [
+        {
+            "id": "gpt4-turbo",
+            "name": "GPT-4 Turbo",
+            "faction": "openai",
+            "rarity": "hero",
+            "type": "CREATIVITY",
+            "stats": {
+                "efficiency": 70,
+                "creativity": 75,
+                "function": 65,
+                "totalPower": 210
+            },
+            "ability": {
+                "id": "fast-thinking",
+                "name": "빠른 사고",
+                "description": "전투 시 속성 보너스 +10% 추가",
+                "type": "active"
+            },
+            "image": "/cards/gpt4-turbo.png"
+        },
+        {
+            "id": "gemini-pro",
+            "name": "Gemini Pro",
+            "faction": "gemini",
+            "rarity": "hero",
+            "type": "EFFICIENCY",
+            "stats": {
+                "efficiency": 75,
+                "creativity": 68,
+                "function": 62,
+                "totalPower": 205
+            },
+            "ability": {
+                "id": "multimodal-boost",
+                "name": "멀티모달 부스트",
+                "description": "모든 능력치 +8%",
+                "type": "active"
+            },
+            "image": "/cards/gemini-pro.png"
+        },
+        {
+            "id": "claude-opus",
+            "name": "Claude Opus",
+            "faction": "anthropic",
+            "rarity": "hero",
+            "type": "EFFICIENCY",
+            "stats": {
+                "efficiency": 78,
+                "creativity": 72,
+                "function": 60,
+                "totalPower": 210
+            },
+            "ability": {
+                "id": "deep-reasoning",
+                "name": "깊은 추론",
+                "description": "효율 능력치 +15%",
+                "type": "active"
+            },
+            "image": "/cards/claude-opus.png"
+        }
+    ]
+}
