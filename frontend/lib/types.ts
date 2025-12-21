@@ -3,14 +3,19 @@
 export type Rarity = 'common' | 'rare' | 'epic' | 'legendary';
 export type Specialty = 'text' | 'image' | 'video' | 'music' | 'voice' | 'code';
 export type CardType = 'normal' | 'automated';
+export type AIType = 'EFFICIENCY' | 'CREATIVITY' | 'COST';
 
 export interface Stats {
-    creativity: number;
-    accuracy: number;
-    speed: number;
-    stability: number;
-    ethics: number;
+    creativity?: number;
+    accuracy?: number;
+    speed?: number;
+    stability?: number;
+    ethics?: number;
     totalPower: number;
+    // Extended stats for rock-paper-scissors mechanic
+    efficiency?: number;
+    function?: number;
+    cost?: number;
 }
 
 export interface AIFaction {
@@ -55,6 +60,7 @@ export interface CardTemplate {
 export interface Card {
     id: string;
     templateId: string;
+    name?: string; // Derived from template or unique name
     ownerId: string;
     level: number;
     experience: number;
