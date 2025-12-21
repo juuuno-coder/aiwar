@@ -2,6 +2,15 @@
 
 import { Card } from './types';
 
+export interface ComboDefinition {
+    id: string;
+    name: string;
+    requiredFactions: string[]; // 다중 팩션 조합 등
+    bonusPower: number;
+    description: string;
+    icon: string;
+}
+
 export interface DeckSynergy {
     factionCounts: Record<string, number>;
     totalBonus: number;
@@ -10,6 +19,7 @@ export interface DeckSynergy {
         count: number;
         bonus: number;
     }>;
+    activeCombos: ComboDefinition[];
 }
 
 // 군단별 카드 개수 계산
@@ -55,10 +65,14 @@ export function analyzeDeckSynergy(cards: Card[]): DeckSynergy {
         }
     });
 
+    // TODO: 콤보 계산 로직 추가 (현재는 빈 배열)
+    const activeCombos: ComboDefinition[] = [];
+
     return {
         factionCounts,
         totalBonus,
         activeSynergies,
+        activeCombos
     };
 }
 
