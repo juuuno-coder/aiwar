@@ -1,7 +1,14 @@
-// 게임 유틸리티 함수들
 
+import { type ClassValue, clsx } from "clsx"
+import { twMerge } from "tailwind-merge"
 import { Rarity, Stats } from './types';
 import gameBalanceData from '@/data/game-balance.json';
+
+export function cn(...inputs: ClassValue[]) {
+    return twMerge(clsx(inputs))
+}
+
+// 게임 유틸리티 함수들
 
 // 랜덤 숫자 생성 (min ~ max 사이)
 export function randomInt(min: number, max: number): number {
