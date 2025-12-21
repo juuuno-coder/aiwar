@@ -108,7 +108,7 @@ export default function InteractiveCardPreview() {
                             >
                                 <span className="text-[8px] font-black orbitron text-blue-400 block mb-1">BIO DATA</span>
                                 <div className="h-0.5 w-12 bg-blue-500 mb-1" />
-                                <p className="text-[8px] text-gray-400 italic font-medium leading-tight">{previewCard.ability?.description || 'No special ability data found.'}</p>
+                                <p className="text-[8px] text-gray-400 italic font-medium leading-tight">{previewCard.specialSkill?.description || 'No special ability data found.'}</p>
                             </motion.div>
                         </div>
                     </motion.div>

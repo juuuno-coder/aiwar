@@ -46,9 +46,9 @@ export default function EncyclopediaPage() {
 
             <div className="relative z-10 container mx-auto px-4 pt-4 flex-1 overflow-y-auto custom-scrollbar">
                 <PageHeader
-                    title="AI ENCYCLOPEDIA"
+                    title="AI 백과사전"
+                    englishTitle="AI ENCYCLOPEDIA"
                     description="Dive into the history and secrets of Artificial Intelligences."
-                    showBack={false}
                 />
 
                 <div className="space-y-12 pb-20">
@@ -133,7 +133,6 @@ export default function EncyclopediaPage() {
                                             ownerId: 'demo',
                                             experience: 0,
                                             isLocked: false,
-                                            isCommander: true,
                                             acquiredAt: new Date()
                                         }}
                                         isDisabled={false}

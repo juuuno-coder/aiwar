@@ -218,8 +218,8 @@ export default function Sidebar({ isOpen, onToggle }: SidebarProps) {
                             color="danger"
                             onPress={async () => {
                                 try {
-                                    const { signOut } = await import('@/lib/firebase-auth');
-                                    await signOut();
+                                    const { signOutUser } = await import('@/lib/firebase-auth');
+                                    await signOutUser();
                                     router.push('/login');
                                 } catch (error) {
                                     console.error('Logout failed:', error);

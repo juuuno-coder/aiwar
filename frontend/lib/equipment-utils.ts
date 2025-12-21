@@ -135,8 +135,8 @@ export function recalculateTotalStats(card: Card): Stats {
     }
 
     // totalPower는 보여주기용 갱신
-    const currentTotal = card.stats.efficiency + card.stats.creativity + card.stats.function +
-        (card.plusStats ? (card.plusStats.efficiency + card.plusStats.creativity + card.plusStats.function) : 0);
+    const currentTotal = (card.stats.efficiency || 0) + (card.stats.creativity || 0) + (card.stats.function || 0) +
+        (card.plusStats ? ((card.plusStats.efficiency || 0) + (card.plusStats.creativity || 0) + (card.plusStats.function || 0)) : 0);
 
     return {
         ...card.stats,

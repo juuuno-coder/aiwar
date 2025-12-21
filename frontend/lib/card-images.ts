@@ -73,8 +73,7 @@ export const RARITY_FALLBACK_IMAGES: Record<Rarity, string> = {
     common: '/cards/card_design_common_1765812994475.png',
     rare: '/cards/card_design_rare_1765813078584.png',
     epic: '/cards/card_design_hero_1765813158240.png',
-    legendary: '/cards/card_design_mythic_1765813331925.png',
-    unique: '/cards/card_design_mythic_1765813331925.png',
+    legendary: '/cards/card_design_mythic_1765813331925.png'
 };
 
 /**
@@ -168,7 +167,7 @@ export const CHARACTER_VIDEOS: Record<string, string> = {
  */
 export function getCardCharacterVideo(templateId?: string, rarity?: Rarity): string | null {
     // 영웅/전설/유니크만 영상 지원
-    if (rarity !== 'epic' && rarity !== 'legendary' && rarity !== 'unique') {
+    if (rarity !== 'epic' && rarity !== 'legendary') {
         return null;
     }
 

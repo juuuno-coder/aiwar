@@ -10,9 +10,9 @@ export default function CardDetailModal({ card, isOpen, onClose }: CardDetailMod
     if (!isOpen || !card) return null;
 
     const getCardRarity = (card: Card): string => {
-        if (card.stats.totalPower > 250) return 'LEGENDARY';
-        if (card.stats.totalPower > 200) return 'EPIC';
-        if (card.stats.totalPower > 150) return 'RARE';
+        if ((card.stats.totalPower || 0) > 250) return 'LEGENDARY';
+        if ((card.stats.totalPower || 0) > 200) return 'EPIC';
+        if ((card.stats.totalPower || 0) > 150) return 'RARE';
         return 'COMMON';
     };
 
@@ -72,7 +72,7 @@ export default function CardDetailModal({ card, isOpen, onClose }: CardDetailMod
                 <div className="card p-6 mb-6 text-center glow-purple">
                     <p className="text-sm text-[var(--text-secondary)] mb-2">총 전투력</p>
                     <p className="text-5xl font-bold text-gradient" style={{ fontFamily: 'Orbitron, sans-serif' }}>
-                        {card.stats.totalPower}
+                        {card.stats.totalPower || 0}
                     </p>
                 </div>
 
@@ -82,11 +82,11 @@ export default function CardDetailModal({ card, isOpen, onClose }: CardDetailMod
                         능력치
                     </h3>
                     <div className="space-y-3">
-                        <StatRow label="창의성" value={card.stats.creativity} max={70} icon="💡" />
-                        <StatRow label="정확성" value={card.stats.accuracy} max={70} icon="🎯" />
-                        <StatRow label="속도" value={card.stats.speed} max={70} icon="⚡" />
-                        <StatRow label="안정성" value={card.stats.stability} max={70} icon="🛡️" />
-                        <StatRow label="윤리성" value={card.stats.ethics} max={70} icon="⚖️" />
+                        <StatRow label="창의성" value={card.stats.creativity || 0} max={70} icon="💡" />
+                        <StatRow label="정확성" value={card.stats.accuracy || 0} max={70} icon="🎯" />
+                        <StatRow label="속도" value={card.stats.speed || 0} max={70} icon="⚡" />
+                        <StatRow label="안정성" value={card.stats.stability || 0} max={70} icon="🛡️" />
+                        <StatRow label="윤리성" value={card.stats.ethics || 0} max={70} icon="⚖️" />
                     </div>
                 </div>
 

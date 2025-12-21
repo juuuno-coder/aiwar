@@ -34,7 +34,7 @@ export function applyAbilityEffect(
         // 모델 능력들
         case 'multimodal-master':
             // 모든 타입 상성에서 +20% 보너스
-            if (hasTypeAdvantage(context.card.type, context.opponentCard.type)) {
+            if (context.card.type && context.opponentCard.type && hasTypeAdvantage(context.card.type, context.opponentCard.type)) {
                 modifiedPower *= 1.2;
             }
             break;
@@ -55,7 +55,7 @@ export function applyAbilityEffect(
 
         case 'constitutional-ai':
             // 효율 타입 상성에서 +35%
-            if (context.card.type === 'EFFICIENCY' &&
+            if (context.card.type === 'EFFICIENCY' && context.opponentCard.type &&
                 hasTypeAdvantage(context.card.type, context.opponentCard.type)) {
                 modifiedPower *= 1.35;
             }
@@ -63,7 +63,7 @@ export function applyAbilityEffect(
 
         case 'realtime-analysis':
             // 기능 타입 상성에서 +30%
-            if (context.card.type === 'COST' &&
+            if (context.card.type === 'COST' && context.opponentCard.type &&
                 hasTypeAdvantage(context.card.type, context.opponentCard.type)) {
                 modifiedPower *= 1.3;
             }
@@ -110,9 +110,9 @@ export function applyPassiveEffects(
     const specialEffects: string[] = [];
 
     cards.forEach(card => {
-        if (!card.ability) return;
+        if (!card.specialSkill) return;
 
-        switch (card.ability.id) {
+        switch (card.specialSkill.name) {
             case 'multimodal-master':
                 // 팀 전체 전투력 +5%
                 teamBonus += 0.05;

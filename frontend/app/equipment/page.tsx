@@ -253,7 +253,7 @@ export default function EquipmentPage() {
                                             <div className="absolute inset-0 border border-cyan-500/30 rounded-full animate-[spin_10s_linear_infinite]" />
                                             <div className="absolute inset-2 border border-blue-500/30 rounded-full animate-[spin_15s_linear_infinite_reverse]" />
                                             <div className="text-6xl filter drop-shadow-[0_0_20px_rgba(6,182,212,0.5)]">
-                                                {selectedCard.isCommander ? '👑' : '🤖'}
+                                                {false ? '👑' : '🤖'}
                                             </div>
                                         </div>
 
@@ -265,9 +265,9 @@ export default function EquipmentPage() {
 
                                         {/* 스탯 바 */}
                                         <div className="w-full space-y-5 mb-10 bg-white/5 p-6 rounded-2xl border border-white/5">
-                                            <LabStat color="primary" label="EFFICIENCY" value={selectedCard.stats.efficiency} />
-                                            <LabStat color="secondary" label="CREATIVITY" value={selectedCard.stats.creativity} />
-                                            <LabStat color="success" label="FUNCTION" value={selectedCard.stats.function} />
+                                            <LabStat color="primary" label="EFFICIENCY" value={selectedCard.stats.efficiency || 0} />
+                                            <LabStat color="secondary" label="CREATIVITY" value={selectedCard.stats.creativity || 0} />
+                                            <LabStat color="success" label="FUNCTION" value={selectedCard.stats.function || 0} />
                                             <Divider className="bg-white/5 my-2" />
                                             <div className="flex justify-between items-center px-1 pt-1">
                                                 <span className="text-[10px] text-gray-500 font-black orbitron tracking-widest">TOTAL OUTPUT</span>

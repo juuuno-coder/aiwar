@@ -10,8 +10,7 @@ export function generateRandomCard(ownerId: string, forcedRarity?: Rarity, insig
         common: 60,
         rare: 25,
         epic: 10,
-        legendary: 4,
-        unique: 1
+        legendary: 5
     };
 
     // 통찰력 연구 보너스 적용
@@ -58,8 +57,7 @@ export function generateRandomCard(ownerId: string, forcedRarity?: Rarity, insig
         common: { min: 10, max: 40 },
         rare: { min: 41, max: 60 },
         epic: { min: 61, max: 75 },
-        legendary: { min: 76, max: 85 },
-        unique: { min: 86, max: 100 }
+        legendary: { min: 76, max: 90 }
     };
 
     const range = statRanges[rarity];
@@ -69,7 +67,7 @@ export function generateRandomCard(ownerId: string, forcedRarity?: Rarity, insig
         function: range.min + Math.floor(Math.random() * (range.max - range.min + 1)),
         totalPower: 0
     };
-    stats.totalPower = stats.efficiency + stats.creativity + stats.function;
+    stats.totalPower = (stats.efficiency || 0) + (stats.creativity || 0) + (stats.function || 0);
 
     const types: AIType[] = ['EFFICIENCY', 'CREATIVITY', 'COST'];
     const type = types[Math.floor(Math.random() * types.length)];
@@ -87,6 +85,6 @@ export function generateRandomCard(ownerId: string, forcedRarity?: Rarity, insig
         stats,
         rarity,
         acquiredAt: new Date(),
-        isLocked: rarity === 'unique' || rarity === 'legendary'
+        isLocked: rarity === 'legendary'
     };
 }

@@ -8,6 +8,7 @@ import {
     updateExpAndLevel
 } from './firebase-db';
 import { isFirebaseConfigured } from './firebase';
+import { CommanderResearch } from './research-system';
 
 /**
  * 게임 상태 인터페이스
@@ -20,6 +21,10 @@ export interface GameState {
     inventory: any[];
     unlockedFactions: string[];
     slots: any[];
+    equipment: any[];
+    research?: CommanderResearch;
+    decks: any[];
+    stageProgress?: any;
 }
 
 /**
@@ -50,7 +55,10 @@ class UnifiedStorage {
                         experience: profile.exp,
                         inventory: localState.inventory || [],
                         unlockedFactions: localState.unlockedFactions || [],
-                        slots: localState.slots || []
+                        slots: localState.slots || [],
+                        equipment: localState.equipment || [],
+                        research: localState.research,
+                        decks: localState.decks || []
                     };
                 }
             } catch (error) {
@@ -66,7 +74,9 @@ class UnifiedStorage {
             experience: 0,
             inventory: [],
             unlockedFactions: [],
-            slots: []
+            slots: [],
+            equipment: [],
+            decks: []
         });
     }
 
@@ -224,6 +234,118 @@ class UnifiedStorage {
     async getCards(): Promise<any[]> {
         const state = await this.loadGameState();
         return state.inventory || [];
+    }
+
+    /**
+     * 장비 목록 조회
+     */
+    async getEquipment(): Promise<any[]> {
+        const state = await this.loadGameState();
+        return state.equipment || [];
+    }
+
+    /**
+     * 장비 추가
+     */
+    async addEquipment(equipment: any): Promise<void> {
+        const state = await this.loadGameState();
+        const currentEquipment = state.equipment || [];
+        await this.saveGameState({ equipment: [...currentEquipment, equipment] });
+    }
+
+    /**
+     * 카드 업데이트
+     */
+    async updateCard(cardId: string, updates: any): Promise<void> {
+        const state = await this.loadGameState();
+        const inventory = state.inventory || [];
+        const index = inventory.findIndex((c: any) => c.id === cardId);
+        if (index !== -1) {
+            inventory[index] = { ...inventory[index], ...updates };
+            await this.saveGameState({ inventory });
+        }
+    }
+
+    /**
+     * 장비 업데이트
+     */
+    async updateEquipment(equipment: any): Promise<void> {
+        const state = await this.loadGameState();
+        const currentEquipment = state.equipment || [];
+        const index = currentEquipment.findIndex((e: any) => e.id === equipment.id);
+        if (index !== -1) {
+            currentEquipment[index] = equipment;
+            await this.saveGameState({ equipment: currentEquipment });
+        }
+    }
+
+    /**
+     * 카드 삭제
+     */
+    async deleteCard(cardId: string): Promise<void> {
+        const state = await this.loadGameState();
+        const inventory = state.inventory || [];
+        const newInventory = inventory.filter((c: any) => c.id !== cardId);
+        await this.saveGameState({ inventory: newInventory });
+    }
+
+    /**
+     * 레벨 조회
+     */
+    async getLevel(): Promise<number> {
+        const state = await this.loadGameState();
+        return state.level || 1;
+    }
+
+    /**
+     * 경험치 조회
+     */
+    async getExperience(): Promise<number> {
+        const state = await this.loadGameState();
+        return state.experience || 0;
+    }
+
+    /**
+     * 덱 조회 (카드 객체 반환)
+     */
+    async getDeck(deckId: string): Promise<any[]> {
+        const state = await this.loadGameState();
+        const decks = state.decks || [];
+        const deck = decks.find((d: any) => d.id === deckId);
+        if (!deck) return [];
+
+        const inventory = state.inventory || [];
+        return deck.cardIds
+            .map((id: string) => inventory.find((c: any) => c.id === id))
+            .filter((c: any) => c !== undefined);
+    }
+
+    /**
+     * 활성 덱 카드 조회
+     */
+    async getActiveDeckCards(): Promise<any[]> {
+        const state = await this.loadGameState();
+        const decks = state.decks || [];
+        const activeDeck = decks.find((d: any) => d.isActive);
+
+        if (!activeDeck) {
+            // 활성 덱이 없으면 인벤토리 상위 5개 반환 (임시)
+            const inventory = state.inventory || [];
+            return inventory.slice(0, 5);
+        }
+
+        const inventory = state.inventory || [];
+        return activeDeck.cardIds
+            .map((id: string) => inventory.find((c: any) => c.id === id))
+            .filter((c: any) => c !== undefined);
+    }
+
+    /**
+     * 전투 통계 조회 (스텁)
+     */
+    async getBattleStats(): Promise<{ victories: number; defeats: number }> {
+        // This is a stub implementation - battle stats are not currently tracked
+        return { victories: 0, defeats: 0 };
     }
 }
 

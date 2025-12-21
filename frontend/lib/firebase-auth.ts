@@ -1,6 +1,7 @@
 import {
     signInAnonymously,
     onAuthStateChanged,
+    signOut,
     User
 } from 'firebase/auth';
 import { auth, isFirebaseConfigured } from './firebase';
@@ -58,4 +59,16 @@ export async function getUserId(): Promise<string> {
     }
 
     return user?.uid || 'local-user';
+}
+
+/**
+ * 로그아웃
+ */
+export async function signOutUser(): Promise<void> {
+    if (!auth) return;
+    try {
+        await signOut(auth);
+    } catch (error) {
+        console.error('로그아웃 실패:', error);
+    }
 }

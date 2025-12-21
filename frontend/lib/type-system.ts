@@ -38,7 +38,8 @@ export const AI_TYPE_INFO = {
  * @param defenderType 방어하는 카드의 타입
  * @returns true if attacker has advantage
  */
-export function hasTypeAdvantage(attackerType: AIType, defenderType: AIType): boolean {
+export function hasTypeAdvantage(attackerType: AIType | undefined, defenderType: AIType | undefined): boolean {
+    if (!attackerType || !defenderType) return false;
     const advantages: Record<AIType, AIType> = {
         EFFICIENCY: 'COST',      // 효율성 > 비용
         COST: 'CREATIVITY',      // 비용 > 창의성
@@ -87,29 +88,32 @@ export function getRandomType(): AIType {
 /**
  * 타입 아이콘 가져오기
  */
-export function getTypeIcon(type: AIType): string {
+export function getTypeIcon(type: AIType | undefined): string {
+    if (!type) return '❓';
     return AI_TYPE_INFO[type].icon;
 }
 
 /**
  * 타입 색상 가져오기
  */
-export function getTypeColor(type: AIType): string {
+export function getTypeColor(type: AIType | undefined): string {
+    if (!type) return '#9ca3af'; // gray-400
     return AI_TYPE_INFO[type].color;
 }
 
 /**
  * 타입 이름 가져오기
  */
-export function getTypeName(type: AIType): string {
+export function getTypeName(type: AIType | undefined): string {
+    if (!type) return 'Unknown';
     return AI_TYPE_INFO[type].name;
 }
 
 /**
  * 상성 관계 설명
  */
-export function getTypeAdvantageDescription(attackerType: AIType, defenderType: AIType): string | null {
-    if (!hasTypeAdvantage(attackerType, defenderType)) {
+export function getTypeAdvantageDescription(attackerType: AIType | undefined, defenderType: AIType | undefined): string | null {
+    if (!attackerType || !defenderType || !hasTypeAdvantage(attackerType, defenderType)) {
         return null;
     }
 

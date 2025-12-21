@@ -17,7 +17,8 @@ export function validateGameState(state: any): GameState {
         slots: Array.isArray(state?.slots) ? state.slots : [],
         equipment: Array.isArray(state?.equipment) ? state.equipment : [],
         research: state?.research ? validateResearch(state.research) : undefined,
-        stageProgress: state?.stageProgress ? validateStageProgress(state.stageProgress) : undefined
+        stageProgress: state?.stageProgress ? validateStageProgress(state.stageProgress) : undefined,
+        decks: Array.isArray(state?.decks) ? state.decks : []
     };
 
     return validated;

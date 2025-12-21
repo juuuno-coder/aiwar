@@ -239,15 +239,15 @@ function PvPFightContent() {
 
             // 상성 로그
             if (round.reason === 'ADVANTAGE') {
-                const advName = round.winner === 'player' ? round.playerCard.name : round.enemyCard.name;
+                const advName = (round.winner === 'player' ? round.playerCard.name : round.enemyCard.name) || 'Unknown Unit';
                 addBattleLog(t('pvp.log.advantage').replace('{name}', advName).replace('{m}', '1.3'), 'advantage');
             }
 
             // 충돌 로그
             addBattleLog(t('pvp.log.clash')
-                .replace('{pName}', round.playerCard.name)
+                .replace('{pName}', round.playerCard.name || 'Unknown Unit')
                 .replace('{pPower}', round.playerPower.toString())
-                .replace('{eName}', round.enemyCard.name)
+                .replace('{eName}', round.enemyCard.name || 'Unknown Unit')
                 .replace('{ePower}', round.enemyPower.toString()),
                 'system'
             );
@@ -274,9 +274,9 @@ function PvPFightContent() {
 
                 // 결과 로그
                 if (round.winner === 'player') {
-                    addBattleLog(t('pvp.log.roundWinner').replace('{name}', round.playerCard.name), 'winner');
+                    addBattleLog(t('pvp.log.roundWinner').replace('{name}', round.playerCard.name || 'Unknown Unit'), 'winner');
                 } else if (round.winner === 'enemy') {
-                    addBattleLog(t('pvp.log.roundWinner').replace('{name}', round.enemyCard.name), 'enemy');
+                    addBattleLog(t('pvp.log.roundWinner').replace('{name}', round.enemyCard.name || 'Unknown Unit'), 'enemy');
                 } else {
                     addBattleLog(t('pvp.log.roundDraw'), 'draw');
                 }
@@ -286,7 +286,7 @@ function PvPFightContent() {
         });
     };
 
-    const getTypeColor = (type: string) => {
+    const getTypeColor = (type: string | undefined) => {
         switch (type) {
             case 'EFFICIENCY': return 'rgba(239, 68, 68, 0.6)'; // EFFICIENCY (Rock) - Red
             case 'COST': return 'rgba(245, 158, 11, 0.6)'; // COST (Scissors) - Yellow
@@ -295,7 +295,7 @@ function PvPFightContent() {
         }
     };
 
-    const getTypeGlow = (type: string) => {
+    const getTypeGlow = (type: string | undefined) => {
         switch (type) {
             case 'EFFICIENCY': return 'shadow-[0_0_20px_rgba(239,68,68,0.5)] border-red-500/50';
             case 'COST': return 'shadow-[0_0_20px_rgba(245,158,11,0.5)] border-amber-500/50';
@@ -304,7 +304,7 @@ function PvPFightContent() {
         }
     };
 
-    const getTypeIcon = (type: string) => {
+    const getTypeIcon = (type: string | undefined) => {
         switch (type) {
             case 'EFFICIENCY': return '✊';
             case 'COST': return '✌️';

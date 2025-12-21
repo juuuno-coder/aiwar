@@ -26,7 +26,7 @@ const koreanNames: Record<string, string> = {
 };
 
 const categoryIcons: Record<string, string> = {
-    'super': '🧠', 'image': '🎨', 'video': '🎬', 'audio': '🎵', 'coding': '💻',
+    'text': '📝', 'image': '🎨', 'video': '🎬', 'music': '🎵', 'voice': '🎤', 'code': '💻',
 };
 
 export default function FactionSelectionModal({ isOpen, onClose, factions, onSelect, subscribedFactionIds }: FactionSelectionModalProps) {
@@ -92,7 +92,7 @@ export default function FactionSelectionModal({ isOpen, onClose, factions, onSel
                             >
                                 <div className="flex items-center gap-4 relative z-10">
                                     <div className="w-12 h-12 rounded-xl bg-black/40 border border-white/10 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
-                                        {categoryIcons[faction.category] || '🤖'}
+                                        {categoryIcons[faction.specialty[0]] || '🤖'}
                                     </div>
                                     <div className="text-left">
                                         <div className="flex items-center gap-2">
@@ -104,7 +104,7 @@ export default function FactionSelectionModal({ isOpen, onClose, factions, onSel
                                             )}
                                         </div>
                                         <p className="text-[9px] text-gray-500 font-bold orbitron uppercase tracking-wider">
-                                            {faction.displayName} • {faction.category.toUpperCase()}
+                                            {faction.displayName} • {(faction.specialty[0] || '').toUpperCase()}
                                         </p>
                                     </div>
                                 </div>

@@ -7,7 +7,9 @@ import { AIType, Stats } from './types';
  * 가장 높은 능력치에 따라 타입이 결정됨
  */
 export function determineCardType(stats: Stats): AIType {
-    const { efficiency, creativity, function: func } = stats;
+    const efficiency = stats.efficiency || 0;
+    const creativity = stats.creativity || 0;
+    const func = stats.function || 0;
 
     // 가장 높은 능력치 찾기
     if (efficiency >= creativity && efficiency >= func) {

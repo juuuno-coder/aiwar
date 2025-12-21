@@ -4,9 +4,11 @@ interface GameCardProps {
     card: CardType;
     onClick?: () => void;
     isSelected?: boolean;
+    isDisabled?: boolean;
+    isHolographic?: boolean;
 }
 
-export default function GameCard({ card, onClick, isSelected = false }: GameCardProps) {
+export default function GameCard({ card, onClick, isSelected = false, isDisabled = false, isHolographic = false }: GameCardProps) {
     const rarityColors: Record<Rarity, string> = {
         common: 'var(--rarity-common)',
         rare: 'var(--rarity-rare)',
@@ -27,16 +29,22 @@ export default function GameCard({ card, onClick, isSelected = false }: GameCard
     return (
         <div
             className={`
-        relative cursor-pointer transition-all duration-300
+        relative transition-all duration-300
         ${rarityGlow[rarity]}
         ${isSelected ? 'scale-105 ring-4 ring-[var(--primary-blue)]' : 'hover:scale-105'}
+        ${isDisabled ? 'opacity-50 cursor-not-allowed grayscale' : 'cursor-pointer'}
+        ${isHolographic ? 'animate-pulse shadow-[0_0_30px_rgba(255,255,255,0.3)]' : ''}
       `}
-            onClick={onClick}
+            onClick={isDisabled ? undefined : onClick}
             style={{
                 width: '200px',
                 height: '300px',
             }}
         >
+            {/* Holographic Overlay */}
+            {isHolographic && (
+                <div className="absolute inset-0 rounded-xl z-20 pointer-events-none bg-gradient-to-tr from-transparent via-white/10 to-transparent opacity-50" />
+            )}
             {/* 카드 배경 */}
             <div
                 className="absolute inset-0 rounded-xl overflow-hidden"
@@ -58,7 +66,7 @@ export default function GameCard({ card, onClick, isSelected = false }: GameCard
                 <div className="h-[40%] p-3 flex flex-col">
                     {/* 카드 이름 */}
                     <h3 className="text-sm font-bold mb-1 truncate" style={{ fontFamily: 'Orbitron, sans-serif' }}>
-                        AI 유닛 #{card.id.slice(0, 6)}
+                        {card.name || `AI 유닛 #${card.id.slice(0, 6)}`}
                     </h3>
 
                     {/* 등급 표시 */}
@@ -70,9 +78,9 @@ export default function GameCard({ card, onClick, isSelected = false }: GameCard
 
                     {/* 능력치 */}
                     <div className="flex-1 space-y-1 text-xs">
-                        <StatBar label="창의" value={card.stats.creativity} max={80} />
-                        <StatBar label="정확" value={card.stats.accuracy} max={80} />
-                        <StatBar label="속도" value={card.stats.speed} max={80} />
+                        <StatBar label="창의" value={card.stats.creativity || 0} max={80} />
+                        <StatBar label="정확" value={card.stats.accuracy || 0} max={80} />
+                        <StatBar label="속도" value={card.stats.speed || 0} max={80} />
                     </div>
 
                     {/* 경험치 바 */}

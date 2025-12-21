@@ -119,7 +119,7 @@ export default function CardRevealModal({ isOpen, card, onClose }: CardRevealMod
                                             animate={{ scale: 1 }}
                                             className="text-4xl font-black text-white italic tracking-tighter mb-2"
                                         >
-                                            IDENTIFIED: <span className="text-cyan-400 uppercase">{card.ability?.name || 'GENERIC UNIT'}</span>
+                                            IDENTIFIED: <span className="text-cyan-400 uppercase">{card.name || 'GENERIC UNIT'}</span>
                                         </motion.div>
                                         <div className="text-purple-400 font-black tracking-widest text-sm uppercase">
                                             {(card.rarity || 'common').toUpperCase()} GRADE SUCCESS

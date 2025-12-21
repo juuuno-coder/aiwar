@@ -41,8 +41,7 @@ export default function CardGacha({ cards, onComplete }: CardGachaProps) {
         common: '#9CA3AF',
         rare: '#3B82F6',
         epic: '#A855F7',
-        legendary: '#F59E0B',
-        unique: '#EF4444'
+        legendary: '#F59E0B'
     };
 
     // Removed unused glowColors

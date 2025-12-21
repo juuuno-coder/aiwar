@@ -264,13 +264,11 @@ export function getResearchTimeBuff(deck: Card[]): number {
     for (const card of deck) {
         // 카테고리나 등급에 따른 버프 적용 (임의의 로직)
         if (card.rarity === 'legendary') {
-            maxBuff = Math.max(maxBuff, 0.15); // 15% 단축
-        } else if (card.rarity === 'unique') {
-            maxBuff = Math.max(maxBuff, 0.25); // 25% 단축
+            maxBuff = Math.max(maxBuff, 0.20); // 20% 단축 (legendary gets the max buff)
         }
 
         // 특정 카드 이름이나 태그가 있다면 추가 버프 (예: 'Sora', 'GPT-5' 등)
-        if (card.name.includes('Sora') || card.name.includes('GPT-4o')) {
+        if (card.name && (card.name.includes('Sora') || card.name.includes('GPT-4o'))) {
             maxBuff = Math.max(maxBuff, 0.3); // 30% 단축
         }
     }

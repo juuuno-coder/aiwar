@@ -4,12 +4,13 @@ import { AIType } from '@/lib/types';
 import { getTypeIcon, getTypeColor, getTypeName } from '@/lib/type-system';
 
 interface TypeBadgeProps {
-    type: AIType;
+    type?: AIType;
     size?: 'sm' | 'md' | 'lg';
     showName?: boolean;
 }
 
 export default function TypeBadge({ type, size = 'md', showName = true }: TypeBadgeProps) {
+    if (!type) return null;
     const icon = getTypeIcon(type);
     const color = getTypeColor(type);
     const name = getTypeName(type);
@@ -36,14 +37,14 @@ export default function TypeBadge({ type, size = 'md', showName = true }: TypeBa
 }
 
 interface TypeAdvantageIndicatorProps {
-    attackerType: AIType;
-    defenderType: AIType;
+    attackerType?: AIType;
+    defenderType?: AIType;
 }
 
 export function TypeAdvantageIndicator({ attackerType, defenderType }: TypeAdvantageIndicatorProps) {
     const { hasTypeAdvantage } = require('@/lib/type-system');
 
-    if (!hasTypeAdvantage(attackerType, defenderType)) {
+    if (!attackerType || !defenderType || !hasTypeAdvantage(attackerType, defenderType)) {
         return null;
     }
 

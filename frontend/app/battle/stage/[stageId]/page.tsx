@@ -166,8 +166,12 @@ export default function StageBattlePage() {
         if (card.type === 'COST') return 'scissors';
 
         const stats = card.stats;
-        if (stats.efficiency >= stats.creativity && stats.efficiency >= stats.function) return 'rock';
-        if (stats.creativity >= stats.efficiency && stats.creativity >= stats.function) return 'paper';
+        const eff = stats.efficiency || 0;
+        const creat = stats.creativity || 0;
+        const func = stats.function || 0;
+
+        if (eff >= creat && eff >= func) return 'rock';
+        if (creat >= eff && creat >= func) return 'paper';
         return 'scissors';
     };
 
@@ -414,14 +418,14 @@ export default function StageBattlePage() {
         if (stageConfig.battleCardCount === 5) {
             // 5장 전투: 재정렬된 selectedHand 순서 그대로 사용 (단순화)
             playerCards = selectedHand.map(c => ({
-                name: c.name,
+                name: c.name || 'Unknown Unit',
                 power: c.stats?.totalPower || 0,
                 attribute: getCardAttribute(c)
             }));
         } else {
             // 다른 모드도 동일하게 처리 (현재는)
             playerCards = selectedHand.map(c => ({
-                name: c.name,
+                name: c.name || 'Unknown Unit',
                 power: c.stats?.totalPower || 0,
                 attribute: getCardAttribute(c)
             }));
@@ -762,7 +766,6 @@ export default function StageBattlePage() {
                                                 ownerId: 'enemy',
                                                 experience: 0,
                                                 isLocked: false,
-                                                isCommander: false,
                                                 acquiredAt: new Date()
                                             };
 
@@ -821,7 +824,6 @@ export default function StageBattlePage() {
                                             ownerId: 'enemy',
                                             experience: 0,
                                             isLocked: false,
-                                            isCommander: false,
                                             acquiredAt: new Date()
                                         };
                                         return (

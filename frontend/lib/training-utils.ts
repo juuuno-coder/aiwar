@@ -82,24 +82,24 @@ export function executeTraining(target: Card, materials: Card[]) {
             const gainCreativity = Math.floor(Math.random() * 3) + 1;
             const gainFunction = Math.floor(Math.random() * 3) + 1;
 
-            updatedCard.plusStats.efficiency += gainEfficiency;
-            updatedCard.plusStats.creativity += gainCreativity;
-            updatedCard.plusStats.function += gainFunction;
+            updatedCard.plusStats.efficiency = (updatedCard.plusStats.efficiency || 0) + gainEfficiency;
+            updatedCard.plusStats.creativity = (updatedCard.plusStats.creativity || 0) + gainCreativity;
+            updatedCard.plusStats.function = (updatedCard.plusStats.function || 0) + gainFunction;
 
             // 메인 타입 추가 보너스
-            if (target.type === 'EFFICIENCY') updatedCard.plusStats.efficiency += 2;
-            if (target.type === 'CREATIVITY') updatedCard.plusStats.creativity += 2;
-            if (target.type === 'COST') updatedCard.plusStats.function += 2;
+            if (target.type === 'EFFICIENCY') updatedCard.plusStats.efficiency = (updatedCard.plusStats.efficiency || 0) + 2;
+            if (target.type === 'CREATIVITY') updatedCard.plusStats.creativity = (updatedCard.plusStats.creativity || 0) + 2;
+            if (target.type === 'COST') updatedCard.plusStats.function = (updatedCard.plusStats.function || 0) + 2;
         }
 
         // 총 전투력 재계산
         updatedCard.plusStats.totalPower =
-            updatedCard.plusStats.efficiency +
-            updatedCard.plusStats.creativity +
-            updatedCard.plusStats.function;
+            (updatedCard.plusStats.efficiency || 0) +
+            (updatedCard.plusStats.creativity || 0) +
+            (updatedCard.plusStats.function || 0);
 
         // 기본 스탯에도 반영 (totalPower 업데이트를 위해)
-        updatedCard.stats.totalPower = updatedCard.stats.efficiency + updatedCard.stats.creativity + updatedCard.stats.function + updatedCard.plusStats.totalPower;
+        updatedCard.stats.totalPower = (updatedCard.stats.efficiency || 0) + (updatedCard.stats.creativity || 0) + (updatedCard.stats.function || 0) + (updatedCard.plusStats.totalPower || 0);
     }
 
     return updatedCard;

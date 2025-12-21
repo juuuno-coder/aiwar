@@ -58,8 +58,8 @@ export default function StoryBattlePage() {
             isLocked: false,
         };
 
-        card.stats.totalPower = card.stats.creativity + card.stats.accuracy +
-            card.stats.speed + card.stats.stability + card.stats.ethics;
+        card.stats.totalPower = (card.stats.creativity || 0) + (card.stats.accuracy || 0) +
+            (card.stats.speed || 0) + (card.stats.stability || 0) + (card.stats.ethics || 0);
 
         return card;
     };

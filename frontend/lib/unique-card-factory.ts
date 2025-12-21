@@ -24,13 +24,16 @@ export function generateUniqueCard(ownerId: string): Card {
         function: 85 + Math.floor(Math.random() * 16),
         totalPower: 0 // Calculated below
     };
-    stats.totalPower = stats.efficiency + stats.creativity + stats.function;
+    stats.totalPower = (stats.efficiency || 0) + (stats.creativity || 0) + (stats.function || 0);
 
     // Determine Type based on highest stat
     let type: AIType = 'EFFICIENCY';
-    if (stats.creativity >= stats.efficiency && stats.creativity >= stats.function) {
+    const efficiency = stats.efficiency || 0;
+    const creativity = stats.creativity || 0;
+    const func = stats.function || 0;
+    if (creativity >= efficiency && creativity >= func) {
         type = 'CREATIVITY';
-    } else if (stats.function >= stats.efficiency && stats.function >= stats.creativity) {
+    } else if (func >= efficiency && func >= creativity) {
         type = 'COST'; // Mapping function/cost loosely for now, or use mapped type
     }
 
@@ -43,7 +46,7 @@ export function generateUniqueCard(ownerId: string): Card {
         level: 1,
         experience: 0,
         stats,
-        rarity: 'unique',
+        rarity: 'legendary', // Changed from 'unique' to match Rarity type
         acquiredAt: new Date(),
         isLocked: true, // Auto-lock unique cards for safety
         isUnique: true,
@@ -51,8 +54,6 @@ export function generateUniqueCard(ownerId: string): Card {
             name: `${template.name} Protocol`,
             description: `Uses ${template.specialty} mastery to dominate the field.`,
             effect: 'active'
-        },
-        // Legacy support if needed
-        isCommander: true
+        }
     };
 }

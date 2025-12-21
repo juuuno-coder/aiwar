@@ -75,6 +75,22 @@ export interface Card {
         description: string;
         effect: string;
     };
+    equipment?: Equipment[];
+    plusStats?: Stats;
+}
+
+export type EquipmentRarity = 'standard' | 'advanced' | 'elite' | 'quantum';
+export type EquipmentType = 'GPU' | 'TPU' | 'NPU' | 'COOLING';
+
+export interface Equipment {
+    id: string;
+    templateId: string;
+    type: EquipmentType;
+    rarity: EquipmentRarity;
+    name: string;
+    description: string;
+    stats: Partial<Stats>;
+    equippedCardId: string | null;
 }
 
 export interface FactionSlot {

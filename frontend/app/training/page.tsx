@@ -115,7 +115,7 @@ export default function TrainingPage() {
             await addTokens(-preview.tokenCost);
 
             for (const mat of materialCards) {
-                await gameStorage.removeCard(mat.id);
+                await gameStorage.deleteCard(mat.id);
             }
             await gameStorage.updateCard(updatedCard.id, updatedCard);
 
@@ -205,7 +205,7 @@ export default function TrainingPage() {
                                     <div className="p-4 bg-black/40 border border-blue-500/30 rounded-2xl relative z-10">
                                         <div className="flex items-center gap-4">
                                             <div className="w-16 h-16 rounded-xl bg-blue-500/10 flex items-center justify-center text-3xl border border-blue-500/20">
-                                                {targetCard.isCommander ? '👑' : '🤖'}
+                                                {false ? '👑' : '🤖'}
                                             </div>
                                             <div>
                                                 <h4 className="font-black text-white orbitron uppercase italic">{targetCard.name}</h4>
@@ -323,7 +323,7 @@ export default function TrainingPage() {
                                                     "w-12 h-12 rounded-xl flex items-center justify-center text-2xl border border-white/5 flex-shrink-0",
                                                     isTarget ? "bg-blue-500/30" : "bg-black/40"
                                                 )}>
-                                                    {card.isCommander ? '👑' : '🤖'}
+                                                    {false ? '👑' : '🤖'}
                                                 </div>
                                                 <div className="flex-1 min-w-0">
                                                     <div className="flex justify-between items-center mb-1">
