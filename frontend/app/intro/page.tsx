@@ -2,102 +2,209 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { startAsGuest } from '@/lib/auth-utils';
+import { motion } from 'framer-motion';
+import { DraggableCardContainer } from '@/components/ui/aceternity/draggable-card';
+import DraggableGameCard from '@/components/game/DraggableGameCard';
+import { BackgroundBeams } from '@/components/ui/aceternity/background-beams';
+
+// Sample cards for demonstration
+const DEMO_CARDS = [
+    {
+        id: 'demo-1',
+        name: 'AI Strategist',
+        type: 'EFFICIENCY' as const,
+        level: 5,
+        stats: {
+            function: 85,
+            efficiency: 92,
+            creativity: 78,
+            totalPower: 255,
+        },
+        templateId: 'demo-1',
+        ownerId: 'demo',
+        experience: 0,
+        acquiredAt: new Date(),
+        isLocked: false,
+    },
+    {
+        id: 'demo-2',
+        name: 'Creative AI',
+        type: 'CREATIVITY' as const,
+        level: 7,
+        stats: {
+            function: 78,
+            efficiency: 75,
+            creativity: 95,
+            totalPower: 248,
+        },
+        templateId: 'demo-2',
+        ownerId: 'demo',
+        experience: 0,
+        acquiredAt: new Date(),
+        isLocked: false,
+    },
+    {
+        id: 'demo-3',
+        name: 'Efficient AI',
+        type: 'COST' as const,
+        level: 6,
+        stats: {
+            function: 88,
+            efficiency: 90,
+            creativity: 72,
+            totalPower: 250,
+        },
+        templateId: 'demo-3',
+        ownerId: 'demo',
+        experience: 0,
+        acquiredAt: new Date(),
+        isLocked: false,
+    },
+];
 
 export default function IntroPage() {
     const router = useRouter();
-    const [isAnimating, setIsAnimating] = useState(false);
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
 
-    const handleGuestStart = () => {
-        setIsAnimating(true);
-        startAsGuest();
+    const handleLogin = (e: React.FormEvent) => {
+        e.preventDefault();
+        // TODO: Implement Firebase login
+        router.push('/main');
+    };
 
-        setTimeout(() => {
-            router.push('/');
-        }, 500);
+    const handleSignUp = () => {
+        router.push('/signup');
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center p-4 overflow-hidden">
-            {/* 배경 애니메이션 */}
-            <div className="absolute inset-0 grid-pattern opacity-20"></div>
+        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900/30 to-slate-900 relative overflow-hidden">
+            {/* Background Effects */}
+            <BackgroundBeams />
 
-            {/* 메인 컨텐츠 */}
-            <div className="relative z-10 max-w-4xl w-full">
-                {/* 로고 및 타이틀 */}
-                <div className="text-center mb-12 animate-float">
-                    <div className="text-8xl mb-6 animate-pulse-glow">🤖</div>
-                    <h1
-                        className="text-7xl md:text-9xl font-bold mb-4 text-gradient"
-                        style={{ fontFamily: 'Orbitron, sans-serif' }}
-                    >
-                        AI 대전
+            {/* Content */}
+            <div className="relative z-10 container mx-auto px-6 py-20">
+                {/* Hero Title */}
+                <motion.div
+                    initial={{ opacity: 0, y: -30 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="text-center mb-16"
+                >
+                    <h1 className="text-8xl font-black mb-6">
+                        <span className="bg-gradient-to-r from-purple-200 via-violet-300 to-indigo-200 bg-clip-text text-transparent drop-shadow-[0_0_30px_rgba(139,92,246,0.5)]">
+                            AI WAR
+                        </span>
                     </h1>
-                    <p className="text-2xl md:text-3xl text-white mb-2">
-                        AI DAEJEON
+                    <p className="text-xl text-purple-300/60 font-light tracking-wide">
+                        The Ultimate Card Battle Experience
                     </p>
-                    <p className="text-lg md:text-xl text-gray-300">
-                        2030년의 미래를 바꿀 카드 전략 게임
-                    </p>
-                </div>
+                </motion.div>
 
-                {/* 게임 소개 */}
-                <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 mb-8 border border-white/20">
-                    <h2 className="text-2xl font-bold text-white mb-4 text-center">🎮 게임 소개</h2>
-                    <div className="grid md:grid-cols-3 gap-6 text-center">
-                        <div>
-                            <div className="text-4xl mb-2">⚔️</div>
-                            <h3 className="text-lg font-bold text-white mb-2">전략적 전투</h3>
-                            <p className="text-sm text-gray-300">5전 3선승제로 치열한 전투를 펼치세요</p>
-                        </div>
-                        <div>
-                            <div className="text-4xl mb-2">🤖</div>
-                            <h3 className="text-lg font-bold text-white mb-2">13개 AI 군단</h3>
-                            <p className="text-sm text-gray-300">각기 다른 특성을 가진 AI 군단을 수집하세요</p>
-                        </div>
-                        <div>
-                            <div className="text-4xl mb-2">🏆</div>
-                            <h3 className="text-lg font-bold text-white mb-2">랭킹 경쟁</h3>
-                            <p className="text-sm text-gray-300">전 세계 플레이어와 순위를 겨루세요</p>
+                {/* Draggable Cards Demo */}
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.2 }}
+                    className="mb-20"
+                >
+                    <div className="text-center mb-8">
+                        <p className="text-lg text-purple-300/80 font-medium">
+                            드래그하여 카드를 움직여보세요
+                        </p>
+                    </div>
+
+                    <DraggableCardContainer className="flex items-center justify-center gap-8 min-h-[400px]">
+                        {DEMO_CARDS.map((card, index) => (
+                            <motion.div
+                                key={card.id}
+                                initial={{ opacity: 0, scale: 0.8 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                transition={{ delay: 0.3 + index * 0.1 }}
+                            >
+                                <DraggableGameCard card={card} />
+                            </motion.div>
+                        ))}
+                    </DraggableCardContainer>
+                </motion.div>
+
+                {/* Login Form */}
+                <motion.div
+                    initial={{ opacity: 0, y: 30 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.6 }}
+                    className="max-w-md mx-auto"
+                >
+                    <div className="bg-slate-900/60 backdrop-blur-xl border border-purple-500/20 rounded-3xl p-8">
+                        <h2 className="text-2xl font-bold text-white mb-6 text-center">
+                            로그인
+                        </h2>
+
+                        <form onSubmit={handleLogin} className="space-y-6">
+                            {/* Email Input */}
+                            <div>
+                                <label className="block text-sm font-medium text-slate-300 mb-2">
+                                    이메일
+                                </label>
+                                <input
+                                    type="email"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    className="w-full px-4 py-3 bg-slate-800/50 border border-purple-500/20 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-purple-400/50 transition-colors"
+                                    placeholder="your@email.com"
+                                    required
+                                />
+                            </div>
+
+                            {/* Password Input */}
+                            <div>
+                                <label className="block text-sm font-medium text-slate-300 mb-2">
+                                    비밀번호
+                                </label>
+                                <input
+                                    type="password"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    className="w-full px-4 py-3 bg-slate-800/50 border border-purple-500/20 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-purple-400/50 transition-colors"
+                                    placeholder="••••••••"
+                                    required
+                                />
+                            </div>
+
+                            {/* Buttons */}
+                            <div className="space-y-3">
+                                <motion.button
+                                    whileHover={{ scale: 1.02 }}
+                                    whileTap={{ scale: 0.98 }}
+                                    type="submit"
+                                    className="w-full py-3 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white font-medium rounded-xl transition-all shadow-lg shadow-purple-500/20"
+                                >
+                                    로그인
+                                </motion.button>
+
+                                <motion.button
+                                    whileHover={{ scale: 1.02 }}
+                                    whileTap={{ scale: 0.98 }}
+                                    type="button"
+                                    onClick={handleSignUp}
+                                    className="w-full py-3 bg-slate-800/50 border border-purple-500/20 hover:bg-slate-700/50 text-white font-medium rounded-xl transition-all"
+                                >
+                                    회원가입
+                                </motion.button>
+                            </div>
+                        </form>
+
+                        {/* Guest Login */}
+                        <div className="mt-6 text-center">
+                            <button
+                                onClick={() => router.push('/main')}
+                                className="text-sm text-purple-300/60 hover:text-purple-300 transition-colors"
+                            >
+                                게스트로 시작하기 →
+                            </button>
                         </div>
                     </div>
-                </div>
-
-                {/* 버튼 그룹 */}
-                <div className="space-y-4">
-                    <Link href="/login">
-                        <button className="w-full py-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl text-xl font-bold transition-all transform hover:scale-105 hover:shadow-2xl">
-                            🔐 로그인
-                        </button>
-                    </Link>
-
-                    <Link href="/signup">
-                        <button className="w-full py-4 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-xl text-xl font-bold transition-all transform hover:scale-105 hover:shadow-2xl">
-                            ✨ 회원가입
-                        </button>
-                    </Link>
-
-                    <button
-                        onClick={handleGuestStart}
-                        disabled={isAnimating}
-                        className="w-full py-4 bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white rounded-xl text-xl font-bold transition-all border-2 border-white/30 hover:border-white/50 disabled:opacity-50"
-                    >
-                        👤 게스트로 시작
-                    </button>
-                </div>
-
-                {/* 하단 정보 */}
-                <div className="mt-8 text-center text-gray-400 text-sm">
-                    <p>v0.6.0 - Phase 10 Update</p>
-                    <p className="mt-2">© 2025 AI DAEJEON. All rights reserved.</p>
-                </div>
+                </motion.div>
             </div>
-
-            {/* 파티클 효과 */}
-            <div className="absolute top-10 left-10 w-20 h-20 bg-blue-500 rounded-full opacity-20 blur-3xl animate-pulse"></div>
-            <div className="absolute bottom-10 right-10 w-32 h-32 bg-purple-500 rounded-full opacity-20 blur-3xl animate-pulse animation-delay-500"></div>
-            <div className="absolute top-1/2 right-20 w-24 h-24 bg-pink-500 rounded-full opacity-20 blur-3xl animate-pulse animation-delay-1000"></div>
         </div>
     );
 }
