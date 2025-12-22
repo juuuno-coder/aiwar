@@ -4,8 +4,8 @@ import { useState, useEffect } from 'react';
 import { AIFaction, FactionSlot } from '@/lib/types';
 import { storage, getRemainingMinutes, formatTime, generateId, getRandomRarity, generateRandomStats } from '@/lib/utils';
 import aiFactionsData from '@/data/ai-factions.json';
-import UiCard from '@/components/ui/Card';
-import Button from '@/components/ui/Button';
+import { Card } from '@/components/ui/custom/Card';
+import { Button } from '@/components/ui/custom/Button';
 
 export default function FactionsPage() {
     const [factions] = useState<AIFaction[]>(aiFactionsData.factions as any);
@@ -162,12 +162,12 @@ export default function FactionsPage() {
                         AI 군단을 영입하고 유닛을 생성하세요
                     </p>
                 </div>
-                <UiCard variant="gradient" className="text-right">
+                <Card variant="gradient" className="text-right">
                     <p className="text-sm text-gray-400 mb-1">보유 코인</p>
                     <p className="text-3xl font-bold text-yellow-300">
                         💰 {userCoins.toLocaleString()}
                     </p>
-                </UiCard>
+                </Card>
             </div>
 
             {/* 슬롯 섹션 */}
@@ -182,7 +182,7 @@ export default function FactionsPage() {
                         const isReady = remaining === 0 && slot.aiFactionId !== null;
 
                         return (
-                            <UiCard
+                            <Card
                                 key={slot.id}
                                 variant={isReady ? 'glow' : 'default'}
                                 className={`text-center animate-slide-up delay-${(index + 1) * 100} ${isReady ? 'animate-pulse' : ''}`}
@@ -227,7 +227,7 @@ export default function FactionsPage() {
                                         </p>
                                     </>
                                 )}
-                            </UiCard>
+                            </Card>
                         );
                     })}
                 </div>
@@ -245,7 +245,7 @@ export default function FactionsPage() {
                         const hasEmptySlot = slots.some(s => s.aiFactionId === null);
 
                         return (
-                            <UiCard
+                            <Card
                                 key={faction.id}
                                 className={`animate-slide-up delay-${(index + 1) * 50} ${isOwned ? 'opacity-50' : ''}`}
                             >
@@ -289,7 +289,7 @@ export default function FactionsPage() {
                                         )}
                                     </div>
                                 </div>
-                            </UiCard>
+                            </Card>
                         );
                     })}
                 </div>

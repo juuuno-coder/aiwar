@@ -13,8 +13,8 @@ import {
 import { AIFaction } from '@/lib/faction-types';
 import { CATEGORY_COLORS, CATEGORY_ICONS, CATEGORY_NAMES } from '@/lib/faction-types';
 import { getGameState } from '@/lib/game-state';
-import UiCard from '@/components/ui/Card';
-import Button from '@/components/ui/Button';
+import { Card } from '@/components/ui/custom/Card';
+import { Button } from '@/components/ui/custom/Button';
 
 export default function SlotsPage() {
     const [factions, setFactions] = useState<AIFaction[]>([]);
@@ -115,28 +115,28 @@ export default function SlotsPage() {
 
             {/* 상단 정보 */}
             <div className="grid grid-cols-4 gap-4 mb-8">
-                <UiCard variant="gradient" className="animate-slide-up delay-100">
+                <Card variant="gradient" className="animate-slide-up delay-100">
                     <p className="text-sm text-gray-400 mb-2">보유 토큰</p>
                     <p className="text-3xl font-bold text-yellow-300">💰 {userTokens.toLocaleString()}</p>
-                </UiCard>
-                <UiCard variant="gradient" className="animate-slide-up delay-150">
+                </Card>
+                <Card variant="gradient" className="animate-slide-up delay-150">
                     <p className="text-sm text-gray-400 mb-2">해금된 AI 군단</p>
                     <p className="text-3xl font-bold text-blue-300">{unlockedFactions.length}개</p>
-                </UiCard>
-                <UiCard variant="gradient" className="animate-slide-up delay-200">
+                </Card>
+                <Card variant="gradient" className="animate-slide-up delay-200">
                     <p className="text-sm text-gray-400 mb-2">배치된 슬롯</p>
                     <p className="text-3xl font-bold text-green-300">{getFilledSlotsCount()} / 5</p>
-                </UiCard>
-                <UiCard variant="gradient" className="animate-slide-up delay-250">
+                </Card>
+                <Card variant="gradient" className="animate-slide-up delay-250">
                     <p className="text-sm text-gray-400 mb-2">총 시너지 보너스</p>
                     <p className={`text-3xl font-bold transition-all ${getTotalSynergyBonus() > 0 ? 'text-purple-400 animate-pulse-glow' : 'text-gray-500'}`}>
                         {getTotalSynergyBonus() > 0 ? `+${getTotalSynergyBonus()}%` : '0%'}
                     </p>
-                </UiCard>
+                </Card>
             </div>
 
             {/* 슬롯 영역 */}
-            <UiCard variant="glow" className="mb-8 animate-slide-up delay-300">
+            <Card variant="glow" className="mb-8 animate-slide-up delay-300">
                 <h2 className="text-2xl font-bold mb-6">슬롯 배치 (5개)</h2>
 
                 <div className="grid grid-cols-5 gap-4 mb-8">
@@ -152,7 +152,7 @@ export default function SlotsPage() {
                                 className={`relative cursor-pointer transition-all duration-300 ${isSelected ? 'ring-4 ring-blue-500 scale-105' : 'hover:scale-105'
                                     } ${isAnimating ? 'animate-bounce-in' : ''}`}
                             >
-                                <UiCard
+                                <Card
                                     className={`h-48 flex flex-col items-center justify-center transition-all ${slotFaction ? 'bg-gradient-to-br from-purple-900/30 to-blue-900/30' : 'bg-gray-800/50'
                                         } ${isAnimating ? 'shadow-lg shadow-purple-500/50' : ''}`}
                                 >
@@ -188,7 +188,7 @@ export default function SlotsPage() {
                                             <p className="text-xs text-gray-500">{isSelected ? '배치할 AI 선택' : '비어있음'}</p>
                                         </>
                                     )}
-                                </UiCard>
+                                </Card>
                                 {isSelected && (
                                     <div className="absolute -top-2 -right-2 bg-blue-500 text-white text-xs px-2 py-1 rounded-full animate-pulse">
                                         선택됨
@@ -265,10 +265,10 @@ export default function SlotsPage() {
                         </div>
                     </div>
                 )}
-            </UiCard>
+            </Card>
 
             {/* AI 군단 목록 */}
-            <UiCard className="animate-slide-up delay-400">
+            <Card className="animate-slide-up delay-400">
                 <h2 className="text-2xl font-bold mb-6 text-white">
                     AI 군단 목록
                     {selectedSlot !== null && (
@@ -306,7 +306,7 @@ export default function SlotsPage() {
                                                 } ${hoveredFaction === faction.id && isUnlocked ? 'ring-2 ring-purple-500 rounded-lg' : ''
                                                 }`}
                                         >
-                                            <UiCard
+                                            <Card
                                                 onClick={() => {
                                                     if (isUnlocked && selectedSlot !== null) {
                                                         handleFactionSelect(faction.id);
@@ -362,7 +362,7 @@ export default function SlotsPage() {
                                                         </p>
                                                     )}
                                                 </div>
-                                            </UiCard>
+                                            </Card>
                                         </div>
                                     );
                                 })}
@@ -370,7 +370,7 @@ export default function SlotsPage() {
                         </div>
                     );
                 })}
-            </UiCard>
+            </Card>
         </div>
     );
 }

@@ -3,8 +3,8 @@
 import { useState, useEffect } from 'react';
 import { storage, getRandomRarity, generateRandomStats, generateId } from '@/lib/utils';
 import { Card, Rarity } from '@/lib/types';
-import UiCard from '@/components/ui/Card';
-import Button from '@/components/ui/Button';
+import { Card } from '@/components/ui/custom/Card';
+import { Button } from '@/components/ui/custom/Button';
 
 interface ShopItem {
     id: string;
@@ -164,12 +164,12 @@ export default function ShopPage() {
                         카드 팩과 부스터를 구매하세요
                     </p>
                 </div>
-                <UiCard variant="gradient" className="text-right">
+                <Card variant="gradient" className="text-right">
                     <p className="text-sm text-gray-400 mb-1">보유 코인</p>
                     <p className={`text-4xl font-bold text-yellow-300 ${purchaseAnimation ? 'animate-pulse' : ''}`}>
                         💰 {userCoins.toLocaleString()}
                     </p>
-                </UiCard>
+                </Card>
             </div>
 
             {/* 카드 팩 섹션 */}
@@ -179,7 +179,7 @@ export default function ShopPage() {
                 </h2>
                 <div className="grid grid-cols-3 gap-6">
                     {shopItems.filter(item => item.type === 'card-pack').map((item, index) => (
-                        <UiCard
+                        <Card
                             key={item.id}
                             variant="glow"
                             className={`text-center animate-slide-up delay-${(index + 1) * 100}`}
@@ -202,7 +202,7 @@ export default function ShopPage() {
                             >
                                 {userCoins >= item.price ? '구매하기' : '코인 부족'}
                             </Button>
-                        </UiCard>
+                        </Card>
                     ))}
                 </div>
             </div>
@@ -214,7 +214,7 @@ export default function ShopPage() {
                 </h2>
                 <div className="grid grid-cols-2 gap-6">
                     {shopItems.filter(item => item.type === 'boost').map((item, index) => (
-                        <UiCard
+                        <Card
                             key={item.id}
                             className={`flex items-center gap-6 animate-slide-up delay-${(index + 4) * 100}`}
                         >
@@ -237,20 +237,20 @@ export default function ShopPage() {
                             >
                                 구매
                             </Button>
-                        </UiCard>
+                        </Card>
                     ))}
                 </div>
             </div>
 
             {/* 안내 메시지 */}
-            <UiCard className="mt-12 bg-gradient-to-r from-blue-500/10 to-purple-500/10 animate-slide-up delay-600">
+            <Card className="mt-12 bg-gradient-to-r from-blue-500/10 to-purple-500/10 animate-slide-up delay-600">
                 <h3 className="text-lg font-bold mb-2 text-white">💡 팁</h3>
                 <ul className="text-sm text-gray-400 space-y-1">
                     <li>• 대전에서 승리하면 코인을 획득할 수 있습니다</li>
                     <li>• 프리미엄 팩은 레어 이상 카드가 보장됩니다</li>
                     <li>• 부스터는 중복 사용이 가능합니다</li>
                 </ul>
-            </UiCard>
+            </Card>
         </div>
     );
 }

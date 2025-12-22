@@ -14,7 +14,7 @@ import {
     subscribeToMatchmaking,
     MatchmakingPlayer
 } from '@/lib/realtime-pvp';
-import { Card as UiCard } from '@/components/ui/custom/Card';
+import { Card as Card } from '@/components/ui/custom/Card';
 import { Button } from '@/components/ui/custom/Button';
 import { Chip } from '@/components/ui/custom/Chip';
 import { Progress } from '@/components/ui/custom/Progress';
@@ -204,7 +204,7 @@ export default function PvPMatchPage() {
                             </div>
 
                             {/* 실시간 매칭 */}
-                            <UiCard
+                            <Card
                                 isPressable
                                 onPress={isOnline ? startRealMatch : undefined}
                                 className={`p-6 border transition-all ${isOnline
@@ -231,10 +231,10 @@ export default function PvPMatchPage() {
                                     </div>
                                     <Users size={20} className="text-gray-600" />
                                 </div>
-                            </UiCard>
+                            </Card>
 
                             {/* AI 봇 매칭 */}
-                            <UiCard
+                            <Card
                                 isPressable
                                 onPress={startBotMatch}
                                 className="p-6 bg-purple-500/10 border border-purple-500/30 hover:border-purple-500/50 transition-all"
@@ -252,7 +252,7 @@ export default function PvPMatchPage() {
                                     </div>
                                     <Zap size={20} className="text-purple-400" />
                                 </div>
-                            </UiCard>
+                            </Card>
 
                             {/* 뒤로가기 */}
                             <Button
@@ -330,7 +330,7 @@ export default function PvPMatchPage() {
 
                             <h2 className="text-3xl font-black text-green-400 orbitron italic mb-4">매칭 완료!</h2>
 
-                            <UiCard className="bg-black/40 border border-green-500/30 p-6 mb-4">
+                            <Card className="bg-black/40 border border-green-500/30 p-6 mb-4">
                                 <div className="flex items-center justify-center gap-2 mb-2">
                                     {opponent.isRealPlayer ? (
                                         <Users size={16} className="text-blue-400" />
@@ -345,7 +345,7 @@ export default function PvPMatchPage() {
                                 {opponent.rating && (
                                     <p className="text-yellow-400 font-bold orbitron">{opponent.rating} MMR</p>
                                 )}
-                            </UiCard>
+                            </Card>
 
                             <p className="text-gray-500 text-sm animate-pulse">전투 준비 중...</p>
                         </motion.div>

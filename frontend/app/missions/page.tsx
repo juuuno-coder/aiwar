@@ -3,8 +3,8 @@
 import { useState, useEffect } from 'react';
 import { storage } from '@/lib/utils';
 import { Mission, DailyMissions } from '@/lib/mission-types';
-import UiCard from '@/components/ui/Card';
-import Button from '@/components/ui/Button';
+import { Card } from '@/components/ui/custom/Card';
+import { Button } from '@/components/ui/custom/Button';
 
 // 오늘 날짜 가져오기 (YYYY-MM-DD)
 function getTodayDate(): string {
@@ -142,28 +142,28 @@ export default function MissionsPage() {
 
             {/* 상단 통계 */}
             <div className="grid grid-cols-4 gap-4 mb-8">
-                <UiCard variant="gradient" className="animate-slide-up delay-100">
+                <Card variant="gradient" className="animate-slide-up delay-100">
                     <p className="text-sm text-gray-400 mb-2">보유 코인</p>
                     <p className="text-3xl font-bold text-yellow-300">💰 {userCoins.toLocaleString()}</p>
-                </UiCard>
-                <UiCard variant="gradient" className="animate-slide-up delay-150">
+                </Card>
+                <Card variant="gradient" className="animate-slide-up delay-150">
                     <p className="text-sm text-gray-400 mb-2">완료된 미션</p>
                     <p className="text-3xl font-bold text-green-300">{completedCount} / {missions.length}</p>
-                </UiCard>
-                <UiCard variant="gradient" className="animate-slide-up delay-200">
+                </Card>
+                <Card variant="gradient" className="animate-slide-up delay-200">
                     <p className="text-sm text-gray-400 mb-2">수령한 보상</p>
                     <p className="text-3xl font-bold text-blue-300">{claimedCount} / {missions.length}</p>
-                </UiCard>
-                <UiCard variant="gradient" className="animate-slide-up delay-250">
+                </Card>
+                <Card variant="gradient" className="animate-slide-up delay-250">
                     <p className="text-sm text-gray-400 mb-2">미수령 보상</p>
                     <p className={`text-3xl font-bold ${unclaimedRewards > 0 ? 'text-purple-400 animate-pulse-glow' : 'text-gray-500'}`}>
                         {unclaimedRewards}개
                     </p>
-                </UiCard>
+                </Card>
             </div>
 
             {/* 전체 진행도 */}
-            <UiCard variant="glow" className="mb-8 animate-slide-up delay-300">
+            <Card variant="glow" className="mb-8 animate-slide-up delay-300">
                 <h2 className="text-2xl font-bold mb-4">오늘의 진행도</h2>
                 <div className="w-full bg-gray-800 rounded-full h-6 overflow-hidden relative">
                     <div className="absolute inset-0 bg-gradient-to-r from-gray-800 via-gray-700 to-gray-800" />
@@ -177,7 +177,7 @@ export default function MissionsPage() {
                 <p className="text-center mt-2 text-gray-400">
                     {Math.round((claimedCount / missions.length) * 100)}% 완료
                 </p>
-            </UiCard>
+            </Card>
 
             {/* 미션 목록 */}
             <div className="grid grid-cols-1 gap-4 animate-slide-up delay-400">
@@ -186,7 +186,7 @@ export default function MissionsPage() {
                     const isClaiming = claimingId === mission.id;
 
                     return (
-                        <UiCard
+                        <Card
                             key={mission.id}
                             variant={mission.completed && !mission.claimed ? 'glow' : 'default'}
                             className={`transition-all duration-300 ${mission.completed && !mission.claimed ? 'animate-pulse-glow' : ''
@@ -279,13 +279,13 @@ export default function MissionsPage() {
                                     )}
                                 </div>
                             </div>
-                        </UiCard>
+                        </Card>
                     );
                 })}
             </div>
 
             {/* 안내 메시지 */}
-            <UiCard className="mt-8 bg-gray-800/50">
+            <Card className="mt-8 bg-gray-800/50">
                 <h3 className="text-lg font-bold mb-2 text-white">💡 미션 팁</h3>
                 <ul className="text-sm text-gray-400 space-y-1">
                     <li>• 미션은 매일 자정(00:00)에 초기화됩니다</li>
@@ -293,7 +293,7 @@ export default function MissionsPage() {
                     <li>• 모든 미션을 완료하면 추가 보너스를 받을 수 있습니다 (추후 추가)</li>
                     <li>• 게임을 플레이하면서 자연스럽게 미션이 달성됩니다</li>
                 </ul>
-            </UiCard>
+            </Card>
         </div>
     );
 }

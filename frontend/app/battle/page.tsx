@@ -7,8 +7,8 @@ import { Card, BattleGenre } from '@/lib/types';
 import { storage } from '@/lib/utils';
 import { analyzeDeckSynergy, getFactionDisplayName } from '@/lib/synergy-utils';
 import gameBalanceData from '@/data/game-balance.json';
-import UiCard from '@/components/ui/Card';
-import Button from '@/components/ui/Button';
+import { Card } from '@/components/ui/custom/Card';
+import { Button } from '@/components/ui/custom/Button';
 
 export default function BattlePage() {
     const router = useRouter();
@@ -60,7 +60,7 @@ export default function BattlePage() {
 
             {/* 대전 장르 */}
             {battleGenre && (
-                <UiCard variant="glow" className="mb-8 text-center animate-slide-up">
+                <Card variant="glow" className="mb-8 text-center animate-slide-up">
                     <h2 className="text-2xl font-bold mb-2">
                         오늘의 대전 장르
                     </h2>
@@ -70,7 +70,7 @@ export default function BattlePage() {
                     <p className="text-sm text-gray-400">
                         {battleGenre.description}
                     </p>
-                </UiCard>
+                </Card>
             )}
 
             {/* 선택 상태 & 시작 버튼 */}
@@ -101,7 +101,7 @@ export default function BattlePage() {
 
             {/* 시너지 정보 */}
             {synergy && synergy.activeSynergies.length > 0 && (
-                <UiCard variant="glow" className="mb-6 animate-fade-in">
+                <Card variant="glow" className="mb-6 animate-fade-in">
                     <h3 className="text-xl font-bold mb-4">
                         ✨ 시너지 보너스
                     </h3>
@@ -133,12 +133,12 @@ export default function BattlePage() {
                             </span>
                         </div>
                     </div>
-                </UiCard>
+                </Card>
             )}
 
             {/* 카드 그리드 */}
             {cards.length === 0 ? (
-                <UiCard className="p-12 text-center">
+                <Card className="p-12 text-center">
                     <p className="text-xl text-gray-400 mb-4">보유한 카드가 없습니다</p>
                     <Button
                         variant="primary"
@@ -146,7 +146,7 @@ export default function BattlePage() {
                     >
                         상점으로 가기 🛒
                     </Button>
-                </UiCard>
+                </Card>
             ) : (
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
                     {cards.map((card, index) => (

@@ -5,8 +5,8 @@ import Link from 'next/link';
 import { initializeNewPlayer } from '@/lib/game-init';
 import TutorialPopup from '@/components/TutorialPopup';
 import { getGameState, checkDailyReset } from '@/lib/game-state';
-import Card from '@/components/ui/Card';
-import Button from '@/components/ui/Button';
+import { Card } from '@/components/ui/custom/Card';
+import { Button } from '@/components/ui/custom/Button';
 
 export default function Home() {
   const [showTutorial, setShowTutorial] = useState(false);

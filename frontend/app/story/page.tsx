@@ -11,9 +11,9 @@ import {
     Chapter
 } from '@/lib/story-utils';
 import { getGameState } from '@/lib/game-state';
-import Card from '@/components/ui/Card';
-import Button from '@/components/ui/Button';
-import Modal from '@/components/ui/Modal';
+import { Card } from '@/components/ui/custom/Card';
+import { Button } from '@/components/ui/custom/Button';
+import { Modal } from '@/components/ui/custom/Modal';
 
 export default function StoryPage() {
     const [chapters, setChapters] = useState<Chapter[]>([]);

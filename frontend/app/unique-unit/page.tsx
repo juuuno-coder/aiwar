@@ -10,8 +10,8 @@ import {
 } from '@/lib/unique-unit-utils';
 import { CATEGORY_COLORS, CATEGORY_ICONS, CATEGORY_NAMES } from '@/lib/faction-types';
 import { calculateSynergy } from '@/lib/slot-utils';
-import UiCard from '@/components/ui/Card';
-import Button from '@/components/ui/Button';
+import { Card } from '@/components/ui/custom/Card';
+import { Button } from '@/components/ui/custom/Button';
 import CircularProgress from '@/components/CircularProgress';
 
 export default function UniqueUnitPage() {
@@ -83,7 +83,7 @@ export default function UniqueUnitPage() {
             </div>
 
             {/* 타이머 영역 */}
-            <UiCard variant="glow" className="mb-8 animate-slide-up">
+            <Card variant="glow" className="mb-8 animate-slide-up">
                 {!progress?.isGenerating ? (
                     /* 생성 시작 전 */
                     <div className="text-center py-12">
@@ -114,25 +114,25 @@ export default function UniqueUnitPage() {
                                 <p className="text-gray-400 mb-4">{progress.unitData.description}</p>
 
                                 <div className="grid grid-cols-3 gap-4 max-w-2xl mx-auto mb-6">
-                                    <UiCard variant="gradient">
+                                    <Card variant="gradient">
                                         <p className="text-sm text-gray-400">전투력</p>
                                         <p className="text-2xl font-bold text-white">{progress.unitData.basePower}</p>
-                                    </UiCard>
-                                    <UiCard variant="gradient">
+                                    </Card>
+                                    <Card variant="gradient">
                                         <p className="text-sm text-gray-400">등급</p>
                                         <p className="text-2xl font-bold capitalize text-white">{progress.unitData.rarity}</p>
-                                    </UiCard>
-                                    <UiCard variant="gradient">
+                                    </Card>
+                                    <Card variant="gradient">
                                         <p className="text-sm text-gray-400">배율</p>
                                         <p className="text-2xl font-bold text-white">×{progress.unitData.powerMultiplier}</p>
-                                    </UiCard>
+                                    </Card>
                                 </div>
 
-                                <UiCard className="max-w-2xl mx-auto mb-6 bg-gradient-to-r from-purple-500/20 to-blue-500/20">
+                                <Card className="max-w-2xl mx-auto mb-6 bg-gradient-to-r from-purple-500/20 to-blue-500/20">
                                     <p className="text-sm text-gray-400 mb-2">특수 스킬</p>
                                     <p className="text-xl font-bold mb-2 text-white">{progress.unitData.specialSkill.name}</p>
                                     <p className="text-gray-400">{progress.unitData.specialSkill.description}</p>
-                                </UiCard>
+                                </Card>
                             </div>
                         )}
 
@@ -171,7 +171,7 @@ export default function UniqueUnitPage() {
 
                         {/* 시너지 효과 */}
                         {synergy && synergy.timeReduction > 0 && (
-                            <UiCard className="bg-gradient-to-r from-green-500/20 to-blue-500/20 animate-slide-up">
+                            <Card className="bg-gradient-to-r from-green-500/20 to-blue-500/20 animate-slide-up">
                                 <p className="text-sm text-gray-400 mb-2">⚡ 시너지 효과</p>
                                 <p className="text-xl font-bold text-green-400">
                                     생성 시간 {(synergy.timeReduction * 100).toFixed(0)}% 감소
@@ -179,19 +179,19 @@ export default function UniqueUnitPage() {
                                 <p className="text-sm text-gray-400 mt-2">
                                     {synergy.description}
                                 </p>
-                            </UiCard>
+                            </Card>
                         )}
                     </div>
                 )}
-            </UiCard>
+            </Card>
 
             {/* 유니크 유닛 목록 */}
-            <UiCard className="animate-slide-up delay-200">
+            <Card className="animate-slide-up delay-200">
                 <h2 className="text-2xl font-bold mb-6 text-white">유니크 유닛 도감</h2>
 
                 <div className="grid grid-cols-3 gap-6">
                     {allUnits.map((unit, index) => (
-                        <UiCard
+                        <Card
                             key={unit.id}
                             variant={progress?.unitData?.id === unit.id ? 'glow' : 'default'}
                             className={`animate-slide-up delay-${(index + 1) * 50}`}
@@ -228,13 +228,13 @@ export default function UniqueUnitPage() {
                                     {unit.specialSkill.description}
                                 </p>
                             </div>
-                        </UiCard>
+                        </Card>
                     ))}
                 </div>
-            </UiCard>
+            </Card>
 
             {/* 도움말 */}
-            <UiCard className="mt-8 bg-gradient-to-r from-blue-500/10 to-purple-500/10 animate-slide-up delay-300">
+            <Card className="mt-8 bg-gradient-to-r from-blue-500/10 to-purple-500/10 animate-slide-up delay-300">
                 <h3 className="text-xl font-bold mb-4 text-white">💡 팁</h3>
                 <ul className="space-y-2 text-sm text-gray-400">
                     <li>• 슬롯에 같은 카테고리 AI를 배치하면 생성 시간이 단축됩니다</li>
@@ -242,7 +242,7 @@ export default function UniqueUnitPage() {
                     <li>• 유니크 유닛은 일반 카드보다 70-100% 강력합니다</li>
                     <li>• 특수 스킬은 전투에서 강력한 효과를 발휘합니다</li>
                 </ul>
-            </UiCard>
+            </Card>
         </div>
     );
 }

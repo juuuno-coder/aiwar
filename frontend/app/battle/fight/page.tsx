@@ -9,8 +9,8 @@ import { storage, generateCard } from '@/lib/utils';
 import { analyzeDeckSynergy } from '@/lib/synergy-utils';
 import gameBalanceData from '@/data/game-balance.json';
 import { getGameState, addTokens, addExperience, recordBattleResult } from '@/lib/game-state';
-import UiCard from '@/components/ui/Card';
-import Button from '@/components/ui/Button';
+import { Card } from '@/components/ui/custom/Card';
+import { Button } from '@/components/ui/custom/Button';
 
 function BattleFightContent() {
     const router = useRouter();
@@ -226,7 +226,7 @@ function BattleFightContent() {
             </div>
 
             {/* 스코어 보드 */}
-            <UiCard variant="glow" className="mb-8 animate-slide-up">
+            <Card variant="glow" className="mb-8 animate-slide-up">
                 <div className="flex items-center justify-center gap-12">
                     <div className="text-center">
                         <p className="text-sm text-gray-400 mb-2">플레이어</p>
@@ -260,7 +260,7 @@ function BattleFightContent() {
                         </div>
                     </div>
                 </div>
-            </UiCard>
+            </Card>
 
             {/* 대전 화면 */}
             {!battleEnded ? (
@@ -343,7 +343,7 @@ function BattleFightContent() {
                 </>
             ) : (
                 /* 최종 결과 */
-                <UiCard variant="glow" className="p-12 text-center animate-scale-in">
+                <Card variant="glow" className="p-12 text-center animate-scale-in">
                     <h2 className="text-5xl font-bold mb-6">
                         {playerWins > opponentWins ? (
                             <span className="text-green-400 animate-bounce">🎉 승리! 🎉</span>
@@ -362,14 +362,14 @@ function BattleFightContent() {
                         <div className="mb-8">
                             <p className="text-xl mb-4 text-white">🎁 보상</p>
                             <div className="flex items-center justify-center gap-6">
-                                <UiCard variant="gradient">
+                                <Card variant="gradient">
                                     <p className="text-sm text-gray-400">토큰</p>
                                     <p className="text-2xl font-bold text-yellow-300">+300</p>
-                                </UiCard>
-                                <UiCard variant="gradient">
+                                </Card>
+                                <Card variant="gradient">
                                     <p className="text-sm text-gray-400">경험치</p>
                                     <p className="text-2xl font-bold text-blue-300">+50</p>
-                                </UiCard>
+                                </Card>
                             </div>
                         </div>
                     )}
@@ -382,7 +382,7 @@ function BattleFightContent() {
                             메인으로
                         </Button>
                     </div>
-                </UiCard>
+                </Card>
             )}
         </div>
     );
