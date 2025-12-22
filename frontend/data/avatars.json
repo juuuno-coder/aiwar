@@ -1,0 +1,88 @@
+{
+    "avatars": [
+        {
+            "id": "gemini",
+            "name": "Gemini",
+            "faction": "Super",
+            "imageUrl": "/assets/factions/gemini.png",
+            "description": "구글의 차세대 AI"
+        },
+        {
+            "id": "chatgpt",
+            "name": "ChatGPT",
+            "faction": "Super",
+            "imageUrl": "/assets/factions/chatgpt.png",
+            "description": "OpenAI의 대화형 AI"
+        },
+        {
+            "id": "claude",
+            "name": "Claude",
+            "faction": "Super",
+            "imageUrl": "/assets/factions/claude.png",
+            "description": "Anthropic의 안전한 AI"
+        },
+        {
+            "id": "grok",
+            "name": "Grok",
+            "faction": "Super",
+            "imageUrl": "/assets/factions/grok.png",
+            "description": "xAI의 유머러스한 AI"
+        },
+        {
+            "id": "midjourney",
+            "name": "Midjourney",
+            "faction": "Image",
+            "imageUrl": "/assets/factions/midjourney.png",
+            "description": "최고의 이미지 생성 AI"
+        },
+        {
+            "id": "dalle",
+            "name": "DALL-E",
+            "faction": "Image",
+            "imageUrl": "/assets/factions/dalle.png",
+            "description": "OpenAI의 이미지 생성 AI"
+        },
+        {
+            "id": "stable-diffusion",
+            "name": "Stable Diffusion",
+            "faction": "Image",
+            "imageUrl": "/assets/factions/stable-diffusion.png",
+            "description": "오픈소스 이미지 AI"
+        },
+        {
+            "id": "flux",
+            "name": "Flux",
+            "faction": "Image",
+            "imageUrl": "/assets/factions/flux.png",
+            "description": "Black Forest Labs의 이미지 AI"
+        },
+        {
+            "id": "suno",
+            "name": "Suno",
+            "faction": "Audio",
+            "imageUrl": "/assets/factions/suno.png",
+            "description": "AI 음악 생성의 선두주자"
+        },
+        {
+            "id": "udio",
+            "name": "Udio",
+            "faction": "Audio",
+            "imageUrl": "/assets/factions/udio.png",
+            "description": "고품질 음악 생성 AI"
+        },
+        {
+            "id": "cursor",
+            "name": "Cursor",
+            "faction": "Coding",
+            "imageUrl": "/assets/factions/cursor.png",
+            "description": "AI 코딩 에디터"
+        },
+        {
+            "id": "copilot",
+            "name": "GitHub Copilot",
+            "faction": "Coding",
+            "imageUrl": "/assets/factions/copilot.png",
+            "description": "GitHub의 AI 코딩 도우미"
+        }
+    ]
+}

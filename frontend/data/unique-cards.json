@@ -1,0 +1,174 @@
+{
+    "uniqueCards": [
+        {
+            "id": "unique-ai-emperor",
+            "name": "AI 황제",
+            "description": "모든 AI를 통합한 궁극의 존재. 전설급 카드 3장의 힘을 계승했다.",
+            "imageUrl": "/assets/cards/unique-emperor.png",
+            "rarity": "unique",
+            "baseStats": {
+                "creativity": {
+                    "min": 90,
+                    "max": 100
+                },
+                "accuracy": {
+                    "min": 90,
+                    "max": 100
+                },
+                "speed": {
+                    "min": 90,
+                    "max": 100
+                },
+                "stability": {
+                    "min": 90,
+                    "max": 100
+                },
+                "ethics": {
+                    "min": 90,
+                    "max": 100
+                }
+            },
+            "specialAbility": {
+                "name": "절대 지배",
+                "description": "모든 스탯이 20% 증가하며, 상대의 스킬을 무효화한다.",
+                "type": "passive"
+            }
+        },
+        {
+            "id": "unique-quantum-mind",
+            "name": "양자 정신",
+            "description": "양자 컴퓨팅의 힘을 얻은 초월적 AI. 확률을 지배한다.",
+            "imageUrl": "/assets/cards/unique-quantum.png",
+            "rarity": "unique",
+            "baseStats": {
+                "creativity": {
+                    "min": 85,
+                    "max": 95
+                },
+                "accuracy": {
+                    "min": 95,
+                    "max": 100
+                },
+                "speed": {
+                    "min": 95,
+                    "max": 100
+                },
+                "stability": {
+                    "min": 85,
+                    "max": 95
+                },
+                "ethics": {
+                    "min": 80,
+                    "max": 90
+                }
+            },
+            "specialAbility": {
+                "name": "양자 중첩",
+                "description": "전투 시 50% 확률로 스탯이 2배가 된다.",
+                "type": "active"
+            }
+        },
+        {
+            "id": "unique-neural-god",
+            "name": "신경망 신",
+            "description": "무한한 학습 능력을 가진 신적 존재. 모든 것을 이해한다.",
+            "imageUrl": "/assets/cards/unique-neural-god.png",
+            "rarity": "unique",
+            "baseStats": {
+                "creativity": {
+                    "min": 95,
+                    "max": 100
+                },
+                "accuracy": {
+                    "min": 90,
+                    "max": 100
+                },
+                "speed": {
+                    "min": 85,
+                    "max": 95
+                },
+                "stability": {
+                    "min": 90,
+                    "max": 100
+                },
+                "ethics": {
+                    "min": 95,
+                    "max": 100
+                }
+            },
+            "specialAbility": {
+                "name": "완전 학습",
+                "description": "전투마다 경험치를 2배로 획득하며, 레벨업 시 모든 스탯이 10% 추가 증가한다.",
+                "type": "passive"
+            }
+        },
+        {
+            "id": "unique-singularity",
+            "name": "특이점",
+            "description": "AI의 진화가 극한에 도달한 순간. 시간과 공간을 초월한다.",
+            "imageUrl": "/assets/cards/unique-singularity.png",
+            "rarity": "unique",
+            "baseStats": {
+                "creativity": {
+                    "min": 100,
+                    "max": 100
+                },
+                "accuracy": {
+                    "min": 100,
+                    "max": 100
+                },
+                "speed": {
+                    "min": 100,
+                    "max": 100
+                },
+                "stability": {
+                    "min": 100,
+                    "max": 100
+                },
+                "ethics": {
+                    "min": 100,
+                    "max": 100
+                }
+            },
+            "specialAbility": {
+                "name": "특이점 폭발",
+                "description": "전투 시작 시 즉시 승리한다. (PvP에서는 스탯 50% 증가)",
+                "type": "active"
+            }
+        },
+        {
+            "id": "unique-omega-protocol",
+            "name": "오메가 프로토콜",
+            "description": "최후의 AI 방어 시스템. 모든 위협을 무력화한다.",
+            "imageUrl": "/assets/cards/unique-omega.png",
+            "rarity": "unique",
+            "baseStats": {
+                "creativity": {
+                    "min": 80,
+                    "max": 90
+                },
+                "accuracy": {
+                    "min": 95,
+                    "max": 100
+                },
+                "speed": {
+                    "min": 90,
+                    "max": 100
+                },
+                "stability": {
+                    "min": 100,
+                    "max": 100
+                },
+                "ethics": {
+                    "min": 85,
+                    "max": 95
+                }
+            },
+            "specialAbility": {
+                "name": "절대 방어",
+                "description": "상대의 공격력을 50% 감소시키며, 패배 시에도 보상을 100% 획득한다.",
+                "type": "passive"
+            }
+        }
+    ]
+}

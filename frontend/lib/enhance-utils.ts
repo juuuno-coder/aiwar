@@ -1,105 +1,161 @@
-// 카드 강화 유틸리티
+// 카드 강화 유틸리티 - 10장 소모 시스템
 
 import { Card } from './types';
-import { getGameState, updateCard, spendTokens } from './game-state';
 
 /**
- * 강화 비용 계산
- * 레벨 × 50 토큰
+ * 10장 소모 강화 시스템
+ * - 같은 카드 10장을 소모하여 1장을 레벨업
+ * - 토큰 비용 추가
+ */
+
+/**
+ * 강화 비용 계산 (토큰)
+ * 레벨에 따라 증가
  */
 export function getEnhanceCost(level: number): number {
     return level * 50;
 }
 
 /**
- * 강화 시 능력치 상승량 계산
+ * 강화 가능 여부 확인
  */
-export function getEnhanceBonus(card: Card): number {
-    const currentPower = card.stats?.totalPower || 0;
-    // 현재 전투력의 10% 상승
-    return Math.floor(currentPower * 0.1);
-}
-
-/**
- * 카드 강화 (토큰 사용)
- */
-export function enhanceCard(cardId: string): { success: boolean; message: string; card?: Card } {
-    const state = getGameState();
-    const card = state.inventory.find(c => c.id === cardId);
-
-    if (!card) {
-        return { success: false, message: '카드를 찾을 수 없습니다.' };
-    }
-
-    const cost = getEnhanceCost(card.level);
-    const spendResult = spendTokens(cost);
-
-    if (!spendResult.success) {
-        return { success: false, message: '토큰이 부족합니다.' };
-    }
-
+export function canEnhance(
+    targetCard: Card,
+    materialCards: Card[],
+    userTokens: number
+): { canEnhance: boolean; reason?: string } {
     // 최대 레벨 체크
-    if (card.level && card.level >= 10) {
-        return { success: false, message: '이미 최대 레벨입니다.' };
+    if (targetCard.level >= 10) {
+        return { canEnhance: false, reason: '이미 최대 레벨입니다.' };
     }
 
-    // 능력치 상승
-    const bonus = getEnhanceBonus(card);
-    const newLevel = (card.level || 1) + 1;
+    // 재료 카드 개수 체크
+    if (materialCards.length !== 10) {
+        return { canEnhance: false, reason: '재료 카드가 10장 필요합니다.' };
+    }
 
-    const updatedCard: Card = {
-        ...card,
-        level: newLevel,
-        stats: card.stats ? {
-            ...card.stats,
-            totalPower: card.stats.totalPower + bonus
-        } : card.stats
-    };
+    // 같은 카드인지 확인 (templateId 기준)
+    const targetTemplateId = targetCard.templateId;
+    const allSameCard = materialCards.every(card => card.templateId === targetTemplateId);
 
-    // 카드 업데이트
-    updateCard(cardId, updatedCard);
+    if (!allSameCard) {
+        return { canEnhance: false, reason: '같은 종류의 카드만 재료로 사용할 수 있습니다.' };
+    }
+
+    // 토큰 체크
+    const cost = getEnhanceCost(targetCard.level);
+    if (userTokens < cost) {
+        return { canEnhance: false, reason: `토큰이 부족합니다. (필요: ${cost})` };
+    }
+
+    return { canEnhance: true };
+}
+
+/**
+ * 강화 시 스탯 증가량 계산
+ * 레벨업 시 모든 스탯 5% 증가
+ */
+export function calculateEnhancedStats(card: Card): Card['stats'] {
+    const multiplier = 1.05; // 5% 증가
 
     return {
-        success: true,
-        message: `강화 성공! 레벨 ${newLevel}로 상승했습니다.`,
-        card: updatedCard
+        creativity: Math.floor((card.stats.creativity || 0) * multiplier),
+        accuracy: Math.floor((card.stats.accuracy || 0) * multiplier),
+        speed: Math.floor((card.stats.speed || 0) * multiplier),
+        stability: Math.floor((card.stats.stability || 0) * multiplier),
+        ethics: Math.floor((card.stats.ethics || 0) * multiplier),
+        totalPower: Math.floor(card.stats.totalPower * multiplier),
+        efficiency: card.stats.efficiency ? Math.floor(card.stats.efficiency * multiplier) : undefined,
+        function: card.stats.function ? Math.floor(card.stats.function * multiplier) : undefined,
+        cost: card.stats.cost ? Math.floor(card.stats.cost * multiplier) : undefined
     };
 }
 
 /**
- * 경험치로 카드 강화
+ * 카드 강화 실행
  */
-export function enhanceCardWithExp(cardId: string, expAmount: number): {
-    success: boolean;
-    message: string;
-    card?: Card;
-} {
-    const state = getGameState();
-    const card = state.inventory.find(c => c.id === cardId);
-
-    if (!card) {
-        return { success: false, message: '카드를 찾을 수 없습니다.' };
-    }
-
-    const currentExp = card.experience || 0;
-    const newExp = currentExp + expAmount;
-    const newLevel = Math.floor(newExp / 100) + 1;
-
-    if (newLevel > 10) {
-        return { success: false, message: '최대 레벨을 초과할 수 없습니다.' };
-    }
-
-    const updatedCard: Card = {
-        ...card,
-        experience: newExp,
-        level: newLevel
-    };
-
-    updateCard(cardId, updatedCard);
+export function enhanceCard(
+    targetCard: Card,
+    materialCards: Card[]
+): Card {
+    const newLevel = targetCard.level + 1;
+    const newStats = calculateEnhancedStats(targetCard);
 
     return {
-        success: true,
-        message: `경험치 ${expAmount} 획득!`,
-        card: updatedCard
+        ...targetCard,
+        level: newLevel,
+        stats: newStats,
+        experience: 0 // 경험치 초기화
     };
+}
+
+/**
+ * 강화 미리보기
+ */
+export function getEnhancePreview(card: Card): {
+    currentLevel: number;
+    nextLevel: number;
+    currentStats: Card['stats'];
+    nextStats: Card['stats'];
+    cost: number;
+    materialsNeeded: number;
+} {
+    return {
+        currentLevel: card.level,
+        nextLevel: card.level + 1,
+        currentStats: card.stats,
+        nextStats: calculateEnhancedStats(card),
+        cost: getEnhanceCost(card.level),
+        materialsNeeded: 10
+    };
+}
+
+/**
+ * 재료 카드 검증
+ */
+export function validateMaterialCards(
+    targetCard: Card,
+    materialCards: Card[]
+): { valid: boolean; invalidCards: Card[]; reason?: string } {
+    const invalidCards: Card[] = [];
+
+    // 대상 카드가 재료에 포함되어 있는지 확인
+    if (materialCards.some(card => card.id === targetCard.id)) {
+        return {
+            valid: false,
+            invalidCards: [],
+            reason: '강화 대상 카드는 재료로 사용할 수 없습니다.'
+        };
+    }
+
+    // 같은 templateId인지 확인
+    materialCards.forEach(card => {
+        if (card.templateId !== targetCard.templateId) {
+            invalidCards.push(card);
+        }
+    });
+
+    if (invalidCards.length > 0) {
+        return {
+            valid: false,
+            invalidCards,
+            reason: '같은 종류의 카드만 재료로 사용할 수 있습니다.'
+        };
+    }
+
+    return { valid: true, invalidCards: [] };
+}
+
+/**
+ * 강화 성공률 계산 (항상 100%, 하지만 확장 가능)
+ */
+export function getEnhanceSuccessRate(targetCard: Card, materialCards: Card[]): number {
+    // 기본 100% 성공
+    let baseRate = 100;
+
+    // 재료 카드의 평균 레벨이 높으면 보너스 (미래 확장용)
+    const avgLevel = materialCards.reduce((sum, card) => sum + card.level, 0) / materialCards.length;
+    const levelBonus = Math.min(avgLevel * 0.5, 5); // 최대 +5%
+
+    return Math.min(baseRate + levelBonus, 100);
 }

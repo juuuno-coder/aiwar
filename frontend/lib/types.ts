@@ -1,9 +1,10 @@
 // 게임 타입 정의
 
-export type Rarity = 'common' | 'rare' | 'epic' | 'legendary';
+export type Rarity = 'common' | 'rare' | 'epic' | 'legendary' | 'unique' | 'commander';
 export type Specialty = 'text' | 'image' | 'video' | 'music' | 'voice' | 'code';
 export type CardType = 'normal' | 'automated';
 export type AIType = 'EFFICIENCY' | 'CREATIVITY' | 'COST';
+export type BattleMode = '1-card' | '3-card' | '5-card';
 
 export interface Stats {
     creativity?: number;
@@ -65,7 +66,7 @@ export interface Card {
     level: number;
     experience: number;
     stats: Stats; // Assuming CardStats is a typo and should be Stats
-    rarity?: 'common' | 'rare' | 'epic' | 'legendary';
+    rarity?: Rarity;
     acquiredAt: Date;
     isLocked: boolean;
     isUnique?: boolean; // 유니크 유닛 여부
