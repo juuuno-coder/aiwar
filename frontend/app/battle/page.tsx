@@ -2,15 +2,15 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { motion } from 'framer-motion';
+import CyberPageLayout from '@/components/CyberPageLayout';
 import GameCard from '@/components/GameCard';
 import { Card as CardType, BattleGenre } from '@/lib/types';
 import { storage } from '@/lib/utils';
 import { analyzeDeckSynergy, getFactionDisplayName } from '@/lib/synergy-utils';
 import gameBalanceData from '@/data/game-balance.json';
-import { Card } from '@/components/ui/custom/Card';
-import { Button } from '@/components/ui/custom/Button';
 import { HoverBorderGradient } from '@/components/ui/aceternity/hover-border-gradient';
-import { BackgroundBeams } from '@/components/ui/aceternity/background-beams';
+import { cn } from '@/lib/utils';
 
 export default function BattlePage() {
     const router = useRouter();
@@ -21,7 +21,6 @@ export default function BattlePage() {
     useEffect(() => {
         const savedCards = storage.get<CardType[]>('userCards', []);
         setCards(savedCards);
-
         const genres = gameBalanceData.battleGenres;
         const randomGenre = genres[Math.floor(Math.random() * genres.length)];
         setBattleGenre(randomGenre as BattleGenre);
@@ -40,7 +39,6 @@ export default function BattlePage() {
             alert('5장의 카드를 선택해주세요!');
             return;
         }
-
         const cardIds = selectedCards.join(',');
         router.push(`/battle/fight?cards=${cardIds}&genre=${battleGenre?.id}`);
     };
@@ -49,146 +47,123 @@ export default function BattlePage() {
     const synergy = selectedCards.length > 0 ? analyzeDeckSynergy(selectedCardObjects) : null;
 
     return (
-        <div className="relative min-h-screen p-8 bg-slate-950 overflow-hidden">
-            <BackgroundBeams className="opacity-20" />
-            <div className="relative z-10">
-                {/* 헤더 */}
-                <div className="mb-8 animate-slide-down">
-                    <h1 className="text-4xl font-bold text-gradient mb-2">
-                        ⚔️ 대전
-                    </h1>
-                    <p className="text-lg text-gray-400">
-                        5장의 카드를 선택하여 5전 3선승제 대전을 시작하세요
-                    </p>
+        <CyberPageLayout
+            title="COMBAT_ARENA"
+            subtitle="Battle Protocol"
+            description="5장의 유닛 카드를 선택하여 5전 3선승제 전투를 시작하세요. 시너지 보너스를 활용하면 승률이 높아집니다."
+            color="red"
+        >
+            {/* Battle Genre */}
+            {battleGenre && (
+                <motion.div
+                    initial={{ opacity: 0, y: -20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="bg-gradient-to-r from-red-500/10 to-orange-500/10 border border-red-500/30 rounded-xl p-6 mb-8 text-center"
+                >
+                    <p className="text-[9px] font-mono text-white/40 uppercase tracking-widest mb-2">TODAY'S_GENRE</p>
+                    <h2 className="text-2xl font-black orbitron text-red-400 mb-2">{battleGenre.name}</h2>
+                    <p className="text-sm text-white/50">{battleGenre.description}</p>
+                </motion.div>
+            )}
+
+            {/* Selection Status & Start Button */}
+            <div className="flex items-center justify-between mb-8">
+                <div className="flex items-center gap-4">
+                    <span className="text-sm font-mono text-white/60">
+                        SELECTED: <span className={cn("font-bold", selectedCards.length === 5 ? "text-green-400" : "text-cyan-400")}>{selectedCards.length}/5</span>
+                    </span>
+                    {selectedCards.length > 0 && (
+                        <button
+                            onClick={() => setSelectedCards([])}
+                            className="px-3 py-1 text-[10px] font-mono uppercase tracking-widest bg-white/5 border border-white/10 text-white/40 rounded hover:text-white hover:border-white/20 transition-all"
+                        >
+                            RESET
+                        </button>
+                    )}
                 </div>
-
-                {/* 대전 장르 */}
-                {battleGenre && (
-                    <Card variant="glow" className="mb-8 text-center animate-slide-up">
-                        <h2 className="text-2xl font-bold mb-2">
-                            오늘의 대전 장르
-                        </h2>
-                        <p className="text-3xl font-bold text-gradient mb-2">
-                            {battleGenre.name}
-                        </p>
-                        <p className="text-sm text-gray-400">
-                            {battleGenre.description}
-                        </p>
-                    </Card>
-                )}
-
-                {/* 선택 상태 & 시작 버튼 */}
-                <div className="mb-6 flex items-center justify-between animate-slide-up delay-100">
-                    <div className="flex items-center gap-4">
-                        <div className="text-lg">
-                            선택된 카드: <span className="font-bold text-blue-400">{selectedCards.length}/5</span>
-                        </div>
-                        {selectedCards.length > 0 && (
-                            <Button
-                                color="secondary"
-                                size="sm"
-                                onClick={() => setSelectedCards([])}
-                            >
-                                선택 초기화
-                            </Button>
-                        )}
-                    </div>
-                    <div className="flex-1 max-w-xs">
-                        {selectedCards.length === 5 ? (
-                            <HoverBorderGradient
-                                onClick={startBattle}
-                                className="w-full py-3 h-full px-8"
-                                containerClassName="w-full"
-                                duration={2}
-                            >
-                                <span className="font-bold text-white whitespace-nowrap">대전 시작 ⚔️</span>
-                            </HoverBorderGradient>
-                        ) : (
-                            <Button
-                                color="primary"
-                                onClick={startBattle}
-                                disabled={true}
-                                size="lg"
-                                className="w-full opacity-50 cursor-not-allowed"
-                            >
-                                대전 시작 ⚔️
-                            </Button>
-                        )}
-                    </div>
+                <div className="w-48">
+                    {selectedCards.length === 5 ? (
+                        <HoverBorderGradient
+                            onClick={startBattle}
+                            className="w-full py-3"
+                            containerClassName="w-full"
+                        >
+                            <span className="font-mono text-sm uppercase tracking-widest text-white">ENGAGE ⚔️</span>
+                        </HoverBorderGradient>
+                    ) : (
+                        <button disabled className="w-full py-3 bg-white/5 border border-white/10 text-white/30 rounded text-sm font-mono uppercase tracking-widest cursor-not-allowed">
+                            SELECT 5 UNITS
+                        </button>
+                    )}
                 </div>
+            </div>
 
-                {/* 시너지 정보 */}
-                {synergy && synergy.activeSynergies.length > 0 && (
-                    <Card variant="glow" className="mb-6 animate-fade-in">
-                        <h3 className="text-xl font-bold mb-4">
-                            ✨ 시너지 보너스
-                        </h3>
-                        <div className="space-y-3">
-                            {synergy.activeSynergies.map((s, index) => (
-                                <div key={index} className="flex items-center justify-between">
-                                    <div className="flex items-center gap-3">
-                                        <span className="text-2xl">🤖</span>
-                                        <div>
-                                            <p className="font-bold text-white">{getFactionDisplayName(s.faction)}</p>
-                                            <p className="text-sm text-gray-400">
-                                                {s.count}장 사용 중
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <div className="text-right">
-                                        <p className="text-2xl font-bold text-green-400">
-                                            +{((s.bonus - 1) * 100).toFixed(0)}%
-                                        </p>
+            {/* Synergy Info */}
+            {synergy && synergy.activeSynergies.length > 0 && (
+                <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="bg-gradient-to-r from-purple-500/10 to-pink-500/10 border border-purple-500/30 rounded-xl p-6 mb-8"
+                >
+                    <h3 className="text-sm font-mono text-purple-400 uppercase tracking-widest mb-4">SYNERGY_BONUS</h3>
+                    <div className="space-y-3">
+                        {synergy.activeSynergies.map((s, i) => (
+                            <div key={i} className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <span className="text-xl">🤖</span>
+                                    <div>
+                                        <p className="font-bold text-white">{getFactionDisplayName(s.faction)}</p>
+                                        <p className="text-[10px] text-white/40 font-mono">{s.count} UNITS</p>
                                     </div>
                                 </div>
-                            ))}
-                        </div>
-                        <div className="mt-4 pt-4 border-t border-purple-500">
-                            <div className="flex items-center justify-between">
-                                <span className="font-bold text-white">총 보너스</span>
-                                <span className="text-2xl font-bold text-gradient">
-                                    +{((synergy.totalBonus - 1) * 100).toFixed(0)}%
-                                </span>
-                            </div>
-                        </div>
-                    </Card>
-                )}
-
-                {/* 카드 그리드 */}
-                {cards.length === 0 ? (
-                    <Card className="p-12 text-center">
-                        <p className="text-xl text-gray-400 mb-4">보유한 카드가 없습니다</p>
-                        <Button
-                            color="primary"
-                            onClick={() => router.push('/shop')}
-                        >
-                            상점으로 가기 🛒
-                        </Button>
-                    </Card>
-                ) : (
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-                        {cards.map((card, index) => (
-                            <div
-                                key={card.id}
-                                onClick={() => toggleCardSelection(card.id)}
-                                className={`cursor-pointer transition-all transform hover:scale-105 animate-slide-up delay-${(index % 10) * 50} ${selectedCards.includes(card.id)
-                                    ? 'ring-4 ring-blue-500 scale-105'
-                                    : ''
-                                    }`}
-                            >
-                                <GameCard card={card} />
-                                {selectedCards.includes(card.id) && (
-                                    <div className="mt-2 text-center">
-                                        <span className="bg-blue-600 text-white px-3 py-1 rounded-full text-sm font-bold">
-                                            선택됨 ✓
-                                        </span>
-                                    </div>
-                                )}
+                                <span className="text-xl font-bold text-green-400">+{((s.bonus - 1) * 100).toFixed(0)}%</span>
                             </div>
                         ))}
                     </div>
-                )}
-            </div>
-        </div>
+                    <div className="mt-4 pt-4 border-t border-white/10 flex items-center justify-between">
+                        <span className="font-mono text-white/60">TOTAL_BONUS</span>
+                        <span className="text-2xl font-black orbitron text-green-400">+{((synergy.totalBonus - 1) * 100).toFixed(0)}%</span>
+                    </div>
+                </motion.div>
+            )}
+
+            {/* Card Grid */}
+            {cards.length === 0 ? (
+                <div className="text-center py-20">
+                    <p className="text-white/30 mb-4 font-mono">NO_UNITS_AVAILABLE</p>
+                    <button
+                        onClick={() => router.push('/shop')}
+                        className="px-6 py-3 bg-red-500/20 border border-red-500/50 text-red-400 rounded-lg text-sm font-mono uppercase tracking-widest hover:bg-red-500/30 transition-all"
+                    >
+                        VISIT_MARKET 🛒
+                    </button>
+                </div>
+            ) : (
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                    {cards.map((card, i) => (
+                        <motion.div
+                            key={card.id}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: i * 0.02 }}
+                            onClick={() => toggleCardSelection(card.id)}
+                            className={cn(
+                                "cursor-pointer transition-all",
+                                selectedCards.includes(card.id) && "ring-2 ring-red-500 scale-105"
+                            )}
+                        >
+                            <GameCard card={card} />
+                            {selectedCards.includes(card.id) && (
+                                <div className="mt-2 text-center">
+                                    <span className="px-3 py-1 bg-red-500/20 border border-red-500/50 text-red-400 rounded text-[10px] font-mono uppercase">
+                                        SELECTED ✓
+                                    </span>
+                                </div>
+                            )}
+                        </motion.div>
+                    ))}
+                </div>
+            )}
+        </CyberPageLayout>
     );
 }

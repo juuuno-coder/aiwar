@@ -1,12 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { Card as CardType } from '@/lib/types';
 import { canEnhance, enhanceCard, getEnhanceCost, getEnhancePreview } from '@/lib/enhance-utils';
-import { Card } from '@/components/ui/custom/Card';
-import { Button } from '@/components/ui/custom/Button';
+import CyberPageLayout from '@/components/CyberPageLayout';
 import GameCard from '@/components/GameCard';
 import { HoverBorderGradient } from '@/components/ui/aceternity/hover-border-gradient';
+import { cn } from '@/lib/utils';
 
 export default function EnhancePage() {
     const [allCards, setAllCards] = useState<CardType[]>([]);
@@ -34,7 +35,6 @@ export default function EnhancePage() {
 
     const handleToggleMaterial = (card: CardType) => {
         if (card.id === targetCard?.id) return;
-
         if (materialCards.find(c => c.id === card.id)) {
             setMaterialCards(prev => prev.filter(c => c.id !== card.id));
         } else {
@@ -45,7 +45,6 @@ export default function EnhancePage() {
 
     const handleEnhance = async () => {
         if (!targetCard || materialCards.length !== 10) return;
-
         const check = canEnhance(targetCard, materialCards, userTokens);
         if (!check.canEnhance) {
             alert(check.reason);
@@ -53,25 +52,16 @@ export default function EnhancePage() {
         }
 
         const { gameStorage } = await import('@/lib/game-storage');
-
-        // 강화 실행
         const enhancedCard = enhanceCard(targetCard, materialCards);
         const cost = getEnhanceCost(targetCard.level);
 
-        // 재료 카드 삭제
         for (const mat of materialCards) {
             await gameStorage.deleteCard(mat.id);
         }
-
-        // 강화된 카드 업데이트
         await gameStorage.updateCard(enhancedCard.id, enhancedCard);
-
-        // 토큰 차감
         await gameStorage.addTokens(-cost);
 
         alert(`강화 성공! 레벨 ${enhancedCard.level}로 상승!`);
-
-        // 리셋
         setTargetCard(null);
         setMaterialCards([]);
         await loadCards();
@@ -80,87 +70,107 @@ export default function EnhancePage() {
     const preview = targetCard && materialCards.length === 10 ? getEnhancePreview(targetCard) : null;
 
     return (
-        <div className="min-h-screen p-8 bg-[#050505]">
-            <h1 className="text-4xl font-bold text-gradient mb-2">⚡ 카드 강화</h1>
-            <p className="text-gray-400 mb-8">같은 카드 10장을 소모하여 레벨업</p>
-
-            <div className="grid grid-cols-12 gap-8">
-                {/* 왼쪽: 대상 카드 */}
-                <div className="col-span-4">
-                    <Card className="p-6">
-                        <h3 className="text-xl font-bold mb-4">강화 대상</h3>
-                        {targetCard ? (
-                            <div>
+        <CyberPageLayout
+            title="ENHANCE_PROTOCOL"
+            subtitle="Unit Upgrade"
+            description="같은 유닛 카드 10장을 소모하여 레벨업합니다. 레벨이 올라갈수록 전투력이 상승합니다."
+            color="amber"
+        >
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Target Card */}
+                <motion.div
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    className="bg-white/5 border border-white/10 rounded-xl p-6"
+                >
+                    <h3 className="text-sm font-mono text-amber-400 uppercase tracking-widest mb-4">TARGET_UNIT</h3>
+                    {targetCard ? (
+                        <div className="space-y-4">
+                            <div className="flex justify-center">
                                 <GameCard card={targetCard} />
-                                <Button
-                                    color="danger"
-                                    size="sm"
-                                    onClick={() => setTargetCard(null)}
-                                    className="w-full mt-4"
-                                >
-                                    취소
-                                </Button>
                             </div>
-                        ) : (
-                            <p className="text-gray-500 text-center py-12">대상 카드를 선택하세요</p>
-                        )}
-
-                        {preview && (
-                            <div className="mt-6 p-4 bg-blue-500/10 rounded-lg">
-                                <p className="text-sm text-gray-400">미리보기</p>
-                                <p className="text-lg font-bold">Lv.{preview.currentLevel} → Lv.{preview.nextLevel}</p>
-                                <p className="text-sm">전투력: {preview.currentStats.totalPower} → {preview.nextStats.totalPower}</p>
-                                <p className="text-sm text-yellow-400">비용: {preview.cost} 토큰</p>
-                            </div>
-                        )}
-                    </Card>
-                </div>
-
-                {/* 중앙: 재료 카드 */}
-                <div className="col-span-4">
-                    <Card className="p-6">
-                        <h3 className="text-xl font-bold mb-4">재료 카드 ({materialCards.length}/10)</h3>
-                        <div className="grid grid-cols-2 gap-2 max-h-[600px] overflow-y-auto">
-                            {materialCards.map(card => (
-                                <div key={card.id} onClick={() => handleToggleMaterial(card)} className="cursor-pointer">
-                                    <GameCard card={card} />
-                                </div>
-                            ))}
-                        </div>
-                        {materialCards.length === 10 && (
-                            <HoverBorderGradient
-                                onClick={handleEnhance}
-                                className="w-full py-3 h-full"
-                                containerClassName="w-full mt-4 text-white"
-                                duration={2}
+                            <button
+                                onClick={() => setTargetCard(null)}
+                                className="w-full py-2 bg-red-500/20 border border-red-500/50 text-red-400 rounded text-[10px] font-mono uppercase tracking-widest hover:bg-red-500/30 transition-all"
                             >
-                                <span className="font-bold">강화하기 ⚡</span>
-                            </HoverBorderGradient>
-                        )}
-                    </Card>
-                </div>
-
-                {/* 오른쪽: 카드 목록 */}
-                <div className="col-span-4">
-                    <Card className="p-6">
-                        <h3 className="text-xl font-bold mb-4">카드 목록</h3>
-                        <div className="grid grid-cols-2 gap-2 max-h-[600px] overflow-y-auto">
-                            {allCards.map(card => (
-                                <div
-                                    key={card.id}
-                                    onClick={() => targetCard ? handleToggleMaterial(card) : handleSelectTarget(card)}
-                                    className={`cursor-pointer transition-all ${card.id === targetCard?.id ? 'ring-4 ring-blue-500' :
-                                        materialCards.find(c => c.id === card.id) ? 'ring-4 ring-red-500' :
-                                            'hover:scale-105'
-                                        }`}
-                                >
-                                    <GameCard card={card} />
-                                </div>
-                            ))}
+                                CANCEL_SELECTION
+                            </button>
                         </div>
-                    </Card>
-                </div>
+                    ) : (
+                        <div className="py-16 text-center text-white/30 font-mono text-sm">
+                            SELECT_TARGET_UNIT
+                        </div>
+                    )}
+
+                    {preview && (
+                        <div className="mt-6 p-4 bg-amber-500/10 border border-amber-500/30 rounded-lg">
+                            <p className="text-[9px] font-mono text-white/40 uppercase tracking-widest mb-2">PREVIEW</p>
+                            <p className="text-lg font-bold text-white">LV.{preview.currentLevel} → LV.{preview.nextLevel}</p>
+                            <p className="text-sm text-white/60">PWR: {preview.currentStats.totalPower} → {preview.nextStats.totalPower}</p>
+                            <p className="text-sm text-amber-400 mt-2">COST: {preview.cost} TOKEN</p>
+                        </div>
+                    )}
+                </motion.div>
+
+                {/* Material Cards */}
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.1 }}
+                    className="bg-white/5 border border-white/10 rounded-xl p-6"
+                >
+                    <h3 className="text-sm font-mono text-purple-400 uppercase tracking-widest mb-4">
+                        MATERIAL_UNITS ({materialCards.length}/10)
+                    </h3>
+                    <div className="grid grid-cols-2 gap-2 max-h-[500px] overflow-y-auto mb-4">
+                        {materialCards.map(card => (
+                            <div key={card.id} onClick={() => handleToggleMaterial(card)} className="cursor-pointer hover:opacity-70 transition-opacity">
+                                <GameCard card={card} />
+                            </div>
+                        ))}
+                        {materialCards.length < 10 && (
+                            <div className="aspect-[2/3] border border-dashed border-white/10 rounded-lg flex items-center justify-center text-white/20 text-sm font-mono">
+                                +{10 - materialCards.length}
+                            </div>
+                        )}
+                    </div>
+                    {materialCards.length === 10 && (
+                        <HoverBorderGradient
+                            onClick={handleEnhance}
+                            className="w-full py-3"
+                            containerClassName="w-full"
+                            duration={2}
+                        >
+                            <span className="font-bold text-white font-mono uppercase tracking-widest">EXECUTE_ENHANCE ⚡</span>
+                        </HoverBorderGradient>
+                    )}
+                </motion.div>
+
+                {/* Card List */}
+                <motion.div
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.2 }}
+                    className="bg-white/5 border border-white/10 rounded-xl p-6"
+                >
+                    <h3 className="text-sm font-mono text-cyan-400 uppercase tracking-widest mb-4">AVAILABLE_UNITS</h3>
+                    <div className="grid grid-cols-2 gap-2 max-h-[600px] overflow-y-auto">
+                        {allCards.map(card => (
+                            <div
+                                key={card.id}
+                                onClick={() => targetCard ? handleToggleMaterial(card) : handleSelectTarget(card)}
+                                className={cn(
+                                    "cursor-pointer transition-all",
+                                    card.id === targetCard?.id && "ring-2 ring-amber-500",
+                                    materialCards.find(c => c.id === card.id) && "ring-2 ring-purple-500 opacity-50"
+                                )}
+                            >
+                                <GameCard card={card} />
+                            </div>
+                        ))}
+                    </div>
+                </motion.div>
             </div>
-        </div>
+        </CyberPageLayout>
     );
 }
