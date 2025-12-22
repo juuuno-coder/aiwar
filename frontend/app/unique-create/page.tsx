@@ -7,6 +7,7 @@ import { Card } from '@/components/ui/custom/Card';
 import { Button } from '@/components/ui/custom/Button';
 import GameCard from '@/components/GameCard';
 import { HoverBorderGradient } from '@/components/ui/aceternity/hover-border-gradient';
+import CyberPageLayout from '@/components/CyberPageLayout';
 
 export default function UniqueCreatePage() {
     const [allCards, setAllCards] = useState<CardType[]>([]);
@@ -84,9 +85,12 @@ export default function UniqueCreatePage() {
     const templates = getUniqueCardTemplates();
 
     return (
-        <div className="min-h-screen p-8 bg-[#050505]">
-            <h1 className="text-4xl font-bold text-gradient mb-2">✨ 유니크 카드 생성</h1>
-            <p className="text-gray-400 mb-8">전설급 카드 3장(레벨 10)을 소모하여 유니크 카드 생성</p>
+        <CyberPageLayout
+            title="UNIQUE_CREATION"
+            subtitle="Ultimate Card Synthesis"
+            description="전설급 카드 3장(레벨 10)을 소모하여 유니크 카드 생성"
+            color="red"
+        >
 
             <div className="grid grid-cols-2 gap-8">
                 {/* 왼쪽: 재료 카드 */}
@@ -162,6 +166,6 @@ export default function UniqueCreatePage() {
                     </Card>
                 </div>
             </div>
-        </div>
+        </CyberPageLayout>
     );
 }

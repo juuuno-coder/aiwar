@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import {
     getAllFactions,
     getSlots,
@@ -15,6 +16,8 @@ import { CATEGORY_COLORS, CATEGORY_ICONS, CATEGORY_NAMES } from '@/lib/faction-t
 import { getGameState } from '@/lib/game-state';
 import { Card } from '@/components/ui/custom/Card';
 import { Button } from '@/components/ui/custom/Button';
+import CyberPageLayout from '@/components/CyberPageLayout';
+import { cn } from '@/lib/utils';
 
 export default function SlotsPage() {
     const [factions, setFactions] = useState<AIFaction[]>([]);
@@ -102,16 +105,12 @@ export default function SlotsPage() {
     };
 
     return (
-        <div className="h-full">
-            {/* 헤더 */}
-            <div className="mb-8 animate-slide-down">
-                <h1 className="text-4xl font-bold text-gradient mb-2">
-                    🎰 슬롯 시스템
-                </h1>
-                <p className="text-lg text-gray-400">
-                    AI 군단을 슬롯에 배치하여 최대 +120% 시너지 효과를 얻으세요
-                </p>
-            </div>
+        <CyberPageLayout
+            title="SLOT_SYSTEM"
+            subtitle="AI Legion Deployment"
+            description="AI 군단을 슬롯에 배치하여 최대 +120% 시너지 효과를 얻으세요"
+            color="amber"
+        >
 
             {/* 상단 정보 */}
             <div className="grid grid-cols-4 gap-4 mb-8">
@@ -371,6 +370,6 @@ export default function SlotsPage() {
                     );
                 })}
             </Card>
-        </div>
+        </CyberPageLayout>
     );
 }
