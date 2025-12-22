@@ -14,6 +14,8 @@ export default function GameCard({ card, onClick, isSelected = false, isDisabled
         rare: 'var(--rarity-rare)',
         epic: 'var(--rarity-epic)',
         legendary: 'var(--rarity-legendary)',
+        unique: 'var(--rarity-unique, #EF4444)',
+        commander: 'var(--rarity-commander, #10B981)'
     };
 
     const rarityGlow: Record<Rarity, string> = {
@@ -21,6 +23,8 @@ export default function GameCard({ card, onClick, isSelected = false, isDisabled
         rare: 'card-rare',
         epic: 'card-epic',
         legendary: 'card-legendary',
+        unique: 'card-unique',
+        commander: 'card-commander'
     };
 
     // 임시로 rarity를 'rare'로 설정 (실제로는 card template에서 가져와야 함)
@@ -137,6 +141,8 @@ function getRarityStars(rarity: Rarity): number {
         rare: 2,
         epic: 3,
         legendary: 4,
+        unique: 5,
+        commander: 6
     };
     return stars[rarity];
 }

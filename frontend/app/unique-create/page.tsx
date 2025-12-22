@@ -19,15 +19,16 @@ export default function UniqueCreatePage() {
 
     const loadCards = async () => {
         const { gameStorage } = await import('@/lib/game-storage');
+        const { getGameState } = await import('@/lib/game-state');
         const cards = await gameStorage.getCards();
-        const profile = await gameStorage.getUserProfile();
+        const state = getGameState();
 
         // 전설급 카드만 필터링
         const legendary = cards.filter(c => c.rarity === 'legendary');
 
         setAllCards(cards);
         setLegendaryCards(legendary);
-        setUserTokens(profile.tokens);
+        setUserTokens(state.tokens || 0);
     };
 
     const handleToggleMaterial = (card: CardType) => {
@@ -52,10 +53,9 @@ export default function UniqueCreatePage() {
         }
 
         const { gameStorage } = await import('@/lib/game-storage');
-        const profile = await gameStorage.getUserProfile();
 
         // 유니크 카드 생성
-        const result = createUniqueCard(materialCards, profile.uid);
+        const result = createUniqueCard(materialCards, 'guest');
 
         if (!result.success || !result.card) {
             alert(result.message);
@@ -146,8 +146,8 @@ export default function UniqueCreatePage() {
                                     key={card.id}
                                     onClick={() => handleToggleMaterial(card)}
                                     className={`cursor-pointer transition-all ${materialCards.find(c => c.id === card.id) ? 'ring-4 ring-red-500' :
-                                            card.level < 10 ? 'opacity-50' :
-                                                'hover:scale-105'
+                                        card.level < 10 ? 'opacity-50' :
+                                            'hover:scale-105'
                                         }`}
                                 >
                                     <GameCard card={card} />

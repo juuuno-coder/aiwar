@@ -87,6 +87,50 @@
                 "min": 55,
                 "max": 70
             }
+        },
+        "unique": {
+            "creativity": {
+                "min": 68,
+                "max": 85
+            },
+            "accuracy": {
+                "min": 68,
+                "max": 85
+            },
+            "speed": {
+                "min": 68,
+                "max": 85
+            },
+            "stability": {
+                "min": 68,
+                "max": 85
+            },
+            "ethics": {
+                "min": 68,
+                "max": 85
+            }
+        },
+        "commander": {
+            "creativity": {
+                "min": 80,
+                "max": 100
+            },
+            "accuracy": {
+                "min": 80,
+                "max": 100
+            },
+            "speed": {
+                "min": 80,
+                "max": 100
+            },
+            "stability": {
+                "min": 80,
+                "max": 100
+            },
+            "ethics": {
+                "min": 80,
+                "max": 100
+            }
         }
     },
     "fusionCosts": {

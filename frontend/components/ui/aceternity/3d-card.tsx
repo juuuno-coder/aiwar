@@ -1,97 +1,97 @@
 "use client";
 
-import { cn } from "@/lib/utils";
-import React, {
-    createContext,
-    useState,
-    useContext,
-    useRef,
-    useEffect,
-} from "react";
+import { useMotionValue, useSpring, useTransform, motion } from "framer-motion";
+import React, { useState, useRef } from "react";
 
-const MouseEnterContext = createContext<
-    [boolean, React.Dispatch<React.SetStateAction<boolean>>] | undefined
->(undefined);
-
-export const CardContainer = ({
+export const Card3D = ({
     children,
     className,
     containerClassName,
 }: {
-    children?: React.ReactNode;
+    children: React.ReactNode;
     className?: string;
     containerClassName?: string;
 }) => {
-    const containerRef = useRef<HTMLDivElement>(null);
-    const [isMouseEnter, setIsMouseEnter] = useState(false);
+    const ref = useRef<HTMLDivElement>(null);
+    const [isHovered, setIsHovered] = useState(false);
+
+    const x = useMotionValue(0);
+    const y = useMotionValue(0);
+
+    const mouseXSpring = useSpring(x);
+    const mouseYSpring = useSpring(y);
+
+    const rotateX = useTransform(
+        mouseYSpring,
+        [-0.5, 0.5],
+        ["17.5deg", "-17.5deg"]
+    );
+    const rotateY = useTransform(
+        mouseXSpring,
+        [-0.5, 0.5],
+        ["-17.5deg", "17.5deg"]
+    );
 
     const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-        if (!containerRef.current) return;
-        const { left, top, width, height } =
-            containerRef.current.getBoundingClientRect();
-        const x = (e.clientX - left - width / 2) / 25;
-        const y = (e.clientY - top - height / 2) / 25;
-        containerRef.current.style.transform = `rotateY(${x}deg) rotateX(${-y}deg)`;
+        if (!ref.current) return;
+
+        const rect = ref.current.getBoundingClientRect();
+
+        const width = rect.width;
+        const height = rect.height;
+
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+
+        const xPct = mouseX / width - 0.5;
+        const yPct = mouseY / height - 0.5;
+
+        x.set(xPct);
+        y.set(yPct);
     };
 
-    const handleMouseEnter = (e: React.MouseEvent<HTMLDivElement>) => {
-        setIsMouseEnter(true);
-        if (!containerRef.current) return;
-    };
-
-    const handleMouseLeave = (e: React.MouseEvent<HTMLDivElement>) => {
-        if (!containerRef.current) return;
-        setIsMouseEnter(false);
-        containerRef.current.style.transform = `rotateY(0deg) rotateX(0deg)`;
+    const handleMouseLeave = () => {
+        x.set(0);
+        y.set(0);
+        setIsHovered(false);
     };
 
     return (
-        <MouseEnterContext.Provider value={[isMouseEnter, setIsMouseEnter]}>
+        <motion.div
+            ref={ref}
+            onMouseMove={handleMouseMove}
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={handleMouseLeave}
+            style={{
+                rotateY,
+                rotateX,
+                transformStyle: "preserve-3d",
+            }}
+            className={containerClassName}
+        >
             <div
-                className={cn(
-                    "flex items-center justify-center",
-                    containerClassName
-                )}
                 style={{
-                    perspective: "1000px",
+                    transform: "translateZ(75px)",
+                    transformStyle: "preserve-3d",
                 }}
+                className={className}
             >
-                <div
-                    ref={containerRef}
-                    onMouseEnter={handleMouseEnter}
-                    onMouseMove={handleMouseMove}
-                    onMouseLeave={handleMouseLeave}
-                    className={cn(
-                        "flex items-center justify-center relative transition-all duration-200 ease-linear",
-                        className
-                    )}
-                    style={{
-                        transformStyle: "preserve-3d",
-                    }}
-                >
-                    {children}
-                </div>
+                {children}
             </div>
-        </MouseEnterContext.Provider>
+        </motion.div>
     );
 };
 
 export const CardBody = ({
     children,
     className,
-    ...rest
 }: {
     children: React.ReactNode;
     className?: string;
-    [key: string]: any;
 }) => {
     return (
         <div
-            className={cn(
-                "h-96 w-96 [transform-style:preserve-3d]  [&>*]:[transform-style:preserve-3d]",
-                className
-            )}
-            {...rest}
+            className={`h-full w-full [transform-style:preserve-3d] ${className}`}
         >
             {children}
         </div>
@@ -122,37 +122,27 @@ export const CardItem = ({
     [key: string]: any;
 }) => {
     const ref = useRef<HTMLDivElement>(null);
-    const [isMouseEnter] = useMouseEnter();
+    const [isHovered, setIsHovered] = useState(false);
 
-    useEffect(() => {
-        handleAnimations();
-    }, [isMouseEnter]);
-
-    const handleAnimations = () => {
-        if (!ref.current) return;
-        if (isMouseEnter) {
-            ref.current.style.transform = `translateX(${translateX}px) translateY(${translateY}px) translateZ(${translateZ}px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) rotateZ(${rotateZ}deg)`;
-        } else {
-            ref.current.style.transform = `translateX(0px) translateY(0px) translateZ(0px) rotateX(0deg) rotateY(0deg) rotateZ(0deg)`;
-        }
+    const handleMouseEnter = () => {
+        setIsHovered(true);
+    };
+    const handleMouseLeave = () => {
+        setIsHovered(false);
     };
 
     return (
         <Tag
             ref={ref}
-            className={cn("transition duration-200 ease-linear", className)}
+            className={className}
+            style={{
+                transform: `translateX(${translateX}px) translateY(${translateY}px) translateZ(${translateZ}px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) rotateZ(${rotateZ}deg)`,
+            }}
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
             {...rest}
         >
             {children}
         </Tag>
     );
-};
-
-// Create a hook to use the context
-export const useMouseEnter = () => {
-    const context = useContext(MouseEnterContext);
-    if (context === undefined) {
-        throw new Error("useMouseEnter must be used within a MouseEnterProvider");
-    }
-    return context;
 };

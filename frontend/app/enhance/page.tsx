@@ -19,10 +19,11 @@ export default function EnhancePage() {
 
     const loadCards = async () => {
         const { gameStorage } = await import('@/lib/game-storage');
+        const { getGameState } = await import('@/lib/game-state');
         const cards = await gameStorage.getCards();
-        const profile = await gameStorage.getUserProfile();
+        const state = getGameState();
         setAllCards(cards);
-        setUserTokens(profile.tokens);
+        setUserTokens(state.tokens || 0);
     };
 
     const handleSelectTarget = (card: CardType) => {
@@ -147,8 +148,8 @@ export default function EnhancePage() {
                                     key={card.id}
                                     onClick={() => targetCard ? handleToggleMaterial(card) : handleSelectTarget(card)}
                                     className={`cursor-pointer transition-all ${card.id === targetCard?.id ? 'ring-4 ring-blue-500' :
-                                            materialCards.find(c => c.id === card.id) ? 'ring-4 ring-red-500' :
-                                                'hover:scale-105'
+                                        materialCards.find(c => c.id === card.id) ? 'ring-4 ring-red-500' :
+                                            'hover:scale-105'
                                         }`}
                                 >
                                     <GameCard card={card} />

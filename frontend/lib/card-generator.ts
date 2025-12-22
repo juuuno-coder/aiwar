@@ -10,7 +10,9 @@ export function generateRandomCard(ownerId: string, forcedRarity?: Rarity, insig
         common: 60,
         rare: 25,
         epic: 10,
-        legendary: 5
+        legendary: 4,
+        unique: 0.9,
+        commander: 0.1
     };
 
     // 통찰력 연구 보너스 적용
@@ -57,7 +59,9 @@ export function generateRandomCard(ownerId: string, forcedRarity?: Rarity, insig
         common: { min: 10, max: 40 },
         rare: { min: 41, max: 60 },
         epic: { min: 61, max: 75 },
-        legendary: { min: 76, max: 90 }
+        legendary: { min: 76, max: 90 },
+        unique: { min: 91, max: 100 },
+        commander: { min: 100, max: 120 }
     };
 
     const range = statRanges[rarity];

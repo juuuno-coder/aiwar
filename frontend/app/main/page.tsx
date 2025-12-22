@@ -28,7 +28,7 @@ export default function MainPage() {
             tokens: state.tokens || 0,
             cards: state.inventory?.length || 0,
             level: state.level || 1,
-            coins: state.coins || 0,
+            coins: 0, // GameState doesn't have coins, using 0 as default
         });
     }, []);
 

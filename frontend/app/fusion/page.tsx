@@ -18,10 +18,11 @@ export default function FusionPage() {
 
     const loadCards = async () => {
         const { gameStorage } = await import('@/lib/game-storage');
+        const { getGameState } = await import('@/lib/game-state');
         const cards = await gameStorage.getCards();
-        const profile = await gameStorage.getUserProfile();
+        const state = getGameState();
         setAllCards(cards);
-        setUserTokens(profile.tokens);
+        setUserTokens(state.tokens || 0);
     };
 
     const handleToggleMaterial = (card: CardType) => {
@@ -33,7 +34,7 @@ export default function FusionPage() {
         }
     };
 
-    const handleFuse = async () => {
+    const handleFusion = async () => {
         if (materialCards.length !== 3) return;
 
         const check = canFuse(materialCards, userTokens);
@@ -43,10 +44,10 @@ export default function FusionPage() {
         }
 
         const { gameStorage } = await import('@/lib/game-storage');
-        const profile = await gameStorage.getUserProfile();
+        const { getGameState } = await import('@/lib/game-state');
 
-        // 합성 실행
-        const fusedCard = fuseCards(materialCards, profile.uid);
+        // 융합 실행
+        const fusedCard = fuseCards(materialCards, 'guest');
         const cost = getFusionCost(materialCards[0].rarity!);
 
         // 재료 카드 삭제
@@ -54,13 +55,13 @@ export default function FusionPage() {
             await gameStorage.deleteCard(mat.id);
         }
 
-        // 합성된 카드 추가
+        // 융합된 카드 추가
         await gameStorage.addCardToInventory(fusedCard);
 
         // 토큰 차감
         await gameStorage.addTokens(-cost);
 
-        alert(`합성 성공! ${getRarityName(fusedCard.rarity!)} 등급 카드 획득!`);
+        alert(`융합 성공! ${fusedCard.rarity} 카드 획득!`);
 
         // 리셋
         setMaterialCards([]);
@@ -101,7 +102,7 @@ export default function FusionPage() {
                         {materialCards.length === 3 && (
                             <Button
                                 color="success"
-                                onClick={handleFuse}
+                                onClick={handleFusion}
                                 className="w-full"
                             >
                                 합성하기 🔮

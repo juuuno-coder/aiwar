@@ -2,6 +2,7 @@
 
 import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useState } from 'react';
 import Header from './Header';
 import RightSidebar from './RightSidebar';
 import Sidebar from './Sidebar';
@@ -9,6 +10,7 @@ import GameFooter from './GameFooter';
 
 export default function LayoutWrapper({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false); // Added sidebar state
 
     // Pages that don't need the full layout
     const noLayoutPages = ['/intro', '/login', '/signup'];
@@ -19,14 +21,14 @@ export default function LayoutWrapper({ children }: { children: React.ReactNode 
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900/30 to-slate-900">
+        <div className="min-h-screen bg-[#050505]"> {/* Changed background color */}
             {/* Fixed Header */}
             <Header />
 
             {/* Main Content Area */}
             <div className="flex pt-20">
                 {/* Left Sidebar (existing) */}
-                <Sidebar />
+                <Sidebar isOpen={isSidebarOpen} onToggle={() => setIsSidebarOpen(!isSidebarOpen)} /> {/* Passed sidebar state and toggle function */}
 
                 {/* Main Content */}
                 <main className="flex-1 mr-20">
