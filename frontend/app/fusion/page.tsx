@@ -6,6 +6,7 @@ import { canFuse, fuseCards, getFusionCost, getFusionPreview, getRarityName } fr
 import { Card } from '@/components/ui/custom/Card';
 import { Button } from '@/components/ui/custom/Button';
 import GameCard from '@/components/GameCard';
+import { HoverBorderGradient } from '@/components/ui/aceternity/hover-border-gradient';
 
 export default function FusionPage() {
     const [allCards, setAllCards] = useState<CardType[]>([]);
@@ -100,13 +101,14 @@ export default function FusionPage() {
                         )}
 
                         {materialCards.length === 3 && (
-                            <Button
-                                color="success"
+                            <HoverBorderGradient
                                 onClick={handleFusion}
-                                className="w-full"
+                                className="w-full py-3 h-full"
+                                containerClassName="w-full mt-4"
+                                duration={2}
                             >
-                                합성하기 🔮
-                            </Button>
+                                <span className="font-bold">합성하기 🔮</span>
+                            </HoverBorderGradient>
                         )}
                     </Card>
                 </div>

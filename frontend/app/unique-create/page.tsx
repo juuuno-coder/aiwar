@@ -6,6 +6,7 @@ import { canCreateUniqueCard, createUniqueCard, getUniqueCreationCost, getUnique
 import { Card } from '@/components/ui/custom/Card';
 import { Button } from '@/components/ui/custom/Button';
 import GameCard from '@/components/GameCard';
+import { HoverBorderGradient } from '@/components/ui/aceternity/hover-border-gradient';
 
 export default function UniqueCreatePage() {
     const [allCards, setAllCards] = useState<CardType[]>([]);
@@ -109,13 +110,14 @@ export default function UniqueCreatePage() {
                         )}
 
                         {materialCards.length === 3 && (
-                            <Button
-                                color="success"
+                            <HoverBorderGradient
                                 onClick={handleCreate}
-                                className="w-full"
+                                className="w-full py-4 h-full"
+                                containerClassName="w-full"
+                                duration={2}
                             >
-                                유니크 생성 ✨
-                            </Button>
+                                <span className="font-bold text-white">유니크 생성 ✨</span>
+                            </HoverBorderGradient>
                         )}
                     </Card>
 

@@ -6,6 +6,7 @@ import { canEnhance, enhanceCard, getEnhanceCost, getEnhancePreview } from '@/li
 import { Card } from '@/components/ui/custom/Card';
 import { Button } from '@/components/ui/custom/Button';
 import GameCard from '@/components/GameCard';
+import { HoverBorderGradient } from '@/components/ui/aceternity/hover-border-gradient';
 
 export default function EnhancePage() {
     const [allCards, setAllCards] = useState<CardType[]>([]);
@@ -127,13 +128,14 @@ export default function EnhancePage() {
                             ))}
                         </div>
                         {materialCards.length === 10 && (
-                            <Button
-                                color="success"
+                            <HoverBorderGradient
                                 onClick={handleEnhance}
-                                className="w-full mt-4"
+                                className="w-full py-3 h-full"
+                                containerClassName="w-full mt-4 text-white"
+                                duration={2}
                             >
-                                강화하기 ⚡
-                            </Button>
+                                <span className="font-bold">강화하기 ⚡</span>
+                            </HoverBorderGradient>
                         )}
                     </Card>
                 </div>
