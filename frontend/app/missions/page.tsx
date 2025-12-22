@@ -265,7 +265,7 @@ export default function MissionsPage() {
                                         </div>
                                     ) : mission.completed ? (
                                         <Button
-                                            variant="primary"
+                                            color="primary"
                                             onClick={() => claimReward(mission.id)}
                                             disabled={isClaiming}
                                             className={isClaiming ? 'animate-pulse' : ''}

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { storage, getRandomRarity, generateRandomStats, generateId } from '@/lib/utils';
-import { Card, Rarity } from '@/lib/types';
+import { Card as CardType, Rarity } from '@/lib/types';
 import { Card } from '@/components/ui/custom/Card';
 import { Button } from '@/components/ui/custom/Button';
 
@@ -99,7 +99,7 @@ export default function ShopPage() {
             guaranteedRarity = 'epic';
         }
 
-        const newCards: Card[] = [];
+        const newCards: any[] = [];
 
         for (let i = 0; i < cardCount; i++) {
             let rarity: Rarity;
@@ -119,7 +119,7 @@ export default function ShopPage() {
             }
 
             const stats = generateRandomStats(rarity);
-            const newCard: Card = {
+            const newCard: any = {
                 id: generateId(),
                 templateId: `shop-${item.id}-${Date.now()}-${i}`,
                 ownerId: 'user-001',
@@ -132,7 +132,7 @@ export default function ShopPage() {
             newCards.push(newCard);
         }
 
-        const existingCards = storage.get<Card[]>('userCards', []);
+        const existingCards = storage.get<CardType[]>('userCards', []);
         storage.set('userCards', [...existingCards, ...newCards]);
 
         const rarityText = newCards.map(c => {
@@ -195,7 +195,7 @@ export default function ShopPage() {
                                 💰 {item.price.toLocaleString()}
                             </div>
                             <Button
-                                variant="primary"
+                                color="primary"
                                 onClick={() => purchaseItem(item)}
                                 disabled={userCoins < item.price}
                                 className="w-full"
@@ -231,7 +231,7 @@ export default function ShopPage() {
                                 </div>
                             </div>
                             <Button
-                                variant="primary"
+                                color="primary"
                                 onClick={() => purchaseItem(item)}
                                 disabled={userCoins < item.price}
                             >

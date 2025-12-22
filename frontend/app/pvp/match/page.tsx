@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { gameStorage } from '@/lib/game-storage';
-import { Card } from '@/lib/types';
 import { getPvPStats } from '@/lib/pvp-utils';
 import { isFirebaseConfigured } from '@/lib/firebase';
 import {
@@ -14,8 +13,8 @@ import {
     subscribeToMatchmaking,
     MatchmakingPlayer
 } from '@/lib/realtime-pvp';
-import { Card as Card } from '@/components/ui/custom/Card';
 import { Button } from '@/components/ui/custom/Button';
+import { Card } from "@/components/ui/custom/Card";
 import { Chip } from '@/components/ui/custom/Chip';
 import { Progress } from '@/components/ui/custom/Progress';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -32,7 +31,7 @@ export default function PvPMatchPage() {
     const { showAlert } = useAlert();
     const [mode, setMode] = useState<MatchMode>('selecting');
     const [searchTime, setSearchTime] = useState(0);
-    const [playerDeck, setPlayerDeck] = useState<Card[]>([]);
+    const [playerDeck, setPlayerDeck] = useState<any[]>([]);
     const [opponent, setOpponent] = useState<any>(null);
     const [isOnline, setIsOnline] = useState(false);
     const [matchmakingStatus, setMatchmakingStatus] = useState<MatchmakingPlayer | null>(null);

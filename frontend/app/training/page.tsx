@@ -35,7 +35,6 @@ import {
     ModalFooter
 } from "@/components/ui/custom/Modal";
 
-import { Card as CardType } from '@/lib/types';
 import { gameStorage } from '@/lib/game-storage';
 import { calculateTrainingPreview, executeTraining } from '@/lib/training-utils';
 import { cn } from '@/lib/utils';
@@ -55,9 +54,9 @@ export default function TrainingPage() {
     const { tokens, addTokens, refreshData } = useUser();
 
     // State
-    const [allCards, setAllCards] = useState<CardType[]>([]);
-    const [targetCard, setTargetCard] = useState<CardType | null>(null);
-    const [materialCards, setMaterialCards] = useState<CardType[]>([]);
+    const [allCards, setAllCards] = useState<any[]>([]);
+    const [targetCard, setTargetCard] = useState<any | null>(null);
+    const [materialCards, setMaterialCards] = useState<any[]>([]);
     const [preview, setPreview] = useState<any>(null);
     const [isProcessing, setIsProcessing] = useState(false);
     const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -86,12 +85,12 @@ export default function TrainingPage() {
     }, [targetCard, materialCards]);
 
     // Handlers
-    const handleSelectTarget = (card: CardType) => {
+    const handleSelectTarget = (card: any) => {
         setTargetCard(card);
         setMaterialCards([]);
     };
 
-    const handleToggleMaterial = (card: CardType) => {
+    const handleToggleMaterial = (card: any) => {
         if (targetCard?.id === card.id) return;
 
         if (materialCards.find(c => c.id === card.id)) {

@@ -105,7 +105,7 @@ export default function Home() {
               <div className="text-6xl mb-4 animate-float">{action.icon}</div>
               <h3 className="text-2xl font-bold text-white mb-2">{action.title}</h3>
               <p className="text-gray-400 mb-4">{action.desc}</p>
-              <Button variant="primary" className="w-full">
+              <Button color="primary" className="w-full">
                 시작하기 →
               </Button>
             </Card>

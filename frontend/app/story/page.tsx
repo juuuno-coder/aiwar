@@ -203,7 +203,6 @@ export default function StoryPage() {
                 <Modal
                     isOpen={showModal}
                     onClose={() => setShowModal(false)}
-                    title={`Chapter ${selectedChapter.number}: ${selectedChapter.title}`}
                     size="lg"
                 >
                     <div className="space-y-6">
@@ -284,14 +283,14 @@ export default function StoryPage() {
                             {isChapterCompleted(selectedChapter.id) ? (
                                 <>
                                     <Button
-                                        variant="success"
+                                        color="success"
                                         onClick={() => handleClaimRewards(selectedChapter.id)}
                                         className="flex-1"
                                     >
                                         보상 받기 🎁
                                     </Button>
                                     <Button
-                                        variant="secondary"
+                                        color="secondary"
                                         onClick={() => setShowModal(false)}
                                     >
                                         닫기
@@ -299,7 +298,7 @@ export default function StoryPage() {
                                 </>
                             ) : (
                                 <Button
-                                    variant="primary"
+                                    color="primary"
                                     onClick={() => {
                                         loadStoryData();
                                         alert('미션을 완료하면 자동으로 체크됩니다!');

@@ -183,7 +183,7 @@ export default function AchievementsPage() {
                                         </div>
                                     ) : achievement.completed ? (
                                         <Button
-                                            variant="primary"
+                                            color="primary"
                                             onClick={() => handleClaimReward(achievement.id)}
                                             disabled={isClaiming}
                                             className={isClaiming ? 'animate-pulse' : ''}

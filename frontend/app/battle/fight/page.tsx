@@ -4,7 +4,7 @@ import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import GameCard from '@/components/GameCard';
-import { Card, BattleGenre } from '@/lib/types';
+import { Card as CardType, BattleGenre } from '@/lib/types';
 import { storage, generateCard } from '@/lib/utils';
 import { analyzeDeckSynergy } from '@/lib/synergy-utils';
 import gameBalanceData from '@/data/game-balance.json';
@@ -15,8 +15,8 @@ import { Button } from '@/components/ui/custom/Button';
 function BattleFightContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
-    const [playerCards, setPlayerCards] = useState<Card[]>([]);
-    const [opponentCards, setOpponentCards] = useState<Card[]>([]);
+    const [playerCards, setPlayerCards] = useState<any[]>([]);
+    const [opponentCards, setOpponentCards] = useState<any[]>([]);
     const [battleGenre, setBattleGenre] = useState<BattleGenre | null>(null);
     const [currentRound, setCurrentRound] = useState(0);
     const [playerWins, setPlayerWins] = useState(0);
@@ -34,8 +34,8 @@ function BattleFightContent() {
             return;
         }
 
-        const allCards = storage.get<Card[]>('userCards', []);
-        const selectedCards = cardIds.map(id => allCards.find(c => c.id === id)).filter(Boolean) as Card[];
+        const allCards = storage.get<CardType[]>('userCards', []);
+        const selectedCards = cardIds.map(id => allCards.find(c => c.id === id)).filter(Boolean) as CardType[];
         setPlayerCards(selectedCards);
 
         const aiCards = generateAICards(5);
@@ -45,8 +45,8 @@ function BattleFightContent() {
         setBattleGenre(genre as BattleGenre);
     }, [searchParams, router]);
 
-    const generateAICards = (count: number): Card[] => {
-        const cards: Card[] = [];
+    const generateAICards = (count: number): any[] => {
+        const cards: any[] = [];
         for (let i = 0; i < count; i++) {
             const baseStats = 20 + Math.floor(Math.random() * 20);
 
@@ -79,7 +79,7 @@ function BattleFightContent() {
         return cards;
     };
 
-    const calculatePower = (card: Card, applySynergy: boolean = true): number => {
+    const calculatePower = (card: any, applySynergy: boolean = true): number => {
         if (!battleGenre) return card.stats.totalPower;
 
         const weights = battleGenre.statWeights;
@@ -331,7 +331,7 @@ function BattleFightContent() {
                     {!roundResult && (
                         <div className="text-center">
                             <Button
-                                variant="primary"
+                                color="primary"
                                 size="lg"
                                 onClick={playRound}
                                 className="animate-bounce"
@@ -375,10 +375,10 @@ function BattleFightContent() {
                     )}
 
                     <div className="flex gap-4 justify-center">
-                        <Button variant="primary" onClick={() => router.push('/battle')}>
+                        <Button color="primary" onClick={() => router.push('/battle')}>
                             다시 대전하기
                         </Button>
-                        <Button variant="secondary" onClick={() => router.push('/')}>
+                        <Button color="secondary" onClick={() => router.push('/')}>
                             메인으로
                         </Button>
                     </div>

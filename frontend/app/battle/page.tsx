@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import GameCard from '@/components/GameCard';
-import { Card, BattleGenre } from '@/lib/types';
+import { Card as CardType, BattleGenre } from '@/lib/types';
 import { storage } from '@/lib/utils';
 import { analyzeDeckSynergy, getFactionDisplayName } from '@/lib/synergy-utils';
 import gameBalanceData from '@/data/game-balance.json';
@@ -12,12 +12,12 @@ import { Button } from '@/components/ui/custom/Button';
 
 export default function BattlePage() {
     const router = useRouter();
-    const [cards, setCards] = useState<Card[]>([]);
+    const [cards, setCards] = useState<any[]>([]);
     const [selectedCards, setSelectedCards] = useState<string[]>([]);
     const [battleGenre, setBattleGenre] = useState<BattleGenre | null>(null);
 
     useEffect(() => {
-        const savedCards = storage.get<Card[]>('userCards', []);
+        const savedCards = storage.get<CardType[]>('userCards', []);
         setCards(savedCards);
 
         const genres = gameBalanceData.battleGenres;
@@ -43,7 +43,7 @@ export default function BattlePage() {
         router.push(`/battle/fight?cards=${cardIds}&genre=${battleGenre?.id}`);
     };
 
-    const selectedCardObjects = selectedCards.map(id => cards.find(c => c.id === id)).filter(Boolean) as Card[];
+    const selectedCardObjects = selectedCards.map(id => cards.find(c => c.id === id)).filter(Boolean) as CardType[];
     const synergy = selectedCards.length > 0 ? analyzeDeckSynergy(selectedCardObjects) : null;
 
     return (
@@ -81,7 +81,7 @@ export default function BattlePage() {
                     </div>
                     {selectedCards.length > 0 && (
                         <Button
-                            variant="secondary"
+                            color="secondary"
                             size="sm"
                             onClick={() => setSelectedCards([])}
                         >
@@ -90,7 +90,7 @@ export default function BattlePage() {
                     )}
                 </div>
                 <Button
-                    variant="primary"
+                    color="primary"
                     onClick={startBattle}
                     disabled={selectedCards.length !== 5}
                     size="lg"
@@ -141,7 +141,7 @@ export default function BattlePage() {
                 <Card className="p-12 text-center">
                     <p className="text-xl text-gray-400 mb-4">보유한 카드가 없습니다</p>
                     <Button
-                        variant="primary"
+                        color="primary"
                         onClick={() => router.push('/shop')}
                     >
                         상점으로 가기 🛒

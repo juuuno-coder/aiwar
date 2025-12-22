@@ -203,7 +203,7 @@ export default function FactionsPage() {
 
                                         {isReady ? (
                                             <Button
-                                                variant="success"
+                                                color="success"
                                                 size="sm"
                                                 onClick={() => claimUnit(slot.id)}
                                                 className="w-full"
@@ -278,7 +278,7 @@ export default function FactionsPage() {
                                                     💰 {faction.unlockCost.toLocaleString()}
                                                 </div>
                                                 <Button
-                                                    variant="primary"
+                                                    color="primary"
                                                     size="sm"
                                                     onClick={() => recruitFaction(faction.id)}
                                                     disabled={!canAfford || !hasEmptySlot}

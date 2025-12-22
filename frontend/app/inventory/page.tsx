@@ -4,22 +4,22 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import GameCard from '@/components/GameCard';
 import CardDetailModal from '@/components/CardDetailModal';
-import { Card, Stats } from '@/lib/types';
+import { Card as CardType, Stats } from '@/lib/types';
 import { storage } from '@/lib/utils';
 
 export default function InventoryPage() {
-    const [cards, setCards] = useState<Card[]>([]);
+    const [cards, setCards] = useState<any[]>([]);
     const [selectedCard, setSelectedCard] = useState<string | null>(null);
-    const [detailCard, setDetailCard] = useState<Card | null>(null);
+    const [detailCard, setDetailCard] = useState<any | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
 
     // 로컬 스토리지에서 카드 로드
     useEffect(() => {
-        const savedCards = storage.get<Card[]>('userCards', []);
+        const savedCards = storage.get<CardType[]>('userCards', []);
 
         // 카드가 없으면 테스트용 더미 데이터 생성
         if (savedCards.length === 0) {
-            const dummyCards: Card[] = [
+            const dummyCards: any[] = [
                 {
                     id: 'card-001',
                     templateId: 'gemini-text-001',

@@ -169,7 +169,7 @@ export default function SlotsPage() {
                                                 {getCategoryName(slotFaction.category)}
                                             </p>
                                             <Button
-                                                variant="danger"
+                                                color="danger"
                                                 size="sm"
                                                 onClick={(e) => {
                                                     e?.stopPropagation();

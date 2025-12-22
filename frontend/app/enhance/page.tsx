@@ -2,15 +2,14 @@
 
 import { useState, useEffect } from 'react';
 import GameCard from '@/components/GameCard';
-import { Card } from '@/lib/types';
 import { getGameState } from '@/lib/game-state';
 import { enhanceCard, getEnhanceCost, getEnhanceBonus } from '@/lib/enhance-utils';
 import { Card } from '@/components/ui/custom/Card';
 import { Button } from '@/components/ui/custom/Button';
 
 export default function EnhancePage() {
-    const [cards, setCards] = useState<Card[]>([]);
-    const [selectedCard, setSelectedCard] = useState<Card | null>(null);
+    const [cards, setCards] = useState<any[]>([]);
+    const [selectedCard, setSelectedCard] = useState<any | null>(null);
     const [userTokens, setUserTokens] = useState(0);
 
     useEffect(() => {
@@ -27,7 +26,7 @@ export default function EnhancePage() {
         return level * 100;
     };
 
-    const canLevelUp = (card: Card): boolean => {
+    const canLevelUp = (card: any): boolean => {
         if (card.level >= 10) return false;
         const expNeeded = getExpNeeded(card.level);
         const cost = getEnhanceCostLocal(card.level);
@@ -103,7 +102,7 @@ export default function EnhancePage() {
                     {cards.length === 0 ? (
                         <Card className="p-12 text-center">
                             <p className="text-xl text-gray-400 mb-4">보유한 카드가 없습니다</p>
-                            <Button variant="primary" onClick={() => window.location.href = '/shop'}>
+                            <Button color="primary" onClick={() => window.location.href = '/shop'}>
                                 상점으로 가기
                             </Button>
                         </Card>
@@ -217,7 +216,7 @@ export default function EnhancePage() {
                                     </Card>
                                 ) : canLevelUp(selectedCard) ? (
                                     <Button
-                                        variant="success"
+                                        color="success"
                                         size="lg"
                                         onClick={handleEnhance}
                                         className="w-full animate-pulse"

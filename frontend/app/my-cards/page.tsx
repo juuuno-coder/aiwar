@@ -14,7 +14,6 @@ import { useFooter } from '@/context/FooterContext';
 import { useUser } from '@/context/UserContext';
 import { useAlert } from '@/context/AlertContext';
 import { gameStorage } from '@/lib/game-storage';
-import { Card as CardType } from '@/lib/types';
 import {
     Filter,
     SortAsc,
@@ -49,14 +48,14 @@ export default function MyCardsPage() {
     const { addCoins, refreshData } = useUser();
     const { showAlert } = useAlert();
 
-    const [cards, setCards] = useState<CardType[]>([]);
+    const [cards, setCards] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
     const [sortBy, setSortBy] = useState<SortOption>('power');
     const [sortAsc, setSortAsc] = useState(false);
     const [filterRarity, setFilterRarity] = useState<FilterOption>('all');
     const [isMultiSelectMode, setIsMultiSelectMode] = useState(false);
-    const [selectedCard, setSelectedCard] = useState<CardType | null>(null);
+    const [selectedCard, setSelectedCard] = useState<any | null>(null);
 
     // 푸터 선택 모드 설정
     useEffect(() => {
@@ -106,7 +105,7 @@ export default function MyCardsPage() {
     }, [footer.state.selectionSlots, isMultiSelectMode]);
 
     // 카드 선택/해제 토글
-    const toggleCardSelection = (card: CardType) => {
+    const toggleCardSelection = (card: any) => {
         if (!isMultiSelectMode) {
             // 단일 선택 모드 - 기존 동작 유지
             return;

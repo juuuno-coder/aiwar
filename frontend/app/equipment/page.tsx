@@ -40,9 +40,9 @@ import { cn } from '@/lib/utils';
 export default function EquipmentPage() {
     const router = useRouter();
     const { refreshData } = useUser();
-    const [userCards, setUserCards] = useState<CardType[]>([]);
+    const [userCards, setUserCards] = useState<any[]>([]);
     const [equipmentInventory, setEquipmentInventory] = useState<Equipment[]>([]);
-    const [selectedCard, setSelectedCard] = useState<CardType | null>(null);
+    const [selectedCard, setSelectedCard] = useState<any | null>(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {

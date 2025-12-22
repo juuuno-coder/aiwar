@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Card as CardType } from '@/lib/types';
 import { gameStorage } from '@/lib/game-storage';
 import { updatePvPStats, savePvPStats, getPvPStats, savePvPHistory, calculatePvPRewards } from '@/lib/pvp-utils';
 import { Button } from '@/components/ui/custom/Button';
@@ -24,8 +23,8 @@ const STRATEGY_TIME = 20; // 20초로 상향
 const RATING_CHANGE = 50;
 
 interface BattleRound {
-    playerCard: CardType;
-    enemyCard: CardType;
+    playerCard: any;
+    enemyCard: any;
     winner: 'player' | 'enemy' | 'draw';
     reason: string;
     playerPower: number;
@@ -48,8 +47,8 @@ function PvPFightContent() {
     // Game State
     const [status, setStatus] = useState<'loading' | 'strategy' | 'battling' | 'finished'>('loading');
     const [timer, setTimer] = useState(STRATEGY_TIME);
-    const [playerDeck, setPlayerDeck] = useState<CardType[]>([]);
-    const [enemyDeck, setEnemyDeck] = useState<CardType[]>([]);
+    const [playerDeck, setPlayerDeck] = useState<any[]>([]);
+    const [enemyDeck, setEnemyDeck] = useState<any[]>([]);
     const [selectedOrder, setSelectedOrder] = useState<number[]>([0, 1, 2, 3, 4]);
     const [opponent, setOpponent] = useState<any>(null);
 
@@ -143,7 +142,7 @@ function PvPFightContent() {
     };
 
     // 가위바위보 로직으로 승자 결정 (Daejeon Rule: 1.3배 보너스 적용)
-    const determineWinner = (playerCard: CardType, enemyCard: CardType): { winner: 'player' | 'enemy' | 'draw', reason: string, pFinal: number, eFinal: number } => {
+    const determineWinner = (playerCard: any, enemyCard: any): { winner: 'player' | 'enemy' | 'draw', reason: string, pFinal: number, eFinal: number } => {
         const pType = playerCard.type;
         const eType = enemyCard.type;
         const pBase = playerCard.stats?.totalPower || 0;

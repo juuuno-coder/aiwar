@@ -92,7 +92,7 @@ export default function UniqueUnitPage() {
                         <p className="text-gray-400 mb-6">
                             버튼을 클릭하여 유니크 유닛 생성을 시작하세요
                         </p>
-                        <Button variant="primary" size="lg" onClick={handleStart}>
+                        <Button color="primary" size="lg" onClick={handleStart}>
                             생성 시작하기 🚀
                         </Button>
                     </div>
@@ -136,7 +136,7 @@ export default function UniqueUnitPage() {
                             </div>
                         )}
 
-                        <Button variant="success" size="lg" onClick={handleClaim} className="animate-pulse">
+                        <Button color="success" size="lg" onClick={handleClaim} className="animate-pulse">
                             수령하기 🎁
                         </Button>
                     </div>

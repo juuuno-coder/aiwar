@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import GameCard from '@/components/GameCard';
-import { Card, Rarity } from '@/lib/types';
+import { Card as CardType, Rarity } from '@/lib/types';
 import { storage, generateId } from '@/lib/utils';
 
 interface StoryChapter {
@@ -24,8 +24,8 @@ export default function StoryBattlePage() {
     const chapterId = params.chapterId as string;
 
     const [chapter, setChapter] = useState<StoryChapter | null>(null);
-    const [playerCards, setPlayerCards] = useState<Card[]>([]);
-    const [enemyCards, setEnemyCards] = useState<Card[]>([]);
+    const [playerCards, setPlayerCards] = useState<any[]>([]);
+    const [enemyCards, setEnemyCards] = useState<any[]>([]);
     const [currentRound, setCurrentRound] = useState(0);
     const [playerWins, setPlayerWins] = useState(0);
     const [enemyWins, setEnemyWins] = useState(0);
@@ -33,14 +33,14 @@ export default function StoryBattlePage() {
     const [battleEnded, setBattleEnded] = useState(false);
 
     // 적 카드 생성 함수
-    const generateEnemyCard = (level: number): Card => {
+    const generateEnemyCard = (level: number): any => {
         const rarities: Rarity[] = ['common', 'rare', 'epic', 'legendary'];
         const rarity = rarities[Math.floor(Math.random() * rarities.length)];
 
         const baseStats = 15 + (level * 10);
         const variance = 10;
 
-        const card: Card = {
+        const card: any = {
             id: generateId(),
             templateId: `enemy-template-${level}`,
             ownerId: 'ai',
@@ -82,7 +82,7 @@ export default function StoryBattlePage() {
         setChapter(foundChapter);
 
         // 플레이어 카드 로드
-        const userCards = storage.get<Card[]>('userCards', []);
+        const userCards = storage.get<CardType[]>('userCards', []);
         if (userCards.length < 5) {
             alert('카드가 부족합니다. 최소 5장이 필요합니다.');
             router.push('/story');
@@ -96,7 +96,7 @@ export default function StoryBattlePage() {
         setPlayerCards(topCards);
 
         // 적 카드 생성
-        const enemies: Card[] = [];
+        const enemies: any[] = [];
         for (let i = 0; i < 5; i++) {
             enemies.push(generateEnemyCard(foundChapter.enemyLevel));
         }

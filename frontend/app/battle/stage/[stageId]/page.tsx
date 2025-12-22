@@ -15,7 +15,7 @@ import { useAlert } from '@/context/AlertContext';
 import { useFooter } from '@/context/FooterContext';
 import { useTranslation } from '@/context/LanguageContext';
 import { gameStorage } from '@/lib/game-storage';
-import { Card as CardType } from '@/lib/types';
+import { Card as GameCardType } from '@/lib/types';
 import {
     getStageConfig,
     generateEnemies,
@@ -46,24 +46,24 @@ export default function StageBattlePage() {
     const { t } = useTranslation();
 
     const [phase, setPhase] = useState<Phase>('hand-selection');
-    const [allCards, setAllCards] = useState<CardType[]>([]);
-    const [selectedHand, setSelectedHand] = useState<CardType[]>([]);
+    const [allCards, setAllCards] = useState<GameCardType[]>([]);
+    const [selectedHand, setSelectedHand] = useState<GameCardType[]>([]);
     const [enemies, setEnemies] = useState<Enemy[]>([]);
     const [stageConfig, setStageConfig] = useState<StageConfig | null>(null);
 
     // 5장 전투: 라운드별 메인 카드 배치 (각 라운드 1장씩)
-    const [mainAssignments, setMainAssignments] = useState<(CardType | null)[]>([null, null, null, null, null]);
+    const [mainAssignments, setMainAssignments] = useState<(GameCardType | null)[]>([null, null, null, null, null]);
     // 5장 전투: 라운드 2, 4의 히든카드 (이미 배치된 카드 중에서 선택)
-    const [hiddenR2, setHiddenR2] = useState<CardType | null>(null);
-    const [hiddenR4, setHiddenR4] = useState<CardType | null>(null);
+    const [hiddenR2, setHiddenR2] = useState<GameCardType | null>(null);
+    const [hiddenR4, setHiddenR4] = useState<GameCardType | null>(null);
     const [currentHiddenRound, setCurrentHiddenRound] = useState<2 | 4>(2);
 
     // 1장/3장 전투용
-    const [simpleSelections, setSimpleSelections] = useState<CardType[]>([]);
+    const [simpleSelections, setSimpleSelections] = useState<GameCardType[]>([]);
 
     const [viewTimer, setViewTimer] = useState(0);
     const [battleResult, setBattleResult] = useState<StageBattleResult | null>(null);
-    const [previewCard, setPreviewCard] = useState<CardType | null>(null); // 적 상세보기용
+    const [previewCard, setPreviewCard] = useState<GameCardType | null>(null); // 적 상세보기용
 
     // 전투 연출용 상태
     const [currentBattleRound, setCurrentBattleRound] = useState(0);
@@ -160,7 +160,7 @@ export default function StageBattlePage() {
     };
 
     // 카드 속성 추출용 헬퍼
-    const getCardAttribute = (card: CardType): 'rock' | 'paper' | 'scissors' => {
+    const getCardAttribute = (card: GameCardType): 'rock' | 'paper' | 'scissors' => {
         if (card.type === 'EFFICIENCY') return 'rock';
         if (card.type === 'CREATIVITY') return 'paper';
         if (card.type === 'COST') return 'scissors';
@@ -176,7 +176,7 @@ export default function StageBattlePage() {
     };
 
     // 손패 선택 (푸터로 이관)
-    const toggleHandSelection = (card: CardType) => {
+    const toggleHandSelection = (card: GameCardType) => {
         const isSelected = footer.state.selectionSlots.find(c => c.id === card.id);
         if (isSelected) {
             footer.removeFromSelection(card.id);
@@ -342,7 +342,7 @@ export default function StageBattlePage() {
     }, [phase, viewTimer, stageConfig]);
 
     // 5장 전투: 라운드에 메인 카드 배치
-    const assignToRound = (card: CardType, roundIndex: number) => {
+    const assignToRound = (card: GameCardType, roundIndex: number) => {
         if (!stageConfig || stageConfig.battleCardCount !== 5) return;
 
         // 이미 다른 라운드에 배치된 경우 해제
@@ -376,7 +376,7 @@ export default function StageBattlePage() {
     };
 
     // 1장/3장 전투: 간단한 카드 선택
-    const toggleSimpleSelection = (card: CardType) => {
+    const toggleSimpleSelection = (card: GameCardType) => {
         if (!stageConfig) return;
 
         const maxCards = stageConfig.battleCardCount;
@@ -390,7 +390,7 @@ export default function StageBattlePage() {
     };
 
     // 5장 전투: 히든카드 선택
-    const selectHiddenCard = (card: CardType) => {
+    const selectHiddenCard = (card: GameCardType) => {
         if (currentHiddenRound === 2) {
             setHiddenR2(card);
         } else {
@@ -750,7 +750,7 @@ export default function StageBattlePage() {
                                     <div className="flex justify-center gap-3 flex-wrap">
                                         {enemies.map((enemy, i) => {
                                             // Enemy 객체를 GameCard에서 사용할 Card 객체로 변환
-                                            const enemyCard: CardType = {
+                                            const enemyCard: GameCardType = {
                                                 id: enemy.id,
                                                 name: enemy.name,
                                                 type: enemy.attribute === 'rock' ? 'EFFICIENCY' : enemy.attribute === 'paper' ? 'CREATIVITY' : 'COST', // 속성에 따른 타입 매핑
@@ -808,7 +808,7 @@ export default function StageBattlePage() {
                                 {/* 적 유닛 라인 (Fixed) */}
                                 <div className="flex justify-center gap-4 mb-2">
                                     {enemies.map((enemy, i) => {
-                                        const enemyCard: CardType = {
+                                        const enemyCard: GameCardType = {
                                             id: enemy.id,
                                             name: enemy.name,
                                             type: enemy.attribute === 'rock' ? 'EFFICIENCY' : enemy.attribute === 'paper' ? 'CREATIVITY' : 'COST',

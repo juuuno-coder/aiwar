@@ -4,17 +4,17 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import GameCard from '@/components/GameCard';
-import { Card, Rarity } from '@/lib/types';
+import { Card as CardType, Rarity } from '@/lib/types';
 import { storage, generateRandomStats } from '@/lib/utils';
 
 export default function FusionPage() {
     const router = useRouter();
-    const [cards, setCards] = useState<Card[]>([]);
+    const [cards, setCards] = useState<any[]>([]);
     const [selectedCards, setSelectedCards] = useState<string[]>([]);
     const [userCoins, setUserCoins] = useState(1000);
 
     useEffect(() => {
-        const savedCards = storage.get<Card[]>('userCards', []);
+        const savedCards = storage.get<CardType[]>('userCards', []);
         const savedCoins = storage.get<number>('userCoins', 1000);
         setCards(savedCards);
         setUserCoins(savedCoins);
@@ -28,7 +28,7 @@ export default function FusionPage() {
         }
     };
 
-    const getCardRarity = (card: Card): Rarity => {
+    const getCardRarity = (card: any): Rarity => {
         // totalPower로 등급 추정
         if (card.stats.totalPower > 250) return 'legendary';
         if (card.stats.totalPower > 200) return 'epic';
@@ -100,7 +100,7 @@ export default function FusionPage() {
 
         // 새 카드 생성
         const newStats = generateRandomStats(nextRarity);
-        const newCard: Card = {
+        const newCard: any = {
             id: `fusion-${Date.now()}`,
             templateId: `fusion-${nextRarity}-${Date.now()}`,
             ownerId: 'user-001',
