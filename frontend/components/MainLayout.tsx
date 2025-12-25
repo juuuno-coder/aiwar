@@ -18,11 +18,12 @@ export const useSidebar = () => useContext(SidebarContext);
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
-    const [isCollapsed, setIsCollapsed] = useState(false);
-
     // Pages that should be 100% full page without any layout
-    const noLayoutPages = ['/intro', '/login', '/signup'];
+    const noLayoutPages = ['/intro', '/login', '/signup', '/'];
     const isNoLayout = noLayoutPages.includes(pathname || '');
+
+    // Sidebar state
+    const [isCollapsed, setIsCollapsed] = useState(false);
 
     if (isNoLayout) {
         return <div className="h-screen w-screen overflow-hidden bg-black">{children}</div>;
@@ -40,7 +41,10 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
                     <GameTopBar sidebarCollapsed={isCollapsed} />
 
                     {/* 컨텐츠 */}
-                    <main className="flex-1 overflow-auto mt-16 p-6 bg-gradient-to-br from-[#050510] via-[#0a0a1a] to-[#050510]">
+                    <main
+                        id="main-content"
+                        className="flex-1 overflow-y-auto overflow-x-hidden relative mt-16 bg-gradient-to-br from-[#050510] via-[#0a0a1a] to-[#050510] scroll-smooth"
+                    >
                         {children}
                     </main>
                 </div>

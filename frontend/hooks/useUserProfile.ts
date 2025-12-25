@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
     loadUserProfile,
     saveUserProfile,
@@ -16,14 +16,7 @@ export function useUserProfile() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<Error | null>(null);
 
-    useEffect(() => {
-        if (authLoading) return;
-        if (!user) return;
-
-        loadProfile();
-    }, [user, authLoading]);
-
-    const loadProfile = async () => {
+    const loadProfile = useCallback(async () => {
         try {
             setLoading(true);
             const data = await loadUserProfile();
@@ -34,7 +27,14 @@ export function useUserProfile() {
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
+
+    useEffect(() => {
+        if (authLoading) return;
+        if (!user) return;
+
+        loadProfile();
+    }, [user, authLoading, loadProfile]);
 
     const updateProfile = async (updates: Partial<UserProfile>) => {
         try {

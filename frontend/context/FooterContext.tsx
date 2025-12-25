@@ -24,6 +24,22 @@ export interface CharacterOverlay {
     name?: string;                        // 캐릭터 이름
 }
 
+// 카드 필터
+export interface CardFilters {
+    rarity: string[];                     // 등급 필터 (Common, Rare, Epic, etc.)
+    type: string[];                       // 타입 필터 (EFFICIENCY, CREATIVITY, FUNCTION)
+    search: string;                       // 검색어
+    faction: string[];                    // 군단 필터
+}
+
+// 인벤토리 상태
+export interface InventoryState {
+    cards: Card[];                        // 전체 카드
+    filteredCards: Card[];                // 필터링된 카드
+    selectedCardIds: Set<string>;         // 선택된 카드 ID
+    filters: CardFilters;                 // 현재 필터
+}
+
 // 푸터 상태
 export interface FooterState {
     // 현재 덱 (기본 모드에서 표시)
@@ -60,6 +76,9 @@ export interface FooterState {
 
     // 캐릭터 오버레이 (z-index 높게 푸터 위에 표시)
     characterOverlay?: CharacterOverlay;
+
+    // 인벤토리 상태 (새로운 기능)
+    inventory: InventoryState;
 
     // 푸터 표시 여부
     visible: boolean;
@@ -99,6 +118,23 @@ interface FooterContextType {
     setCharacterOverlay: (overlay: CharacterOverlay) => void;
     clearCharacterOverlay: () => void;
 
+    // 인벤토리 관리 (새로운 기능)
+    setInventoryCards: (cards: Card[]) => void;
+    selectCard: (card: Card) => boolean;
+    deselectCard: (cardId: string) => void;
+    clearCardSelection: () => void;
+    isCardSelected: (cardId: string) => boolean;
+
+    // 필터 관리
+    setRarityFilter: (rarities: string[]) => void;
+    setTypeFilter: (types: string[]) => void;
+    setFactionFilter: (factions: string[]) => void;
+    setSearchFilter: (query: string) => void;
+    clearFilters: () => void;
+
+    // 자동 선택
+    autoSelectMaterials: (targetCard: Card, count: number) => void;
+
     // 푸터 표시/숨김
     showFooter: () => void;
     hideFooter: () => void;
@@ -118,6 +154,17 @@ const defaultState: FooterState = {
     selectionSlots: [],
     maxSelectionSlots: 5,
     selectionLabel: undefined,
+    inventory: {
+        cards: [],
+        filteredCards: [],
+        selectedCardIds: new Set(),
+        filters: {
+            rarity: [],
+            type: [],
+            search: '',
+            faction: [],
+        },
+    },
     visible: true,
     showDeckSlots: false,
 };
@@ -268,6 +315,203 @@ export function FooterProvider({ children }: { children: ReactNode }) {
         setState(defaultState);
     }, []);
 
+    // ============================================
+    // 인벤토리 관리 (새로운 기능)
+    // ============================================
+    const applyFilters = useCallback((cards: Card[], filters: CardFilters): Card[] => {
+        return cards.filter(card => {
+            // 등급 필터
+            if (filters.rarity.length > 0 && !filters.rarity.includes(card.rarity || '')) {
+                return false;
+            }
+            // 타입 필터
+            if (filters.type.length > 0 && !filters.type.includes(card.type || '')) {
+                return false;
+            }
+            // 군단 필터 (선택적 필드)
+            if (filters.faction.length > 0) {
+                const cardFaction = (card as any).faction; // faction은 선택적 필드
+                if (!cardFaction || !filters.faction.includes(cardFaction)) {
+                    return false;
+                }
+            }
+            // 검색어 필터
+            if (filters.search) {
+                const searchLower = filters.search.toLowerCase();
+                const nameMatch = card.name?.toLowerCase().includes(searchLower) || false;
+                const descMatch = (card as any).description?.toLowerCase().includes(searchLower) || false;
+                if (!nameMatch && !descMatch) {
+                    return false;
+                }
+            }
+            return true;
+        });
+    }, []);
+
+    const setInventoryCards = useCallback((cards: Card[]) => {
+        setState(prev => {
+            const filteredCards = applyFilters(cards, prev.inventory.filters);
+            return {
+                ...prev,
+                inventory: {
+                    ...prev.inventory,
+                    cards,
+                    filteredCards,
+                },
+            };
+        });
+    }, [applyFilters]);
+
+    const selectCard = useCallback((card: Card): boolean => {
+        let selected = false;
+        setState(prev => {
+            if (!prev.inventory.selectedCardIds.has(card.id)) {
+                selected = true;
+                const newSelectedIds = new Set(prev.inventory.selectedCardIds);
+                newSelectedIds.add(card.id);
+                return {
+                    ...prev,
+                    inventory: {
+                        ...prev.inventory,
+                        selectedCardIds: newSelectedIds,
+                    },
+                };
+            }
+            return prev;
+        });
+        return selected;
+    }, []);
+
+    const deselectCard = useCallback((cardId: string) => {
+        setState(prev => {
+            const newSelectedIds = new Set(prev.inventory.selectedCardIds);
+            newSelectedIds.delete(cardId);
+            return {
+                ...prev,
+                inventory: {
+                    ...prev.inventory,
+                    selectedCardIds: newSelectedIds,
+                },
+            };
+        });
+    }, []);
+
+    const clearCardSelection = useCallback(() => {
+        setState(prev => ({
+            ...prev,
+            inventory: {
+                ...prev.inventory,
+                selectedCardIds: new Set(),
+            },
+        }));
+    }, []);
+
+    const isCardSelected = useCallback((cardId: string): boolean => {
+        return state.inventory.selectedCardIds.has(cardId);
+    }, [state.inventory.selectedCardIds]);
+
+    // 필터 관리
+    const setRarityFilter = useCallback((rarities: string[]) => {
+        setState(prev => {
+            const newFilters = { ...prev.inventory.filters, rarity: rarities };
+            const filteredCards = applyFilters(prev.inventory.cards, newFilters);
+            return {
+                ...prev,
+                inventory: {
+                    ...prev.inventory,
+                    filters: newFilters,
+                    filteredCards,
+                },
+            };
+        });
+    }, [applyFilters]);
+
+    const setTypeFilter = useCallback((types: string[]) => {
+        setState(prev => {
+            const newFilters = { ...prev.inventory.filters, type: types };
+            const filteredCards = applyFilters(prev.inventory.cards, newFilters);
+            return {
+                ...prev,
+                inventory: {
+                    ...prev.inventory,
+                    filters: newFilters,
+                    filteredCards,
+                },
+            };
+        });
+    }, [applyFilters]);
+
+    const setFactionFilter = useCallback((factions: string[]) => {
+        setState(prev => {
+            const newFilters = { ...prev.inventory.filters, faction: factions };
+            const filteredCards = applyFilters(prev.inventory.cards, newFilters);
+            return {
+                ...prev,
+                inventory: {
+                    ...prev.inventory,
+                    filters: newFilters,
+                    filteredCards,
+                },
+            };
+        });
+    }, [applyFilters]);
+
+    const setSearchFilter = useCallback((query: string) => {
+        setState(prev => {
+            const newFilters = { ...prev.inventory.filters, search: query };
+            const filteredCards = applyFilters(prev.inventory.cards, newFilters);
+            return {
+                ...prev,
+                inventory: {
+                    ...prev.inventory,
+                    filters: newFilters,
+                    filteredCards,
+                },
+            };
+        });
+    }, [applyFilters]);
+
+    const clearFilters = useCallback(() => {
+        setState(prev => {
+            const newFilters = { rarity: [], type: [], search: '', faction: [] };
+            const filteredCards = applyFilters(prev.inventory.cards, newFilters);
+            return {
+                ...prev,
+                inventory: {
+                    ...prev.inventory,
+                    filters: newFilters,
+                    filteredCards,
+                },
+            };
+        });
+    }, [applyFilters]);
+
+    // 자동 선택 알고리즘
+    const autoSelectMaterials = useCallback((targetCard: Card, count: number) => {
+        setState(prev => {
+            // 같은 이름의 카드만 필터링
+            const sameName = prev.inventory.cards.filter(c =>
+                c.name === targetCard.name && c.id !== targetCard.id
+            );
+
+            // 레벨 낮은 순으로 정렬
+            const sorted = sameName.sort((a, b) => (a.level || 1) - (b.level || 1));
+
+            // 상위 count개 선택
+            const selected = sorted.slice(0, count);
+            const newSelectedIds = new Set(selected.map(c => c.id));
+
+            return {
+                ...prev,
+                selectionSlots: selected,
+                inventory: {
+                    ...prev.inventory,
+                    selectedCardIds: newSelectedIds,
+                },
+            };
+        });
+    }, []);
+
     return (
         <FooterContext.Provider value={{
             state,
@@ -287,6 +531,18 @@ export function FooterProvider({ children }: { children: ReactNode }) {
             setInfo,
             setCharacterOverlay,
             clearCharacterOverlay,
+            // 새로운 인벤토리 기능
+            setInventoryCards,
+            selectCard,
+            deselectCard,
+            clearCardSelection,
+            isCardSelected,
+            setRarityFilter,
+            setTypeFilter,
+            setFactionFilter,
+            setSearchFilter,
+            clearFilters,
+            autoSelectMaterials,
             showFooter,
             hideFooter,
             showDeckSlots: showDeckSlotsFunc,

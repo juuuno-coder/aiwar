@@ -30,10 +30,9 @@ export default function GameHeader() {
         { name: '스토리', path: '/story', icon: '📖' },
         { name: '대전', path: '/battle', icon: '⚔️' },
         { name: 'AI 군단', path: '/factions', icon: '🤖' },
-        { name: '슬롯', path: '/slots', icon: '🎰' },
-        { name: '유니크', path: '/unique-unit', icon: '🌟' },
+        { name: 'LAB', path: '/lab', icon: '🔬' },
         { name: '상점', path: '/shop', icon: '🛒' },
-        { name: '강화', path: '/enhance', icon: '⚡' },
+        { name: 'PVP', path: '/pvp', icon: '🎯' },
         { name: '랭킹', path: '/ranking', icon: '🏆' },
     ];
 
@@ -53,8 +52,8 @@ export default function GameHeader() {
                             key={item.path}
                             href={item.path}
                             className={`px-4 py-2 rounded-lg font-medium transition-all ${pathname === item.path
-                                    ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/50'
-                                    : 'bg-white/10 text-gray-300 hover:bg-white/20 hover:text-white'
+                                ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/50'
+                                : 'bg-white/10 text-gray-300 hover:bg-white/20 hover:text-white'
                                 }`}
                         >
                             <span className="mr-1">{item.icon}</span>

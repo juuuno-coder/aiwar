@@ -1,6 +1,7 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 import { motion, HTMLMotionProps } from 'framer-motion';
+import { useSound } from '@/context/SoundContext';
 
 interface ButtonProps extends Omit<HTMLMotionProps<"button">, "children"> {
     children: React.ReactNode;
@@ -87,6 +88,16 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(({
     const variantStyles = selectedVariant[color] || selectedVariant['default'];
     const sizeStyles = sizes[size];
 
+    const { playSfx } = useSound(); // Use Sound Hook
+
+    const handlePress = (e: React.MouseEvent<HTMLButtonElement> | any) => {
+        if (!isDisabled && !isLoading) {
+            playSfx('click');
+            if (onClick) onClick(e);
+            if (onPress) onPress();
+        }
+    };
+
     return (
         <motion.button
             ref={ref}
@@ -99,7 +110,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(({
                 className
             )}
             disabled={isDisabled || isLoading}
-            onClick={!isDisabled && !isLoading ? (onClick || onPress) : undefined}
+            onClick={handlePress} // Use wrapper handler
             {...props}
         >
             {isLoading && (

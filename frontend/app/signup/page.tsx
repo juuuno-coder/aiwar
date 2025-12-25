@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { signup, login, validateUsername, validatePassword, validateNickname } from '@/lib/auth-utils';
+import { BackgroundBeams } from '@/components/ui/aceternity/background-beams';
+import { HoverBorderGradient } from '@/components/ui/aceternity/hover-border-gradient';
 
 export default function SignupPage() {
     const router = useRouter();
@@ -19,7 +21,7 @@ export default function SignupPage() {
         setError('');
         setIsLoading(true);
 
-        // 유효성 검사
+        // Validation
         const usernameValidation = validateUsername(username);
         if (!usernameValidation.valid) {
             setError(usernameValidation.message);
@@ -47,15 +49,15 @@ export default function SignupPage() {
             return;
         }
 
-        // 회원가입 시도
+        // Signup Attempt
         const signupResult = signup(username, password, nickname);
 
         if (signupResult.success) {
-            // 자동 로그인
+            // Auto Login
             login(username, password);
 
             setTimeout(() => {
-                router.push('/');
+                router.push('/'); // Redirect to Intro/Main which will handle auth check
             }, 500);
         } else {
             setError(signupResult.message);
@@ -64,104 +66,105 @@ export default function SignupPage() {
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-purple-900 via-pink-900 to-red-900 flex items-center justify-center p-4">
-            <div className="absolute inset-0 grid-pattern opacity-20"></div>
+        <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center p-4 relative overflow-hidden">
+            <BackgroundBeams className="opacity-40" />
 
             <div className="relative z-10 max-w-md w-full">
-                {/* 로고 */}
+                {/* Header */}
                 <div className="text-center mb-8">
-                    <div className="text-6xl mb-4">✨</div>
-                    <h1 className="text-4xl font-bold text-white mb-2">회원가입</h1>
-                    <p className="text-gray-300">새로운 계정을 만들어보세요</p>
+                    <div className="text-5xl mb-4 animate-pulse">🧬</div>
+                    <h1 className="text-4xl font-black text-white mb-2 orbitron tracking-tight">NEW RECRUIT_</h1>
+                    <p className="text-cyan-400/60 font-mono text-sm tracking-widest">JOIN THE NEURAL NETWORK</p>
                 </div>
 
-                {/* 회원가입 폼 */}
-                <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 border border-white/20">
-                    <form onSubmit={handleSubmit} className="space-y-5">
-                        {/* 아이디 */}
-                        <div>
-                            <label className="block text-white font-bold mb-2">아이디</label>
+                {/* Signup Form */}
+                <div className="bg-black/60 backdrop-blur-xl rounded-2xl p-8 border border-white/10 shadow-[0_0_50px_rgba(88,28,135,0.2)] relative">
+                    {/* Decorative Elements */}
+                    <div className="absolute top-0 right-0 w-16 h-16 border-t-2 border-r-2 border-cyan-500/30 rounded-tr-2xl translate-x-1 -translate-y-1" />
+                    <div className="absolute bottom-0 left-0 w-16 h-16 border-b-2 border-l-2 border-purple-500/30 rounded-bl-2xl -translate-x-1 translate-y-1" />
+
+                    <form onSubmit={handleSubmit} className="space-y-4">
+                        {/* ID */}
+                        <div className="space-y-1">
+                            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Identity (ID)</label>
                             <input
                                 type="text"
                                 value={username}
                                 onChange={(e) => setUsername(e.target.value)}
-                                className="w-full px-4 py-3 rounded-lg bg-white/20 border border-white/30 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                                placeholder="영문, 숫자, _ 사용 (3-20자)"
+                                className="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 text-white placeholder-white/20 focus:outline-none focus:ring-1 focus:ring-cyan-500/50 focus:border-cyan-500/50 transition-all font-mono text-sm"
+                                placeholder="USERNAME"
                                 required
                             />
                         </div>
 
-                        {/* 닉네임 */}
-                        <div>
-                            <label className="block text-white font-bold mb-2">닉네임</label>
+                        {/* Nickname */}
+                        <div className="space-y-1">
+                            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Callsign (Nickname)</label>
                             <input
                                 type="text"
                                 value={nickname}
                                 onChange={(e) => setNickname(e.target.value)}
-                                className="w-full px-4 py-3 rounded-lg bg-white/20 border border-white/30 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                                placeholder="게임 내 표시될 이름 (2-20자)"
+                                className="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 text-white placeholder-white/20 focus:outline-none focus:ring-1 focus:ring-cyan-500/50 focus:border-cyan-500/50 transition-all font-mono text-sm"
+                                placeholder="DISPLAY NAME"
                                 required
                             />
                         </div>
 
-                        {/* 비밀번호 */}
-                        <div>
-                            <label className="block text-white font-bold mb-2">비밀번호</label>
+                        {/* Password */}
+                        <div className="space-y-1">
+                            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Access Code</label>
                             <input
                                 type="password"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
-                                className="w-full px-4 py-3 rounded-lg bg-white/20 border border-white/30 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                                placeholder="4자 이상"
+                                className="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 text-white placeholder-white/20 focus:outline-none focus:ring-1 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all font-mono text-sm"
+                                placeholder="PASSWORD"
                                 required
                             />
                         </div>
 
-                        {/* 비밀번호 확인 */}
-                        <div>
-                            <label className="block text-white font-bold mb-2">비밀번호 확인</label>
+                        {/* Confirm Password */}
+                        <div className="space-y-1">
+                            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Verify Code</label>
                             <input
                                 type="password"
                                 value={confirmPassword}
                                 onChange={(e) => setConfirmPassword(e.target.value)}
-                                className="w-full px-4 py-3 rounded-lg bg-white/20 border border-white/30 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                                placeholder="비밀번호를 다시 입력하세요"
+                                className="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 text-white placeholder-white/20 focus:outline-none focus:ring-1 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all font-mono text-sm"
+                                placeholder="CONFIRM PASSWORD"
                                 required
                             />
                         </div>
 
-                        {/* 에러 메시지 */}
+                        {/* Error Message */}
                         {error && (
-                            <div className="bg-red-500/20 border border-red-500 rounded-lg p-3 text-red-200 text-sm">
-                                {error}
+                            <div className="bg-red-900/20 border border-red-500/50 rounded p-3 text-red-400 text-xs font-mono text-center animate-pulse">
+                                [ERROR]: {error}
                             </div>
                         )}
 
-                        {/* 회원가입 버튼 */}
-                        <button
-                            type="submit"
-                            disabled={isLoading}
-                            className="w-full py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-lg font-bold transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                            {isLoading ? '가입 중...' : '회원가입'}
-                        </button>
+                        {/* Submit Button */}
+                        <div className="pt-4">
+                            <HoverBorderGradient
+                                as="button"
+                                type="submit"
+                                disabled={isLoading}
+                                containerClassName="w-full rounded-xl"
+                                className="w-full bg-gradient-to-r from-purple-900/80 to-pink-900/80 hover:from-purple-800 hover:to-pink-800 text-white py-4 font-black orbitron tracking-widest uppercase"
+                            >
+                                {isLoading ? 'REGISTERING...' : 'INITIATE REGISTRATION'}
+                            </HoverBorderGradient>
+                        </div>
                     </form>
 
-                    {/* 로그인 링크 */}
-                    <div className="mt-6 text-center">
-                        <p className="text-gray-300">
-                            이미 계정이 있으신가요?{' '}
-                            <Link href="/login" className="text-purple-400 hover:text-purple-300 font-bold">
-                                로그인
+                    {/* Footer Links */}
+                    <div className="mt-8 flex flex-col items-center gap-4 text-sm font-mono">
+                        <p className="text-gray-500 text-xs">
+                            ALREADY REGISTERED?{' '}
+                            <Link href="/intro" className="text-purple-400 hover:text-purple-300 font-bold ml-1 hover:underline">
+                                LOGIN HERE
                             </Link>
                         </p>
-                    </div>
-
-                    {/* 뒤로가기 */}
-                    <div className="mt-4 text-center">
-                        <Link href="/intro" className="text-gray-400 hover:text-gray-300 text-sm">
-                            ← 인트로로 돌아가기
-                        </Link>
                     </div>
                 </div>
             </div>

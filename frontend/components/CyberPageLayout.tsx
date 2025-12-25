@@ -10,10 +10,12 @@ import { cn } from '@/lib/utils';
 interface CyberPageLayoutProps {
     children: React.ReactNode;
     title: string;
+    englishTitle?: string;
     subtitle?: string;
     description?: string;
-    color?: 'cyan' | 'purple' | 'pink' | 'amber' | 'green' | 'red' | 'blue';
+    color?: 'cyan' | 'purple' | 'pink' | 'amber' | 'yellow' | 'green' | 'red' | 'blue';
     showBack?: boolean;
+    backPath?: string;
     action?: React.ReactNode;
 }
 
@@ -46,6 +48,13 @@ const colorConfig = {
         bg: 'bg-amber-500/10',
         line: 'bg-amber-500',
     },
+    yellow: {
+        text: 'text-yellow-400',
+        glow: 'shadow-[0_0_20px_rgba(234,179,8,0.3)]',
+        border: 'border-yellow-500/30',
+        bg: 'bg-yellow-500/10',
+        line: 'bg-yellow-500',
+    },
     green: {
         text: 'text-green-400',
         glow: 'shadow-[0_0_20px_rgba(34,197,94,0.3)]',
@@ -72,14 +81,24 @@ const colorConfig = {
 export default function CyberPageLayout({
     children,
     title,
+    englishTitle,
     subtitle,
     description,
     color = 'cyan',
     showBack = true,
+    backPath,
     action,
 }: CyberPageLayoutProps) {
     const router = useRouter();
     const colors = colorConfig[color];
+
+    const handleBack = () => {
+        if (backPath) {
+            router.push(backPath);
+        } else {
+            router.back();
+        }
+    };
 
     return (
         <div className="relative min-h-screen bg-black text-white overflow-hidden">
@@ -118,9 +137,16 @@ export default function CyberPageLayout({
                                     </p>
                                 )}
                                 {/* Title */}
-                                <h1 className="text-3xl md:text-4xl font-black orbitron tracking-tight text-white">
-                                    {title}
-                                </h1>
+                                <div className="flex items-baseline gap-3">
+                                    <h1 className="text-3xl md:text-5xl font-black italic tracking-tighter text-white font-sans">
+                                        {title}
+                                    </h1>
+                                    {englishTitle && (
+                                        <span className="text-sm md:text-lg font-bold orbitron text-white/30 tracking-widest uppercase">
+                                            {englishTitle}
+                                        </span>
+                                    )}
+                                </div>
                             </div>
                         </div>
 
@@ -129,7 +155,7 @@ export default function CyberPageLayout({
 
                             {showBack && (
                                 <button
-                                    onClick={() => router.back()}
+                                    onClick={handleBack}
                                     className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white/40 hover:text-white hover:border-white/20 transition-all group"
                                 >
                                     <ArrowLeft size={14} className="group-hover:-translate-x-1 transition-transform" />

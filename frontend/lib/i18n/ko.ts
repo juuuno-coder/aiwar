@@ -2,6 +2,11 @@ import { Translations } from './types';
 
 export const ko: Translations = {
     // 메뉴
+    'menu.home': '홈', // Added
+    'menu.myCards': '내 카드', // Added
+    'menu.missions': '미션', // Added
+    'menu.achievements': '업적', // Added
+    'menu.encyclopedia': '도감', // Added
     'menu.story': '스토리',
     'menu.battle': '대전',
     'menu.aiFaction': 'AI 군단',
@@ -10,7 +15,7 @@ export const ko: Translations = {
     'menu.pvp': 'PVP',
     'menu.ranking': '랭킹',
     'menu.generation': '생성',
-    'menu.uniqueGeneration': '유니크 생성',
+    'menu.uniqueGeneration': '유니크',
     'menu.fusion': '합성',
     'menu.enhance': '강화',
     'menu.settings': '설정',
@@ -81,6 +86,7 @@ export const ko: Translations = {
     'settings.korean': '한국어',
     'settings.english': 'English',
     'settings.automation': '자동화 설정',
+    'settings.automation.desc': '개방된 AI 군단에서 자동으로 유닛을 생성합니다',
     'settings.profile': '프로필 설정',
     'settings.avatar': '지휘관 아바타',
     'settings.uploadPhoto': '사진 업로드',
@@ -90,10 +96,30 @@ export const ko: Translations = {
     'settings.resetWarning': '모든 게임 데이터를 초기화합니다. 이 작업은 되돌릴 수 없습니다.',
     'settings.help': '도움말',
     'settings.gameInfo': '게임 정보',
+    'settings.activeTimers': '활성 타이머',
+    'settings.nextGen': '다음 생성',
+    'settings.disabled': '비활성화',
+    'settings.version': '버전',
+    'settings.developer': '개발자',
+    'settings.lastUpdate': '마지막 업데이트',
+    'settings.help.start': '게임 시작하기',
+    'settings.help.startDesc': 'AI 군단에서 유닛을 수령하거나 상점에서 카드 팩을 구매하세요.',
+    'settings.help.battle': '대전하기',
+    'settings.help.battleDesc': '카드 5장을 선택하여 대전을 시작하세요. 시너지 보너스를 활용하면 유리합니다.',
+    'settings.help.enhance': '카드 강화',
+    'settings.help.enhanceDesc': '경험치와 코인을 사용하여 카드를 레벨업할 수 있습니다.',
+    'settings.help.fusion': '합성',
+    'settings.help.fusionDesc': '같은 등급의 카드 3장을 합성하여 상위 등급 카드를 획득하세요.',
+    'settings.help.auto': '자동화',
+    'settings.help.autoDesc': '자동 생성을 활성화하면 개방된 AI 군단에서 자동으로 유닛이 생성됩니다.',
 
-    // 사이드바
+    // 사이드바 & 탑바 (New)
     'sidebar.commander': '지휘관',
     'sidebar.eliteCommander': 'Elite Commander',
+    'sidebar.quickAccess': '빠른 접근',
+    'topbar.commanderRegistry': '지휘관 등록 정보',
+    'topbar.syncLevel': '동기화 레벨',
+    'topbar.token': '토큰',
 
     // 생성 자동화
     'slots.activeModules': '활성 모듈',
@@ -299,4 +325,49 @@ export const ko: Translations = {
     'battle.anim.allyDeck': '아군 덱',
     'battle.anim.enemySignatures': '적군 시그니처',
     'battle.anim.unitAssignment': '유닛 배치',
+
+    // 튜토리얼 (Tutorial)
+    'tutorial.step1.title': 'NEURAL_LINK_ESTABLISHED',
+    'tutorial.step1.subtitle': 'COMMANDER_ACCESS_GRANTED',
+    'tutorial.step1.content': '환영합니다, 지휘관님. AI 전쟁이 시작되었습니다. 귀하의 뉴럴 링크는 안정적입니다. 디지털 패권 전쟁에서 엘리트 AI 군단을 이끌 지도자로 선택되셨습니다.',
+    'tutorial.step2.title': 'FACTION_MANAGEMENT',
+    'tutorial.step2.subtitle': 'BUILD_YOUR_LEGION',
+    'tutorial.step2.content': "'군단 본부'에 접속하여 병력을 관리하십시오. 인간, 기계, 외계 세력의 유닛을 모집하고 조합하여 최강의 덱을 구성하십시오.",
+    'tutorial.step3.title': 'COMBAT_PROTOCOLS',
+    'tutorial.step3.subtitle': 'ENGAGE_HOSTILES',
+    'tutorial.step3.content': "'작전 지역'으로 출격하십시오. 전투는 턴 기반 전략 전쟁입니다. 적의 알고리즘에 대응하여 카드를 신중하게 사용하고 승리 토큰을 확보하십시오.",
+    'tutorial.step4.title': 'RESEARCH_LAB',
+    'tutorial.step4.subtitle': 'ENHANCE_CAPABILITIES',
+    'tutorial.step4.content': "'연구소'를 방문하여 지휘관 능력을 업그레이드하십시오. 통찰력, 리더십, 행운 - 이 매개변수들이 자원 효율성과 전투 보상을 결정합니다.",
+    'tutorial.step5.title': 'SYSTEM_READY',
+    'tutorial.step5.subtitle': 'INITIATE_OPERATION',
+    'tutorial.step5.content': '모든 시스템 정상. 자원 할당 완료. 전장이 당신의 명령을 기다립니다. 당신의 가치를 증명하고 네트워크를 지배하십시오.',
+    'tutorial.skip': '튜토리얼 건너뛰기',
+    'tutorial.next': '다음 단계',
+    'tutorial.initialize': '시스템 가동',
+
+    // 스토리 (Story)
+    'story.chapter1.title': 'AI 전쟁의 시작',
+    'story.chapter1.desc': '게임의 기본을 배우고 첫 전투를 경험하세요',
+    'story.chapter1.task1.title': '첫 카드 받기',
+    'story.chapter1.task1.desc': '게임을 시작하면 자동으로 카드를 받습니다',
+    'story.chapter1.task1.guide': '이미 완료되었습니다!',
+    'story.chapter1.task2.title': '카드 능력치 확인하기',
+    'story.chapter1.task2.desc': '인벤토리에서 카드를 확인하세요',
+    'story.chapter1.task2.guide': '메뉴 → 인벤토리 → 카드 클릭',
+    'story.chapter1.task3.title': '첫 전투 승리하기',
+    'story.chapter1.task3.desc': '전투에서 한 번 승리하세요',
+    'story.chapter1.task3.guide': '메뉴 → 대전 시작 → 카드 선택 → 전투',
+
+    'story.chapter2.title': '카드 마스터',
+    'story.chapter2.desc': '카드를 모으고 강화하는 방법을 배우세요',
+    'story.chapter2.task1.title': '카드 3장 모으기',
+    'story.chapter2.task1.desc': '상점에서 카드를 구매하거나 전투 보상으로 획득하세요',
+    'story.chapter2.task1.guide': '메뉴 → 상점 → 카드팩 구매',
+    'story.chapter2.task2.title': '카드 합성하기',
+    'story.chapter2.task2.desc': '카드 3장을 합성하여 더 강한 카드를 만드세요',
+    'story.chapter2.task2.guide': '메뉴 → 카드 합성 → 카드 3장 선택 → 합성',
+    'story.chapter2.task3.title': '희귀 카드 획득하기',
+    'story.chapter2.task3.desc': '희귀 등급 이상의 카드를 획득하세요',
+    'story.chapter2.task3.guide': '카드팩 구매 또는 카드 합성',
 };

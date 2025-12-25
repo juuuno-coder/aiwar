@@ -83,7 +83,7 @@ export default function InventoryPage() {
         <div className="h-full bg-gradient-to-br from-gray-900 via-purple-900/30 to-gray-900 overflow-auto p-8">
             {/* 헤더 */}
             <div className="max-w-7xl mx-auto mb-8">
-                <Link href="/" className="text-[var(--text-secondary)] hover:text-[var(--primary-blue)] mb-2 inline-block">
+                <Link href="/main" className="text-[var(--text-secondary)] hover:text-[var(--primary-blue)] mb-2 inline-block">
                     ← 메인으로
                 </Link>
                 <div className="flex items-center justify-between mb-6">

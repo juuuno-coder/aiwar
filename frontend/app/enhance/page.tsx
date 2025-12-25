@@ -1,176 +1,216 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { useState, useEffect, useCallback } from 'react';
 import { Card as CardType } from '@/lib/types';
-import { canEnhance, enhanceCard, getEnhanceCost, getEnhancePreview } from '@/lib/enhance-utils';
+import { InventoryCard } from '@/lib/inventory-system';
+import { enhanceCard, getEnhanceCost, getEnhancePreview } from '@/lib/enhance-utils';
 import CyberPageLayout from '@/components/CyberPageLayout';
+import EnhanceFooter from '@/components/Footer/EnhanceFooter';
 import GameCard from '@/components/GameCard';
-import { HoverBorderGradient } from '@/components/ui/aceternity/hover-border-gradient';
 import { cn } from '@/lib/utils';
 
 export default function EnhancePage() {
-    const [allCards, setAllCards] = useState<CardType[]>([]);
-    const [targetCard, setTargetCard] = useState<CardType | null>(null);
-    const [materialCards, setMaterialCards] = useState<CardType[]>([]);
+    const [allCards, setAllCards] = useState<InventoryCard[]>([]);
+    const [targetCard, setTargetCard] = useState<InventoryCard | null>(null);
+    const [materialSlots, setMaterialSlots] = useState<(InventoryCard | null)[]>(Array(10).fill(null));
     const [userTokens, setUserTokens] = useState(0);
+    const [discount, setDiscount] = useState(0);
 
     useEffect(() => {
         loadCards();
     }, []);
 
     const loadCards = async () => {
-        const { gameStorage } = await import('@/lib/game-storage');
+        const { loadInventory } = await import('@/lib/inventory-system');
         const { getGameState } = await import('@/lib/game-state');
-        const cards = await gameStorage.getCards();
-        const state = getGameState();
+        const { getResearchBonus } = await import('@/lib/research-system');
+
+        const cards = await loadInventory();
+        const gameState = getGameState();
+
+        let discountVal = 0;
+        if (gameState.research?.stats?.negotiation) {
+            discountVal = getResearchBonus('negotiation', gameState.research.stats.negotiation.currentLevel) / 100;
+        }
+        setDiscount(discountVal);
+
         setAllCards(cards);
-        setUserTokens(state.tokens || 0);
+        setUserTokens(gameState.tokens || 0);
     };
 
-    const handleSelectTarget = (card: CardType) => {
-        setTargetCard(card);
-        setMaterialCards([]);
+    // 카드 드래그 시작
+    const handleDragStart = (e: React.DragEvent, card: InventoryCard) => {
+        e.dataTransfer.setData('application/json', JSON.stringify(card));
     };
 
-    const handleToggleMaterial = (card: CardType) => {
-        if (card.id === targetCard?.id) return;
-        if (materialCards.find(c => c.id === card.id)) {
-            setMaterialCards(prev => prev.filter(c => c.id !== card.id));
-        } else {
-            if (materialCards.length >= 10) return;
-            setMaterialCards(prev => [...prev, card]);
+    // 카드 클릭 (타겟이 없으면 타겟으로, 있으면 재료로)
+    const handleCardClick = (card: InventoryCard) => {
+        if (!targetCard) {
+            setTargetCard(card);
+        } else if (card.name === targetCard.name && card.id !== targetCard.id) {
+            const emptyIndex = materialSlots.findIndex(s => s === null);
+            if (emptyIndex !== -1) {
+                const newSlots = [...materialSlots];
+                newSlots[emptyIndex] = card;
+                setMaterialSlots(newSlots);
+            }
         }
     };
 
+    // 타겟 드롭
+    const handleTargetDrop = (card: InventoryCard) => {
+        setTargetCard(card);
+    };
+
+    // 재료 드롭
+    const handleMaterialDrop = (card: InventoryCard, index: number) => {
+        if (!targetCard) {
+            setTargetCard(card);
+            return;
+        }
+
+        if (card.name === targetCard.name && card.id !== targetCard.id) {
+            const newSlots = [...materialSlots];
+            newSlots[index] = card;
+            setMaterialSlots(newSlots);
+        }
+    };
+
+    // 타겟 제거
+    const handleTargetRemove = () => {
+        setTargetCard(null);
+    };
+
+    // 재료 제거
+    const handleMaterialRemove = (index: number) => {
+        const newSlots = [...materialSlots];
+        newSlots[index] = null;
+        setMaterialSlots(newSlots);
+    };
+
+    // 초기화
+    const handleClear = () => {
+        setTargetCard(null);
+        setMaterialSlots(Array(10).fill(null));
+    };
+
+    // 자동 선택
+    const handleAutoSelect = () => {
+        if (!targetCard) return;
+
+        const sameName = allCards.filter(c =>
+            c.name === targetCard.name && c.id !== targetCard.id
+        );
+        const sorted = sameName.sort((a, b) => (a.level || 1) - (b.level || 1));
+        const selected = sorted.slice(0, 10);
+
+        setMaterialSlots([...selected, ...Array(10 - selected.length).fill(null)]);
+    };
+
+    // 강화 실행
     const handleEnhance = async () => {
-        if (!targetCard || materialCards.length !== 10) return;
-        const check = canEnhance(targetCard, materialCards, userTokens);
-        if (!check.canEnhance) {
-            alert(check.reason);
+        if (!targetCard) return;
+
+        const filledMaterials = materialSlots.filter((c): c is InventoryCard => c !== null);
+        if (filledMaterials.length !== 10) {
+            alert('재료 카드 10장이 필요합니다.');
+            return;
+        }
+
+        const cost = getEnhanceCost(targetCard.level || 1, discount);
+
+        if (userTokens < cost) {
+            alert(`토큰이 부족합니다. (필요: ${cost})`);
             return;
         }
 
         const { gameStorage } = await import('@/lib/game-storage');
-        const enhancedCard = enhanceCard(targetCard, materialCards);
-        const cost = getEnhanceCost(targetCard.level);
+        // InventoryCard를 Card로 캐스팅
+        const enhancedCard = enhanceCard(targetCard as any, filledMaterials as any);
 
-        for (const mat of materialCards) {
+        for (const mat of filledMaterials) {
             await gameStorage.deleteCard(mat.id);
         }
-        await gameStorage.updateCard(enhancedCard.id, enhancedCard);
+        await gameStorage.updateCard(enhancedCard.id, enhancedCard as any);
         await gameStorage.addTokens(-cost);
 
-        alert(`강화 성공! 레벨 ${enhancedCard.level}로 상승!`);
-        setTargetCard(null);
-        setMaterialCards([]);
+        alert(`강화 성공! 레벨 ${enhancedCard.level}로 상승! (비용: ${cost}T)`);
+
+        handleClear();
         await loadCards();
     };
 
-    const preview = targetCard && materialCards.length === 10 ? getEnhancePreview(targetCard) : null;
+    const filledCount = materialSlots.filter(c => c !== null).length;
+    const canEnhance = targetCard !== null && filledCount === 10;
+
+    // 필터링: 타겟이 선택되면 같은 이름의 카드만 표시
+    const displayCards = targetCard
+        ? allCards.filter(c => c.name === targetCard.name && c.id !== targetCard.id)
+        : allCards;
 
     return (
         <CyberPageLayout
-            title="ENHANCE_PROTOCOL"
-            subtitle="Unit Upgrade"
-            description="같은 유닛 카드 10장을 소모하여 레벨업합니다. 레벨이 올라갈수록 전투력이 상승합니다."
+            title="강화 프로토콜"
+            englishTitle="UNIT UPGRADE"
+            description="같은 유닛 카드 10장을 소모하여 레벨업합니다."
             color="amber"
         >
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Target Card */}
-                <motion.div
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    className="bg-white/5 border border-white/10 rounded-xl p-6"
-                >
-                    <h3 className="text-sm font-mono text-amber-400 uppercase tracking-widest mb-4">TARGET_UNIT</h3>
-                    {targetCard ? (
-                        <div className="space-y-4">
-                            <div className="flex justify-center">
-                                <GameCard card={targetCard} />
-                            </div>
-                            <button
-                                onClick={() => setTargetCard(null)}
-                                className="w-full py-2 bg-red-500/20 border border-red-500/50 text-red-400 rounded text-[10px] font-mono uppercase tracking-widest hover:bg-red-500/30 transition-all"
-                            >
-                                CANCEL_SELECTION
-                            </button>
-                        </div>
-                    ) : (
-                        <div className="py-16 text-center text-white/30 font-mono text-sm">
-                            SELECT_TARGET_UNIT
-                        </div>
-                    )}
+            {/* 메인 영역: 카드 목록 */}
+            <div className="p-6 pb-[140px]"> {/* 푸터 높이 120px + 여유 */}
+                <div className="mb-4 flex items-center justify-between">
+                    <h2 className="text-lg font-bold text-white">
+                        {targetCard ? `${targetCard.name} 카드 목록` : '내 카드 목록'}
+                    </h2>
+                    <p className="text-sm text-white/60">
+                        {displayCards.length}장
+                    </p>
+                </div>
 
-                    {preview && (
-                        <div className="mt-6 p-4 bg-amber-500/10 border border-amber-500/30 rounded-lg">
-                            <p className="text-[9px] font-mono text-white/40 uppercase tracking-widest mb-2">PREVIEW</p>
-                            <p className="text-lg font-bold text-white">LV.{preview.currentLevel} → LV.{preview.nextLevel}</p>
-                            <p className="text-sm text-white/60">PWR: {preview.currentStats.totalPower} → {preview.nextStats.totalPower}</p>
-                            <p className="text-sm text-amber-400 mt-2">COST: {preview.cost} TOKEN</p>
-                        </div>
-                    )}
-                </motion.div>
+                <div className="grid grid-cols-5 gap-4">
+                    {displayCards.map(card => {
+                        const isSelected =
+                            card.id === targetCard?.id ||
+                            materialSlots.some(s => s?.id === card.id);
 
-                {/* Material Cards */}
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.1 }}
-                    className="bg-white/5 border border-white/10 rounded-xl p-6"
-                >
-                    <h3 className="text-sm font-mono text-purple-400 uppercase tracking-widest mb-4">
-                        MATERIAL_UNITS ({materialCards.length}/10)
-                    </h3>
-                    <div className="grid grid-cols-2 gap-2 max-h-[500px] overflow-y-auto mb-4">
-                        {materialCards.map(card => (
-                            <div key={card.id} onClick={() => handleToggleMaterial(card)} className="cursor-pointer hover:opacity-70 transition-opacity">
-                                <GameCard card={card} />
-                            </div>
-                        ))}
-                        {materialCards.length < 10 && (
-                            <div className="aspect-[2/3] border border-dashed border-white/10 rounded-lg flex items-center justify-center text-white/20 text-sm font-mono">
-                                +{10 - materialCards.length}
-                            </div>
-                        )}
-                    </div>
-                    {materialCards.length === 10 && (
-                        <HoverBorderGradient
-                            onClick={handleEnhance}
-                            className="w-full py-3"
-                            containerClassName="w-full"
-                            duration={2}
-                        >
-                            <span className="font-bold text-white font-mono uppercase tracking-widest">EXECUTE_ENHANCE ⚡</span>
-                        </HoverBorderGradient>
-                    )}
-                </motion.div>
-
-                {/* Card List */}
-                <motion.div
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.2 }}
-                    className="bg-white/5 border border-white/10 rounded-xl p-6"
-                >
-                    <h3 className="text-sm font-mono text-cyan-400 uppercase tracking-widest mb-4">AVAILABLE_UNITS</h3>
-                    <div className="grid grid-cols-2 gap-2 max-h-[600px] overflow-y-auto">
-                        {allCards.map(card => (
+                        return (
                             <div
                                 key={card.id}
-                                onClick={() => targetCard ? handleToggleMaterial(card) : handleSelectTarget(card)}
+                                draggable
+                                onDragStart={(e) => handleDragStart(e, card)}
+                                onClick={() => handleCardClick(card)}
                                 className={cn(
-                                    "cursor-pointer transition-all",
-                                    card.id === targetCard?.id && "ring-2 ring-amber-500",
-                                    materialCards.find(c => c.id === card.id) && "ring-2 ring-purple-500 opacity-50"
+                                    "cursor-grab active:cursor-grabbing transition-all hover:scale-105",
+                                    isSelected && "opacity-50 ring-2 ring-cyan-500"
                                 )}
                             >
                                 <GameCard card={card} />
                             </div>
-                        ))}
+                        );
+                    })}
+                </div>
+
+                {displayCards.length === 0 && (
+                    <div className="text-center py-20 text-white/40">
+                        {targetCard
+                            ? `${targetCard.name} 카드가 더 이상 없습니다.`
+                            : '카드가 없습니다.'}
                     </div>
-                </motion.div>
+                )}
             </div>
+
+            {/* 푸터: 슬롯 + 버튼 */}
+            <EnhanceFooter
+                targetCard={targetCard}
+                materialSlots={materialSlots}
+                onTargetDrop={handleTargetDrop}
+                onMaterialDrop={handleMaterialDrop}
+                onTargetRemove={handleTargetRemove}
+                onMaterialRemove={handleMaterialRemove}
+                onClear={handleClear}
+                onAutoSelect={handleAutoSelect}
+                onEnhance={handleEnhance}
+                canEnhance={canEnhance}
+            />
         </CyberPageLayout>
     );
 }

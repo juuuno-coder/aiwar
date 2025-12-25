@@ -1,237 +1,304 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { BackgroundBeams } from '@/components/ui/aceternity/background-beams';
-import PageHeader from '@/components/PageHeader';
-import GameCard from '@/components/GameCard';
-import { Button } from '@/components/ui/custom/Button';
-import { useTranslation } from '@/context/LanguageContext';
-import { CATEGORY_NAMES, CATEGORY_ICONS, CATEGORY_COLORS, AIFaction } from '@/lib/faction-types';
-import { FACTION_LORE_DATA } from '@/lib/faction-lore';
-import { X, BookOpen, ExternalLink, Zap } from 'lucide-react';
+import CyberPageLayout from '@/components/CyberPageLayout';
+import { Card as CardType, CardTemplate, AIFaction } from '@/lib/types';
+import { storage } from '@/lib/utils';
+import { CARD_DATABASE, COMMANDERS } from '@/data/card-database';
+import aiFactionsData from '@/data/ai-factions.json';
 import { cn } from '@/lib/utils';
-import {
-    getFactionColor,
-    FACTIONS_DATA
-} from '@/lib/faction-subscription';
+import { Lock, Play } from 'lucide-react';
+import { useTranslation } from '@/context/LanguageContext';
+
+type Tab = 'UNITS' | 'LEGIONS' | 'COMMANDERS';
+
+type SelectedItem =
+    | { type: 'UNIT'; data: CardTemplate; isOwned: boolean }
+    | { type: 'LEGION'; data: AIFaction; isOwned: boolean }
+    | { type: 'COMMANDER'; data: CardTemplate; isOwned: boolean };
 
 export default function EncyclopediaPage() {
-    const { t } = useTranslation();
-    const [selectedFaction, setSelectedFaction] = useState<string | null>(null);
+    const { language } = useTranslation();
+    const [activeTab, setActiveTab] = useState<Tab>('UNITS');
+    const [ownedCardIds, setOwnedCardIds] = useState<Set<string>>(new Set());
+    const [selectedItem, setSelectedItem] = useState<SelectedItem | null>(null);
 
-    const factions = FACTIONS_DATA.factions;
-
-    // 카테고리별로 분류
-    const factionsByCategory = factions.reduce((acc, faction) => {
-        if (!acc[faction.category]) {
-            acc[faction.category] = [];
+    // 번역 객체
+    const translations = {
+        ko: {
+            title: '군단 도감',
+            englishTitle: 'ENCYCLOPEDIA',
+            description: '모든 유닛, 군단, 지휘관의 완전한 아카이브',
+            tabs: {
+                UNITS: '유닛',
+                LEGIONS: '군단',
+                COMMANDERS: '지휘관'
+            },
+            rarity: '등급',
+            specialty: '특성',
+            cmdAcc: '명령 (정확도)',
+            tacSpd: '전술 (속도)',
+            strategist: '전략가'
+        },
+        en: {
+            title: 'Encyclopedia',
+            englishTitle: 'NEURAL DB',
+            description: 'Complete archive of all Units, Legions, and Commanders',
+            tabs: {
+                UNITS: 'UNITS',
+                LEGIONS: 'LEGIONS',
+                COMMANDERS: 'COMMANDERS'
+            },
+            rarity: 'Rarity',
+            specialty: 'Specialty',
+            cmdAcc: 'CMD (Acc)',
+            tacSpd: 'TAC (Spd)',
+            strategist: 'STRATEGIST'
         }
-        acc[faction.category].push(faction);
-        return acc;
-    }, {} as Record<string, AIFaction[]>);
-
-    const categories = ['super', 'image', 'video', 'audio', 'coding'];
-
-    const handleFactionClick = (factionId: string) => {
-        setSelectedFaction(factionId);
     };
 
-    const selectedLore = selectedFaction ? FACTION_LORE_DATA[selectedFaction] : null;
-    const selectedFactionData = factions.find(f => f.id === selectedFaction);
+    const tr = translations[language as keyof typeof translations] || translations.ko;
 
-    return (
-        <div className="min-h-screen bg-black text-white relative overflow-hidden flex flex-col pb-20">
-            <BackgroundBeams />
+    useEffect(() => {
+        // Load owned cards
+        const userCards = storage.get<CardType[]>('userCards', []);
+        const ownedIds = new Set(userCards.map(c => c.templateId));
+        setOwnedCardIds(ownedIds);
+    }, []);
 
-            <div className="relative z-10 container mx-auto px-4 pt-4 flex-1 overflow-y-auto custom-scrollbar">
-                <PageHeader
-                    title="AI 백과사전"
-                    englishTitle="AI ENCYCLOPEDIA"
-                    description="Dive into the history and secrets of Artificial Intelligences."
-                />
-
-                <div className="space-y-12 pb-20">
-                    {categories.map((category) => (
-                        <div key={category} className="space-y-4">
-                            <div className="flex items-center gap-3 border-b border-white/10 pb-2">
-                                <span className="text-2xl">{CATEGORY_ICONS[category as keyof typeof CATEGORY_ICONS]}</span>
-                                <h2 className="text-xl font-bold orbitron uppercase tracking-widest text-white/90">
-                                    {CATEGORY_NAMES[category as keyof typeof CATEGORY_NAMES]}
-                                </h2>
+    const renderUnits = () => (
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+            {CARD_DATABASE.map((card, i) => {
+                const isOwned = ownedCardIds.has(card.id);
+                return (
+                    <motion.div
+                        key={card.id}
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: i * 0.05 }}
+                        onClick={() => setSelectedItem({ type: 'UNIT', data: card, isOwned })}
+                        className={cn(
+                            "aspect-[3/4] relative rounded-lg border overflow-hidden cursor-pointer group transition-all",
+                            isOwned
+                                ? "border-cyan-500/30 bg-black/40 hover:border-cyan-500/60 hover:shadow-[0_0_15px_rgba(34,211,238,0.2)]"
+                                : "border-white/5 bg-white/5 grayscale opacity-60"
+                        )}
+                    >
+                        {card.imageUrl && (
+                            <div className="absolute inset-0 z-0">
+                                <img
+                                    src={card.imageUrl}
+                                    alt={card.name}
+                                    className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity"
+                                />
                             </div>
+                        )}
 
-                            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                                {factionsByCategory[category]?.map((faction) => (
-                                    <motion.div
-                                        key={faction.id}
-                                        whileHover={{ y: -5, scale: 1.02 }}
-                                        whileTap={{ scale: 0.98 }}
-                                        className="relative group cursor-pointer"
-                                        onClick={() => handleFactionClick(faction.id)}
-                                    >
-                                        <div
-                                            className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent rounded-xl z-10"
-                                            style={{ borderBottom: `2px solid ${CATEGORY_COLORS[faction.category as keyof typeof CATEGORY_COLORS]}` }}
-                                        />
-                                        <div className="aspect-[3/4] bg-white/5 rounded-xl border border-white/10 overflow-hidden relative">
-                                            {/* 플레이스홀더 이미지 또는 실제 아이콘 */}
-                                            <div className="absolute inset-0 flex items-center justify-center text-4xl group-hover:scale-110 transition-transform duration-500">
-                                                {/* 여기서는 GameCard 대신 심플한 이미지를 사용하거나, GameCard를 작게 렌더링 */}
-                                                <img
-                                                    src={faction.iconUrl || `/assets/factions/${faction.id}.png`}
-                                                    alt={faction.displayName}
-                                                    className="w-2/3 h-2/3 object-contain drop-shadow-lg"
-                                                    onError={(e) => {
-                                                        (e.target as HTMLImageElement).src = '/card_placeholder_1765931222851.png';
-                                                    }}
-                                                />
-                                            </div>
-                                        </div>
-                                        <div className="absolute bottom-3 left-3 z-20">
-                                            <p className="text-white font-bold text-sm orbitron">{faction.displayName}</p>
-                                            <p className="text-white/50 text-[10px] uppercase tracking-wider">
-                                                {FACTION_LORE_DATA[faction.id]?.catchphrase || "Unknown AI"}
-                                            </p>
-                                        </div>
-                                    </motion.div>
-                                ))}
+                        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/20 to-black/90 z-10" />
+
+                        <div className="absolute top-2 right-2 z-20 flex gap-1">
+                            {card.videoUrl && (
+                                <div className="bg-red-500/80 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-full flex items-center gap-1 backdrop-blur-sm">
+                                    <Play size={6} fill="white" /> LIVE
+                                </div>
+                            )}
+
+                            <div className={cn("w-2 h-2 rounded-full",
+                                card.rarity === 'common' ? 'bg-gray-500' :
+                                    card.rarity === 'rare' ? 'bg-blue-500 shadow-[0_0_5px_#3b82f6]' :
+                                        card.rarity === 'epic' ? 'bg-purple-500 shadow-[0_0_5px_#a855f7]' :
+                                            card.rarity === 'legendary' ? 'bg-amber-500 shadow-[0_0_5px_#f59e0b]' : 'bg-white'
+                            )} />
+                        </div>
+
+                        <div className="absolute bottom-0 w-full p-3 z-20">
+                            <div className="text-[10px] font-mono text-white/70 mb-1">{card.aiFactionId.toUpperCase()}</div>
+                            <div className="font-bold text-white text-sm truncate drop-shadow-md">{card.name}</div>
+                        </div>
+
+                        {!isOwned && (
+                            <div className="absolute inset-0 flex items-center justify-center">
+                                <Lock className="text-white/20" size={32} />
+                            </div>
+                        )}
+                    </motion.div>
+                );
+            })}
+        </div>
+    );
+
+    const renderLegions = () => (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {aiFactionsData.factions.map((faction: any, i: number) => (
+                <motion.div
+                    key={faction.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.1 }}
+                    onClick={() => setSelectedItem({ type: 'LEGION', data: faction, isOwned: true })}
+                    className="bg-white/5 border border-white/10 rounded-xl p-6 hover:bg-white/10 hover:border-white/20 cursor-pointer transition-all"
+                >
+                    <div className="flex items-center gap-4 mb-4">
+                        <div className="text-4xl">🤖</div>
+                        <div>
+                            <h3 className="font-bold text-white text-lg">{faction.displayName}</h3>
+                            <div className="flex gap-2 text-[10px] font-mono text-white/40 mt-1">
+                                {faction.specialty.map((s: string) => <span key={s} className="bg-white/10 px-1 rounded">{s}</span>)}
                             </div>
                         </div>
-                    ))}
-                </div>
+                    </div>
+                    <p className="text-sm text-white/50 line-clamp-3">{faction.description}</p>
+                </motion.div>
+            ))}
+        </div>
+    );
+
+    const renderCommanders = () => (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {COMMANDERS.map((cmd, i) => (
+                <motion.div
+                    key={cmd.id}
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: i * 0.1 }}
+                    onClick={() => setSelectedItem({ type: 'COMMANDER', data: cmd, isOwned: true })}
+                    className="relative aspect-square rounded-xl overflow-hidden border border-amber-500/20 group cursor-pointer"
+                >
+                    <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent z-10" />
+                    <div className="absolute inset-0 bg-zinc-900 flex items-center justify-center text-6xl opacity-30 group-hover:opacity-50 transition-opacity">
+                        👑
+                    </div>
+
+                    <div className="absolute bottom-0 w-full p-6 z-20">
+                        <h3 className="font-bold orbitron text-amber-400 text-xl mb-1">{cmd.name}</h3>
+                        <p className="text-xs font-mono text-white/60">
+                            {cmd.specialty.toUpperCase()} {tr.strategist}
+                        </p>
+                    </div>
+                </motion.div>
+            ))}
+        </div>
+    );
+
+    return (
+        <CyberPageLayout
+            title={tr.title}
+            englishTitle={tr.englishTitle}
+            description={tr.description}
+            color="cyan"
+        >
+            {/* Tabs */}
+            <div className="flex gap-4 mb-8 border-b border-white/10 pb-4">
+                {(['UNITS', 'LEGIONS', 'COMMANDERS'] as Tab[]).map((tab) => (
+                    <button
+                        key={tab}
+                        onClick={() => setActiveTab(tab)}
+                        className={cn(
+                            "px-4 py-2 text-sm font-mono tracking-widest transition-all rounded-lg",
+                            activeTab === tab
+                                ? "bg-cyan-500/20 text-cyan-400 border border-cyan-500/50"
+                                : "text-white/40 hover:text-white hover:bg-white/5"
+                        )}
+                    >
+                        {tr.tabs[tab]}
+                    </button>
+                ))}
             </div>
 
-            {/* 상세 정보 모달 */}
+            {/* Content Area */}
+            <div className="min-h-[500px]">
+                {activeTab === 'UNITS' && renderUnits()}
+                {activeTab === 'LEGIONS' && renderLegions()}
+                {activeTab === 'COMMANDERS' && renderCommanders()}
+            </div>
+
+            {/* Detail Modal */}
             <AnimatePresence>
-                {selectedFaction && selectedFactionData && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-10 pointer-events-none">
+                {selectedItem && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/90 backdrop-blur-lg"
+                        onClick={() => setSelectedItem(null)}
+                    >
                         <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            className="absolute inset-0 bg-black/90 backdrop-blur-md pointer-events-auto"
-                            onClick={() => setSelectedFaction(null)}
-                        />
-                        <motion.div
-                            layoutId={selectedFaction}
-                            className="relative w-full max-w-5xl h-[80vh] bg-gray-900 border border-white/10 rounded-3xl overflow-hidden shadow-2xl pointer-events-auto flex flex-col md:flex-row"
+                            initial={{ y: 50, opacity: 0 }}
+                            animate={{ y: 0, opacity: 1 }}
+                            className="bg-zinc-900 border border-white/10 rounded-2xl w-full max-w-lg overflow-hidden relative"
+                            onClick={e => e.stopPropagation()}
                         >
-                            {/* 좌측: 비주얼 & 스탯 */}
-                            <div className="w-full md:w-1/3 bg-black/50 p-8 flex flex-col items-center justify-center relative overflow-hidden">
-                                <div className="absolute inset-0 opacity-20 bg-cover bg-center blur-md" style={{ backgroundImage: `url(${selectedFactionData.iconUrl})` }} />
-                                <div className="z-10 transform scale-125 mb-8">
-                                    <GameCard
-                                        card={{
-                                            id: 'demo',
-                                            name: selectedFactionData.displayName,
-                                            type: 'EFFICIENCY', // 예시
-                                            rarity: 'legendary',
-                                            level: 5,
-                                            stats: { efficiency: 99, creativity: 99, function: 99, totalPower: 297 },
-                                            templateId: `${selectedFaction}-demo`,
-                                            ownerId: 'demo',
-                                            experience: 0,
-                                            isLocked: false,
-                                            acquiredAt: new Date()
-                                        }}
-                                        isDisabled={false}
-                                        isHolographic={true}
+                            <div className="aspect-video bg-black/50 relative flex items-center justify-center border-b border-white/5 overflow-hidden">
+                                {'videoUrl' in selectedItem.data && selectedItem.data.videoUrl ? (
+                                    <video
+                                        src={selectedItem.data.videoUrl}
+                                        autoPlay
+                                        loop
+                                        muted
+                                        playsInline
+                                        className="w-full h-full object-cover"
                                     />
-                                </div>
-                                <div className="z-10 w-full space-y-2">
-                                    <div className="flex justify-between text-sm">
-                                        <span className="text-white/50">Category</span>
-                                        <span style={{ color: CATEGORY_COLORS[selectedFactionData.category as keyof typeof CATEGORY_COLORS] }}>
-                                            {CATEGORY_NAMES[selectedFactionData.category as keyof typeof CATEGORY_NAMES]}
-                                        </span>
+                                ) : 'imageUrl' in selectedItem.data && selectedItem.data.imageUrl ? (
+                                    <img
+                                        src={selectedItem.data.imageUrl}
+                                        alt={selectedItem.data.name}
+                                        className="w-full h-full object-cover"
+                                    />
+                                ) : (
+                                    <div className="text-6xl animate-pulse">
+                                        {selectedItem.type === 'UNIT' ? '🃏' : selectedItem.type === 'LEGION' ? '🤖' : '👑'}
                                     </div>
-                                    <div className="flex justify-between text-sm">
-                                        <span className="text-white/50">Gen Interval</span>
-                                        <span className="text-white">{selectedFactionData.generationInterval}m</span>
+                                )}
+
+                                {!selectedItem.isOwned && (
+                                    <div className="absolute inset-0 bg-black/60 flex items-center justify-center backdrop-blur-sm z-10">
+                                        <Lock size={48} className="text-white/20" />
                                     </div>
-                                </div>
+                                )}
                             </div>
 
-                            {/* 우측: 로어 & 정보 */}
-                            <div className="w-full md:w-2/3 p-8 overflow-y-auto custom-scrollbar bg-gradient-to-br from-gray-900 to-gray-800">
-                                <div className="flex justify-between items-start mb-6">
-                                    <div>
-                                        <h2 className="text-4xl font-black text-white orbitron mb-2">{selectedFactionData.displayName}</h2>
-                                        <p className="text-xl text-cyan-400 italic font-serif">
-                                            "{selectedLore?.catchphrase || 'The Artificial Intelligence'}"
-                                        </p>
+                            <div className="p-8">
+                                <h2 className="text-3xl font-black orbitron text-white mb-2">
+                                    {selectedItem.type === 'LEGION' ? selectedItem.data.displayName : selectedItem.data.name}
+                                </h2>
+
+                                <p className="text-white/60 mb-6 leading-relaxed">
+                                    {selectedItem.data.description}
+                                </p>
+
+                                {selectedItem.type === 'UNIT' && 'rarity' in selectedItem.data && (
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="bg-white/5 p-3 rounded">
+                                            <div className="text-[10px] text-white/40 uppercase">{tr.rarity}</div>
+                                            <div className="text-sm font-bold text-white capitalize">{selectedItem.data.rarity}</div>
+                                        </div>
+                                        <div className="bg-white/5 p-3 rounded">
+                                            <div className="text-[10px] text-white/40 uppercase">{tr.specialty}</div>
+                                            <div className="text-sm font-bold text-white capitalize">{selectedItem.data.specialty}</div>
+                                        </div>
                                     </div>
-                                    <button
-                                        onClick={() => setSelectedFaction(null)}
-                                        className="p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
-                                    >
-                                        <X size={24} />
-                                    </button>
-                                </div>
+                                )}
 
-                                <div className="space-y-8">
-                                    <section>
-                                        <h3 className="text-sm font-bold text-white/40 uppercase tracking-widest mb-3 flex items-center gap-2">
-                                            <BookOpen size={16} /> Description
-                                        </h3>
-                                        <p className="text-white/80 leading-relaxed text-lg">
-                                            {selectedLore?.description || selectedFactionData.description}
-                                        </p>
-                                    </section>
-
-                                    {selectedLore?.history && (
-                                        <section>
-                                            <h3 className="text-sm font-bold text-white/40 uppercase tracking-widest mb-3 flex items-center gap-2">
-                                                <Zap size={16} /> History
-                                            </h3>
-                                            <p className="text-white/60 leading-relaxed">
-                                                {selectedLore.history}
-                                            </p>
-                                        </section>
-                                    )}
-
-                                    <div className="grid grid-cols-2 gap-6">
-                                        <section>
-                                            <h3 className="text-sm font-bold text-white/40 uppercase tracking-widest mb-3">Personality</h3>
-                                            <div className="flex flex-wrap gap-2">
-                                                {selectedLore?.personality.map((trait, i) => (
-                                                    <span key={i} className="px-3 py-1 rounded-full bg-white/5 border border-white/10 text-xs text-white/70">
-                                                        #{trait}
-                                                    </span>
-                                                ))}
-                                                {(!selectedLore || !selectedLore.personality) && <span className="text-white/30 text-sm">No data</span>}
+                                {selectedItem.type === 'COMMANDER' && (
+                                    <div className="space-y-2">
+                                        <div className="grid grid-cols-2 gap-2 text-sm">
+                                            <div className="flex justify-between bg-white/5 p-2 rounded">
+                                                <span className="text-white/50">{tr.cmdAcc}</span>
+                                                <span className="text-amber-400">{selectedItem.data.baseStats.accuracy.min}</span>
                                             </div>
-                                        </section>
-
-                                        <section>
-                                            <h3 className="text-sm font-bold text-white/40 uppercase tracking-widest mb-3">Relations</h3>
-                                            <div className="space-y-2">
-                                                <div className="flex gap-2 items-center">
-                                                    <span className="text-xs text-green-400 font-bold w-12">ALLIES</span>
-                                                    <div className="flex gap-1">
-                                                        {selectedLore?.allies.map(ally => (
-                                                            <span key={ally} className="text-xs text-white/60 bg-green-500/10 px-2 py-0.5 rounded">{ally.toUpperCase()}</span>
-                                                        ))}
-                                                    </div>
-                                                </div>
-                                                <div className="flex gap-2 items-center">
-                                                    <span className="text-xs text-red-400 font-bold w-12">RIVALS</span>
-                                                    <div className="flex gap-1">
-                                                        {selectedLore?.rivals.map(rival => (
-                                                            <span key={rival} className="text-xs text-white/60 bg-red-500/10 px-2 py-0.5 rounded">{rival.toUpperCase()}</span>
-                                                        ))}
-                                                    </div>
-                                                </div>
+                                            <div className="flex justify-between bg-white/5 p-2 rounded">
+                                                <span className="text-white/50">{tr.tacSpd}</span>
+                                                <span className="text-amber-400">{selectedItem.data.baseStats.speed.min}</span>
                                             </div>
-                                        </section>
+                                        </div>
                                     </div>
-                                </div>
+                                )}
                             </div>
                         </motion.div>
-                    </div>
+                    </motion.div>
                 )}
             </AnimatePresence>
-        </div>
+        </CyberPageLayout>
     );
 }

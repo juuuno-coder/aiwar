@@ -11,8 +11,10 @@ import {
 } from '@/lib/automation-utils';
 import { getGameState } from '@/lib/game-state';
 import CyberPageLayout from '@/components/CyberPageLayout';
+import { useTranslation } from '@/context/LanguageContext';
 
 export default function SettingsPage() {
+    const { t, language, setLanguage } = useTranslation();
     const [soundEnabled, setSoundEnabled] = useState(true);
     const [musicEnabled, setMusicEnabled] = useState(true);
     const [autoGenerationEnabled, setAutoGenerationEnabled] = useState(false);
@@ -60,7 +62,7 @@ export default function SettingsPage() {
     };
 
     const resetData = () => {
-        if (confirm('정말로 모든 데이터를 초기화하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) {
+        if (confirm(t('settings.resetWarning'))) {
             localStorage.clear();
             alert('데이터가 초기화되었습니다. 페이지를 새로고침합니다.');
             window.location.reload();
@@ -69,23 +71,49 @@ export default function SettingsPage() {
 
     return (
         <CyberPageLayout
-            title="SETTINGS"
-            subtitle="System Configuration"
-            description="게임 설정을 관리하세요"
+            title="시스템 설정"
+            englishTitle="CONFIGURATION"
+            description="게임 환경을 최적화하고 계정을 관리하세요."
             color="blue"
         >
+            {/* 언어 설정 (New) */}
+            <div className="card p-6 mb-6">
+                <h2 className="text-2xl font-bold mb-6" style={{ fontFamily: 'Orbitron, sans-serif' }}>
+                    🌐 {t('settings.language')}
+                </h2>
+                <div className="flex gap-4">
+                    <button
+                        onClick={() => setLanguage('ko')}
+                        className={`flex-1 py-4 rounded-lg font-bold transition-all ${language === 'ko'
+                            ? 'bg-[var(--primary-blue)] text-black shadow-[0_0_15px_rgba(0,217,255,0.5)]'
+                            : 'bg-[var(--dark-overlay)] text-[var(--text-secondary)] hover:bg-white/10'
+                            }`}
+                    >
+                        🇰🇷 한국어
+                    </button>
+                    <button
+                        onClick={() => setLanguage('en')}
+                        className={`flex-1 py-4 rounded-lg font-bold transition-all ${language === 'en'
+                            ? 'bg-[var(--primary-purple)] text-white shadow-[0_0_15px_rgba(168,85,247,0.5)]'
+                            : 'bg-[var(--dark-overlay)] text-[var(--text-secondary)] hover:bg-white/10'
+                            }`}
+                    >
+                        🇺🇸 English
+                    </button>
+                </div>
+            </div>
 
             {/* 자동화 설정 */}
             <div className="card p-6 mb-6">
                 <h2 className="text-2xl font-bold mb-6" style={{ fontFamily: 'Orbitron, sans-serif' }}>
-                    🤖 자동화 설정
+                    🤖 {t('settings.automation')}
                 </h2>
                 <div className="space-y-4">
                     <div className="flex items-center justify-between p-4 bg-[var(--dark-overlay)] rounded-lg">
                         <div>
-                            <h3 className="font-bold mb-1">AI 군단 자동 생성</h3>
+                            <h3 className="font-bold mb-1">{t('settings.automation')}</h3>
                             <p className="text-sm text-[var(--text-secondary)]">
-                                해금된 AI 군단에서 자동으로 유닛을 생성합니다
+                                {t('settings.automation.desc')}
                             </p>
                         </div>
                         <label className="relative inline-flex items-center cursor-pointer">
@@ -101,7 +129,7 @@ export default function SettingsPage() {
 
                     {autoGenerationEnabled && timerStatus.length > 0 && (
                         <div className="mt-4 space-y-2">
-                            <h4 className="font-bold text-sm mb-2">활성화된 타이머</h4>
+                            <h4 className="font-bold text-sm mb-2">{t('settings.activeTimers')}</h4>
                             {timerStatus.map((timer) => (
                                 <div
                                     key={timer.factionId}
@@ -110,7 +138,7 @@ export default function SettingsPage() {
                                     <div className="flex items-center justify-between mb-2">
                                         <span className="text-sm font-bold">{timer.factionId}</span>
                                         <span className="text-xs text-[var(--text-secondary)]">
-                                            {timer.enabled ? `다음 생성: ${formatTime(timer.timeUntilNext)}` : '비활성화'}
+                                            {timer.enabled ? `${t('settings.nextGen')}: ${formatTime(timer.timeUntilNext)}` : t('settings.disabled')}
                                         </span>
                                     </div>
                                     {timer.enabled && (
@@ -131,19 +159,19 @@ export default function SettingsPage() {
             {/* 게임 정보 */}
             <div className="card p-6 mb-6">
                 <h2 className="text-2xl font-bold mb-6" style={{ fontFamily: 'Orbitron, sans-serif' }}>
-                    ℹ️ 게임 정보
+                    ℹ️ {t('settings.gameInfo')}
                 </h2>
                 <div className="space-y-2 text-sm text-[var(--text-secondary)]">
                     <div className="flex justify-between">
-                        <span>버전</span>
+                        <span>{t('settings.version')}</span>
                         <span className="font-bold">v1.0.0</span>
                     </div>
                     <div className="flex justify-between">
-                        <span>개발자</span>
+                        <span>{t('settings.developer')}</span>
                         <span className="font-bold">AI Daejeon Team</span>
                     </div>
                     <div className="flex justify-between">
-                        <span>마지막 업데이트</span>
+                        <span>{t('settings.lastUpdate')}</span>
                         <span className="font-bold">2025-12-14</span>
                     </div>
                 </div>
@@ -152,44 +180,44 @@ export default function SettingsPage() {
             {/* 데이터 관리 */}
             <div className="card p-6 mb-6 border-2 border-[var(--accent-red)]">
                 <h2 className="text-2xl font-bold mb-6 text-[var(--accent-red)]" style={{ fontFamily: 'Orbitron, sans-serif' }}>
-                    ⚠️ 데이터 관리
+                    ⚠️ {t('settings.dataManagement')}
                 </h2>
                 <p className="text-sm text-[var(--text-secondary)] mb-4">
-                    모든 게임 데이터를 초기화합니다. 이 작업은 되돌릴 수 없습니다.
+                    {t('settings.resetWarning')}
                 </p>
                 <button
                     onClick={resetData}
                     className="btn bg-[var(--accent-red)] hover:bg-red-700 text-white w-full"
                 >
-                    데이터 초기화
+                    {t('settings.resetData')}
                 </button>
             </div>
 
             {/* 도움말 */}
             <div className="card p-6 mb-6">
                 <h2 className="text-2xl font-bold mb-6" style={{ fontFamily: 'Orbitron, sans-serif' }}>
-                    💡 도움말
+                    💡 {t('settings.help')}
                 </h2>
                 <div className="space-y-3 text-sm text-[var(--text-secondary)]">
                     <div>
-                        <h3 className="font-bold text-white mb-1">게임 시작하기</h3>
-                        <p>AI 군단에서 유닛을 수령하거나 상점에서 카드 팩을 구매하세요.</p>
+                        <h3 className="font-bold text-white mb-1">{t('settings.help.start')}</h3>
+                        <p>{t('settings.help.startDesc')}</p>
                     </div>
                     <div>
-                        <h3 className="font-bold text-white mb-1">대전하기</h3>
-                        <p>카드 5장을 선택하여 대전을 시작하세요. 시너지 보너스를 활용하면 유리합니다.</p>
+                        <h3 className="font-bold text-white mb-1">{t('settings.help.battle')}</h3>
+                        <p>{t('settings.help.battleDesc')}</p>
                     </div>
                     <div>
-                        <h3 className="font-bold text-white mb-1">카드 강화</h3>
-                        <p>경험치와 코인을 사용하여 카드를 레벨업할 수 있습니다.</p>
+                        <h3 className="font-bold text-white mb-1">{t('settings.help.enhance')}</h3>
+                        <p>{t('settings.help.enhanceDesc')}</p>
                     </div>
                     <div>
-                        <h3 className="font-bold text-white mb-1">합성</h3>
-                        <p>같은 등급의 카드 3장을 합성하여 상위 등급 카드를 획득하세요.</p>
+                        <h3 className="font-bold text-white mb-1">{t('settings.help.fusion')}</h3>
+                        <p>{t('settings.help.fusionDesc')}</p>
                     </div>
                     <div>
-                        <h3 className="font-bold text-white mb-1">자동화</h3>
-                        <p>자동 생성을 활성화하면 해금된 AI 군단에서 자동으로 유닛이 생성됩니다.</p>
+                        <h3 className="font-bold text-white mb-1">{t('settings.help.auto')}</h3>
+                        <p>{t('settings.help.autoDesc')}</p>
                     </div>
                 </div>
             </div>

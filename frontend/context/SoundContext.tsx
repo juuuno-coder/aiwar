@@ -1,122 +1,77 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+
+type SoundType = 'click' | 'hover' | 'success' | 'error' | 'start';
 
 interface SoundContextType {
-    bgmEnabled: boolean;
-    sfxEnabled: boolean;
-    volume: number;
-    toggleBgm: () => void;
-    toggleSfx: () => void;
-    setVolume: (vol: number) => void;
-    playBgm: (track: 'lobby' | 'battle' | 'victory' | 'defeat') => void;
-    playSfx: (effect: 'click' | 'attack' | 'damage' | 'win' | 'lose') => void;
+    playSfx: (type: SoundType) => void;
+    playBgm: (bgmName: string) => void;
+    isMuted: boolean;
+    toggleMute: () => void;
 }
 
 const SoundContext = createContext<SoundContextType | undefined>(undefined);
 
 export function SoundProvider({ children }: { children: React.ReactNode }) {
-    const [bgmEnabled, setBgmEnabled] = useState(false); // Default off for better UX on first load
-    const [sfxEnabled, setSfxEnabled] = useState(true);
-    const [volume, setVolume] = useState(0.5);
-    const audioRef = useRef<HTMLAudioElement | null>(null);
-    const [currentTrack, setCurrentTrack] = useState<string | null>(null);
+    const [isMuted, setIsMuted] = useState(false);
 
-    // Initialize audio element
+    // settings 페이지의 로컬스토리지와 연동 (초기 로드)
     useEffect(() => {
-        audioRef.current = new Audio();
-        audioRef.current.loop = true;
-
-        // Load settings from localStorage
-        const storedBgm = localStorage.getItem('bgmEnabled');
-        const storedSfx = localStorage.getItem('sfxEnabled');
-        const storedVol = localStorage.getItem('volume');
-
-        if (storedBgm !== null) setBgmEnabled(JSON.parse(storedBgm));
-        if (storedSfx !== null) setSfxEnabled(JSON.parse(storedSfx));
-        if (storedVol !== null) setVolume(parseFloat(storedVol));
+        const storedSettings = localStorage.getItem('gameSettings');
+        if (storedSettings) {
+            const settings = JSON.parse(storedSettings);
+            if (settings.soundEnabled === false) {
+                setIsMuted(true);
+            }
+        }
     }, []);
 
-    // Update volume
-    useEffect(() => {
-        if (audioRef.current) {
-            audioRef.current.volume = volume;
+    const toggleMute = useCallback(() => {
+        setIsMuted(prev => {
+            const newState = !prev;
+            // 설정 저장 로직은 Settings 페이지와 이원화될 수 있으므로, 
+            // 여기서는 Context 상태만 변경하고 실제 연동은 Settings 페이지에서 처리하거나
+            // 전역 이벤트로 처리해야 함. 현재는 간단히 상태만 관리.
+            return newState;
+        });
+    }, []);
+
+    const playSfx = useCallback((type: SoundType) => {
+        if (isMuted) return;
+
+        // Try to play sound if file exists
+        try {
+            const audio = new Audio(`/sounds/sfx/${type}.mp3`);
+            audio.volume = 0.5;
+            audio.play().catch((e) => {
+                // Ignore errors if file doesn't exist (common in dev without assets)
+                console.warn(`[Sound] Missing SFX file: /sounds/sfx/${type}.mp3`);
+            });
+        } catch (e) {
+            console.error('[Sound] Audio Error:', e);
         }
-    }, [volume]);
+    }, [isMuted]);
 
-    // Update BGM state
-    useEffect(() => {
-        if (audioRef.current) {
-            if (bgmEnabled && currentTrack) {
-                audioRef.current.play().catch(e => console.log('Auto-play prevented:', e));
-            } else {
-                audioRef.current.pause();
-            }
+    const playBgm = useCallback((bgmName: string) => {
+        if (isMuted) return;
+
+        try {
+            // Stop previous BGM if needed (basic implementation)
+            const audio = new Audio(`/sounds/bgm/${bgmName}.mp3`);
+            audio.loop = true;
+            audio.volume = 0.3;
+            audio.play().catch((e) => {
+                console.warn(`[Sound] Missing BGM file: /sounds/bgm/${bgmName}.mp3`);
+            });
+            // Store ref to current BGM to stop it later (omitted for simplicity in this step)
+        } catch (e) {
+            console.error('[Sound] Audio Error:', e);
         }
-        localStorage.setItem('bgmEnabled', JSON.stringify(bgmEnabled));
-    }, [bgmEnabled, currentTrack]);
-
-    useEffect(() => {
-        localStorage.setItem('sfxEnabled', JSON.stringify(sfxEnabled));
-    }, [sfxEnabled]);
-
-    useEffect(() => {
-        localStorage.setItem('volume', volume.toString());
-    }, [volume]);
-
-    const toggleBgm = () => setBgmEnabled(prev => !prev);
-    const toggleSfx = () => setSfxEnabled(prev => !prev);
-
-    const playBgm = (track: 'lobby' | 'battle' | 'victory' | 'defeat') => {
-        if (currentTrack === track) return;
-
-        const trackMap = {
-            lobby: '/sounds/bgm/lobby.mp3',
-            battle: '/sounds/bgm/battle.mp3',
-            victory: '/sounds/bgm/victory.mp3',
-            defeat: '/sounds/bgm/defeat.mp3'
-        };
-
-        const src = trackMap[track];
-        setCurrentTrack(track);
-
-        if (audioRef.current) {
-            audioRef.current.src = src;
-            if (bgmEnabled) {
-                audioRef.current.play().catch(e => console.log('Play failed:', e));
-            }
-        }
-    };
-
-    const playSfx = (effect: 'click' | 'attack' | 'damage' | 'win' | 'lose') => {
-        if (!sfxEnabled) return;
-
-        const sfxMap = {
-            click: '/sounds/sfx/click.mp3',
-            attack: '/sounds/sfx/attack.mp3',
-            damage: '/sounds/sfx/damage.mp3',
-            win: '/sounds/sfx/win.mp3',
-            lose: '/sounds/sfx/lose.mp3'
-        };
-
-        const audio = new Audio(sfxMap[effect]);
-        audio.volume = volume;
-        audio.play().catch(e => console.log('SFX play failed:', e));
-    };
+    }, [isMuted]);
 
     return (
-        <SoundContext.Provider
-            value={{
-                bgmEnabled,
-                sfxEnabled,
-                volume,
-                toggleBgm,
-                toggleSfx,
-                setVolume,
-                playBgm,
-                playSfx
-            }}
-        >
+        <SoundContext.Provider value={{ playSfx, playBgm, isMuted, toggleMute }}>
             {children}
         </SoundContext.Provider>
     );

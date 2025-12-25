@@ -68,33 +68,36 @@ export const TextHoverEffect = ({
                 className="relative"
             >
                 <div
-                    className="text-[8rem] md:text-[12rem] lg:text-[16rem] font-black tracking-tighter"
+                    className="text-[6rem] md:text-[10rem] lg:text-[13rem] font-black tracking-tighter"
                     style={{
                         fontFamily: "Orbitron, sans-serif",
                         textShadow: isHovering
-                            ? "0 0 80px rgba(139, 92, 246, 0.8), 0 0 120px rgba(139, 92, 246, 0.6)"
-                            : "0 0 40px rgba(139, 92, 246, 0.4)",
+                            ? "0 0 80px rgba(6, 182, 212, 0.8), 0 0 120px rgba(139, 92, 246, 0.6)"
+                            : "0 0 40px rgba(6, 182, 212, 0.4)",
                         transition: "text-shadow 0.3s ease",
                     }}
                 >
-                    <span className="bg-gradient-to-br from-purple-400 via-violet-500 to-purple-600 bg-clip-text text-transparent">
+                    <span className="bg-gradient-to-br from-cyan-400 via-blue-500 to-purple-600 bg-clip-text text-transparent">
                         {text}
                     </span>
                 </div>
 
-                {/* Holographic overlay */}
-                {isHovering && (
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent pointer-events-none"
-                        style={{
-                            transform: `translateX(${mouseX.get() - 100}px)`,
-                        }}
-                    />
-                )}
+                {/* Holographic overlay and Glow effect removed for cleaner look */
+                    /*
+                    isHovering && (
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent pointer-events-none"
+                            style={{
+                                transform: `translateX(${mouseX.get() - 100}px)`,
+                            }}
+                        />
+                    )
+                    */
+                }
 
-                {/* Glow effect */}
+                {/* 
                 <div
                     className="absolute inset-0 blur-3xl opacity-50 pointer-events-none"
                     style={{
@@ -104,6 +107,7 @@ export const TextHoverEffect = ({
                         transition: "background 0.3s ease",
                     }}
                 />
+                */}
             </motion.div>
         </div>
     );

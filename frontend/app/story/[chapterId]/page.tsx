@@ -4,34 +4,19 @@ import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import {
     loadStoryProgress,
-    completeTask,
+    completeStage,
     claimChapterReward,
-    verifyTask,
-    checkAllTasks,
     Chapter,
-    Task
+    StoryStage
 } from '@/lib/story-system';
-import {
-    Card,
-    CardBody,
-} from "@/components/ui/custom/Card";
 import { Button } from "@/components/ui/custom/Button";
-import { Progress } from "@/components/ui/custom/Progress";
 import { Modal, ModalBody, ModalHeader, ModalFooter, ModalContent } from "@/components/ui/custom/Modal";
-import { Chip } from "@/components/ui/custom/Chip";
-import { useUser } from '@/context/UserContext';
 import { BackgroundBeams } from '@/components/ui/aceternity/background-beams';
-import { motion } from "framer-motion";
-import { ArrowLeft, CheckCircle2, PlayCircle, Gift, AlertCircle, Sparkles, Coins } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { ArrowLeft, Swords, Shield, Skull, Lock, CheckCircle2, Trophy, Quote } from "lucide-react";
 import { cn } from '@/lib/utils';
 import { addNotification } from '@/components/NotificationCenter';
 import PageHeader from '@/components/PageHeader';
-// import CutscenePlayer from '@/components/CutscenePlayer'; // Existing one
-// import cutsceneData from '@/data/story-cutscenes.json'; // Existing data
-import DialogueOverlay from '@/components/DialogueOverlay';
-import { CHAPTER_SCRIPTS } from '@/lib/story-data';
-import { useFooter } from '@/context/FooterContext';
-
 import { useTranslation } from '@/context/LanguageContext';
 
 export default function ChapterDetailPage() {
@@ -39,428 +24,298 @@ export default function ChapterDetailPage() {
     const params = useParams();
     const { t, language } = useTranslation();
     const chapterId = params.chapterId as string;
-    const { refreshData } = useUser();
-    const footer = useFooter(); // 푸터 훅 사용
 
     const [chapter, setChapter] = useState<Chapter | null>(null);
-    const [verifying, setVerifying] = useState<string | null>(null);
+    const [selectedStage, setSelectedStage] = useState<StoryStage | null>(null);
 
-    // New Cutscene State
-    const [showCutscene, setShowCutscene] = useState(false);
-    const chapterScript = chapterId ? CHAPTER_SCRIPTS[chapterId] : null;
-
-    // Remove old cutscene state
-    // const [showCutscene, setShowCutscene] = useState<'intro' | 'outro' | null>(null);
+    // 모달 상태
     const [modalConfig, setModalConfig] = useState<{
         isOpen: boolean;
         title: string;
         message: string;
-        targetPath?: string;
-        type?: 'success' | 'error' | 'info';
-    }>({
-        isOpen: false,
-        title: '',
-        message: '',
-        type: 'info'
-    });
-
-    /* Old Cutscene Logic Removed/Commented for replacement
-    // 컷신 데이터 가져오기
-    const getChapterCutscene = (type: 'intro' | 'outro') => {
-        return cutsceneData.cutscenes.find(
-            c => c.chapterId === chapterId && c.type === type
-        );
-    };
-
-    // 컷신 재생 여부 체크 (localStorage 기반)
-    const hasCutscenePlayed = (type: 'intro' | 'outro') => {
-        if (typeof window === 'undefined') return true;
-        const key = `cutscene-${chapterId}-${type}`;
-        return localStorage.getItem(key) === 'played';
-    };
-
-    const markCutscenePlayed = (type: 'intro' | 'outro') => {
-        const key = `cutscene-${chapterId}-${type}`;
-        localStorage.setItem(key, 'played');
-    };
-    */
+        type?: 'success' | 'intro';
+        onConfirm?: () => void;
+    }>({ isOpen: false, title: '', message: '' });
 
     useEffect(() => {
-        const init = async () => {
-            await checkAllTasks();
-            loadChapter();
-
-            // 인트로 컷신 자동 재생 (New Logic)
-            if (chapterScript && chapterScript.length > 0) {
-                // Check if already played if desired, for now always play for testing
-                setShowCutscene(true);
-            }
-        }
-        init();
+        loadChapter();
     }, [chapterId]);
 
-    // 푸터 제어: 컷신 중에는 숨기기
-    useEffect(() => {
-        if (showCutscene) {
-            footer.hideFooter();
-        } else {
-            footer.showFooter();
-        }
-
-        return () => {
-            footer.resetFooter();
-        };
-    }, [showCutscene]);
-
     const loadChapter = () => {
-        const chapters = loadStoryProgress();
+        const chapters = loadStoryProgress(t);
         const found = chapters.find(c => c.id === chapterId);
         setChapter(found || null);
+
+        // 기본적으로 클리어하지 않은 첫 번째 스테이지 또는 마지막 스테이지 선택
+        if (found && !selectedStage) {
+            const firstUncleared = found.stages.find(s => !s.isCleared);
+            setSelectedStage(firstUncleared || found.stages[found.stages.length - 1]);
+        }
     };
 
-    const handleVerifyTask = async (task: Task) => {
-        if (task.completed) return;
-        setVerifying(task.id);
-
-        try {
-            const verified = await verifyTask(task);
-            if (verified) {
-                const success = await completeTask(chapterId, task.id);
-                if (success) {
-                    await refreshData();
-                    // 성공 알림만 표시하고 푸터는 유지
-                    addNotification({
-                        type: 'quest',
-                        title: t('story.modal.taskComplete').toUpperCase(),
-                        message: language === 'ko' ? `${task.title} 태스크를 완료했습니다!` : `Completed task: ${task.title}!`,
-                        icon: '✅'
-                    });
-
-                    if (task.reward) {
-                        let rewardMsg = '';
-                        if (task.reward.coins) rewardMsg += `💰 ${task.reward.coins} ${t('common.coins')} `;
-                        if (task.reward.experience) rewardMsg += `⭐ ${task.reward.experience} EXP`;
-                        addNotification({
-                            type: 'reward',
-                            title: language === 'ko' ? '보상 획득!' : 'Reward!',
-                            message: rewardMsg,
-                            icon: '🎁'
-                        });
-                    }
-                    loadChapter();
-                }
-            } else {
-                setModalConfig({
-                    isOpen: true,
-                    title: t('story.modal.missionIncomplete').toUpperCase(),
-                    message: task.guide,
-                    targetPath: task.targetPath,
-                    type: 'error'
+    const handleStageSelect = (stage: StoryStage) => {
+        // 이전 스테이지 클리어 여부 확인 (1-1은 항상 열림)
+        if (stage.step > 1) {
+            const prevStage = chapter?.stages.find(s => s.step === stage.step - 1);
+            if (prevStage && !prevStage.isCleared) {
+                // 잠김 알림
+                addNotification({
+                    type: 'warning',
+                    title: 'LOCKED',
+                    message: '이전 스테이지를 먼저 클리어해야 합니다.',
+                    icon: '🔒'
                 });
+                return;
             }
-        } catch (error) {
-            setModalConfig({
-                isOpen: true,
-                title: 'ERROR',
-                message: '데이터 동기화 중 오류가 발생했습니다.',
-                type: 'error'
-            });
-        } finally {
-            setVerifying(null);
         }
+        setSelectedStage(stage);
     };
 
-    const handleClaimChapterReward = async () => {
-        if (!chapter || !chapter.completed) return;
+    // 전투 시작 핸들러
+    const handleBattleStart = () => {
+        if (!selectedStage) return;
 
-        const success = await claimChapterReward(chapter.id);
-        if (success) {
-            await refreshData();
-            setModalConfig({
-                isOpen: true,
-                title: t('story.modal.rewardClaimed').toUpperCase(),
-                message: language === 'ko' ? '챕터 보상을 수령했습니다!' : 'Claimed chapter rewards!',
-                type: 'success'
-            });
-            loadChapter();
-        }
+        // 적 대사 모달 띄우기 (스토리 몰입감)
+        setModalConfig({
+            isOpen: true,
+            title: `VS ${selectedStage.enemy.name}`,
+            message: selectedStage.enemy.dialogue.intro,
+            type: 'intro',
+            onConfirm: () => {
+                // 실제 전투 페이지로 이동
+                router.push(`/battle/stage/${selectedStage.id}`);
+            }
+        });
     };
 
     if (!chapter) return null;
 
-    const completedTasks = chapter.tasks.filter(t => t.completed).length;
-    const totalTasks = chapter.tasks.length;
-    const progress = (completedTasks / totalTasks) * 100;
-
-    // 컷신 재생 중일 때
-    // 컷신 재생 중일 때 (New Logic)
-    if (showCutscene && chapterScript) {
-        return (
-            <div className="fixed inset-0 z-50 bg-black">
-                <DialogueOverlay
-                    script={chapterScript}
-                    onComplete={() => setShowCutscene(false)}
-                />
-            </div>
-        );
-    }
+    const completedStages = chapter.stages.filter(s => s.isCleared).length;
+    const progress = Math.round((completedStages / chapter.stages.length) * 100);
 
     return (
-        <div className="min-h-screen py-12 px-6 lg:px-12 bg-[#050505] relative overflow-hidden">
+        <div className="min-h-screen py-12 px-4 lg:px-8 bg-[#050505] relative overflow-hidden flex flex-col">
             <BackgroundBeams className="opacity-40" />
 
-            <div className="max-w-6xl mx-auto relative z-10">
+            <div className="max-w-7xl mx-auto w-full relative z-10 flex flex-col flex-1">
+                {/* 헤더 */}
                 <Button
                     variant="ghost"
                     size="sm"
-                    className="mb-8 text-gray-500 hover:text-white orbitron font-black tracking-widest gap-2 pl-0"
+                    className="mb-6 w-fit text-gray-500 hover:text-white orbitron font-black tracking-widest gap-2 pl-0"
                     onClick={() => router.push('/story')}
                 >
-                    <ArrowLeft size={16} /> BACK TO LOGS
+                    <ArrowLeft size={16} /> BACK TO SEASONS
                 </Button>
 
-                {/* PageHeader 적용 */}
                 <PageHeader
-                    title={`${t('story.chapter')} ${chapter.number}: ${chapter.title}`}
-                    englishTitle={`LOG_BUFFER_${chapter.id.toUpperCase()}`}
+                    title={`${chapter.title}`}
+                    englishTitle={`CHAPTER ${chapter.number}`}
                     description={chapter.description}
-                    color="blue"
+                    color="cyan"
                     action={
-                        <div className="flex gap-4">
-                            <div className="bg-black/40 px-6 py-4 rounded-xl border border-white/5 backdrop-blur-2xl flex items-center gap-6 shadow-xl">
-                                <div className="text-right">
-                                    <p className="text-[9px] text-gray-500 font-bold uppercase tracking-widest leading-none mb-1">{t('story.progress')}</p>
-                                    <p className="text-2xl font-black text-blue-400 orbitron">
-                                        {Math.round(progress)}%
-                                    </p>
-                                </div>
-                                <div className="h-12 w-12 bg-blue-500/10 rounded-lg flex items-center justify-center border border-blue-500/20 text-blue-400">
-                                    <Sparkles size={24} />
-                                </div>
+                        <div className="flex items-center gap-4">
+                            <div className="text-right hidden sm:block">
+                                <div className="text-[10px] font-black text-gray-500 uppercase tracking-widest">CHAPTER PROGRESS</div>
+                                <div className="text-2xl font-black text-cyan-400 orbitron">{progress}% COMPLETED</div>
+                            </div>
+                            <div className="w-12 h-12 bg-cyan-900/20 border border-cyan-500/30 rounded-full flex items-center justify-center text-cyan-400">
+                                {progress === 100 ? <Trophy size={20} /> : <Swords size={20} />}
                             </div>
                         </div>
                     }
                 />
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
-                    {/* 왼쪽: 태스크 리스트 */}
-                    <div className="space-y-4">
-                        <div className="flex items-center justify-between mb-2">
-                            <h2 className="text-sm font-black text-white orbitron tracking-[0.2em]">{t('story.tasks').toUpperCase()}</h2>
-                            <span className="text-[10px] text-gray-500 font-bold orbitron">{completedTasks}/{totalTasks}</span>
-                        </div>
-                        {chapter.tasks.map((task) => (
-                            <motion.div
-                                key={task.id}
-                                initial={{ opacity: 0, x: -20 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                className={cn(
-                                    "group relative p-6 rounded-2xl border transition-all duration-300",
-                                    task.completed
-                                        ? "bg-green-500/5 border-green-500/20"
-                                        : "bg-black/40 border-white/5 hover:border-blue-500/30"
-                                )}
-                            >
-                                <div className="flex items-start gap-4">
-                                    <div className={cn(
-                                        "mt-1 w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border",
-                                        task.completed
-                                            ? "bg-green-500/10 border-green-500/20 text-green-500"
-                                            : "bg-white/5 border-white/10 text-gray-500 group-hover:text-blue-400 group-hover:border-blue-500/30"
-                                    )}>
-                                        {task.completed ? <CheckCircle2 size={20} /> : <PlayCircle size={20} />}
-                                    </div>
-                                    <div className="flex-1">
-                                        <h3 className={cn(
-                                            "font-bold text-base mb-1",
-                                            task.completed ? "text-green-500/80" : "text-white"
-                                        )}>{task.title}</h3>
-                                        <p className="text-xs text-gray-500 leading-relaxed mb-4">{task.description}</p>
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mt-8 flex-1">
+                    {/* [LEFT] 스테이지 타임라인 맵 */}
+                    <div className="lg:col-span-5 h-full relative">
+                        <div className="absolute left-6 top-0 bottom-0 w-0.5 bg-gradient-to-b from-cyan-500/50 via-cyan-900/20 to-transparent" />
 
-                                        {!task.completed && (
-                                            <Button
-                                                size="sm"
-                                                variant="flat"
-                                                color="primary"
-                                                isLoading={verifying === task.id}
-                                                className="h-8 orbitron font-black text-[10px] tracking-widest px-6"
-                                                onClick={() => handleVerifyTask(task)}
-                                            >
-                                                {verifying === task.id ? t('story.task.verifying') : t('story.task.verify')}
-                                            </Button>
+                        <div className="space-y-6 relative">
+                            {chapter.stages.map((stage) => {
+                                // 잠금 상태 로직
+                                const isUnlocked = stage.step === 1 || chapter.stages[stage.step - 2]?.isCleared;
+                                const isSelected = selectedStage?.id === stage.id;
+
+                                return (
+                                    <motion.div
+                                        key={stage.id}
+                                        initial={{ opacity: 0, x: -20 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        transition={{ delay: stage.step * 0.05 }}
+                                        className={cn(
+                                            "relative pl-16 py-2 cursor-pointer group transtion-all",
+                                            !isUnlocked && "opacity-50 pointer-events-none grayscale"
                                         )}
-                                    </div>
-
-                                    {task.reward && (
-                                        <div className="text-right shrink-0">
-                                            <div className="flex flex-col gap-1 items-end">
-                                                {task.reward.coins && (
-                                                    <span className="text-[10px] font-bold text-yellow-500/80 flex items-center gap-1.5 orbitron bg-yellow-500/5 px-2 py-1 rounded-md border border-yellow-500/10">
-                                                        <Coins size={10} />+{task.reward.coins}
-                                                    </span>
-                                                )}
-                                                {task.reward.experience && (
-                                                    <span className="text-[10px] font-bold text-purple-500/80 flex items-center gap-1.5 orbitron bg-purple-500/5 px-2 py-1 rounded-md border border-purple-500/10">
-                                                        <Sparkles size={10} />+{task.reward.experience}EXP
-                                                    </span>
-                                                )}
-                                            </div>
+                                        onClick={() => handleStageSelect(stage)}
+                                    >
+                                        {/* 노드 아이콘 */}
+                                        <div className={cn(
+                                            "absolute left-4 -translate-x-1/2 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full border-2 z-10 transition-all duration-300",
+                                            stage.isCleared ? "bg-cyan-500 border-cyan-400 shadow-[0_0_10px_rgba(6,182,212,0.5)]" :
+                                                isSelected ? "bg-black border-cyan-400 scale-125" :
+                                                    "bg-black border-gray-700"
+                                        )}>
+                                            {stage.isCleared && <CheckCircle2 size={12} className="text-black absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />}
                                         </div>
-                                    )}
-                                </div>
-                            </motion.div>
-                        ))}
+
+                                        {/* 스테이지 카드 */}
+                                        <div className={cn(
+                                            "p-4 rounded-xl border transition-all duration-300",
+                                            isSelected
+                                                ? "bg-cyan-950/30 border-cyan-500/50 translate-x-2"
+                                                : "bg-white/5 border-white/5 hover:bg-white/10"
+                                        )}>
+                                            <div className="flex justify-between items-center mb-1">
+                                                <span className={cn(
+                                                    "text-[10px] font-black orbitron tracking-widest",
+                                                    isSelected ? "text-cyan-400" : "text-gray-500"
+                                                )}>
+                                                    STAGE 1-{stage.step}
+                                                </span>
+                                                <span className={cn(
+                                                    "text-[9px] font-bold px-1.5 py-0.5 rounded border",
+                                                    stage.difficulty === 'EASY' ? "bg-green-500/10 text-green-400 border-green-500/20" :
+                                                        stage.difficulty === 'NORMAL' ? "bg-blue-500/10 text-blue-400 border-blue-500/20" :
+                                                            stage.difficulty === 'HARD' ? "bg-orange-500/10 text-orange-400 border-orange-500/20" :
+                                                                "bg-red-500/10 text-red-500 border-red-500/20 animate-pulse"
+                                                )}>
+                                                    {stage.difficulty}
+                                                </span>
+                                            </div>
+                                            <h3 className={cn(
+                                                "text-sm font-bold transition-colors",
+                                                isSelected ? "text-white" : "text-gray-400"
+                                            )}>
+                                                {stage.title}
+                                            </h3>
+                                        </div>
+                                    </motion.div>
+                                );
+                            })}
+                        </div>
                     </div>
 
-                    {/* 오른쪽: 챕터 완료 및 보상 */}
-                    <div className="space-y-6 lg:sticky lg:top-12">
-                        <Card className="bg-black/40 backdrop-blur-2xl border-white/5 overflow-hidden">
-                            <CardBody className="p-8">
-                                <div className="relative mb-8 text-center">
-                                    <div className="inline-flex flex-col items-center">
-                                        <div className={cn(
-                                            "w-24 h-24 rounded-3xl flex items-center justify-center text-5xl mb-4 bg-white/5 border border-white/10 transition-all duration-500",
-                                            chapter.completed ? "bg-green-500/10 border-green-500/30 text-6xl shadow-[0_0_50px_rgba(34,197,94,0.2)]" : "text-gray-500"
-                                        )}>
-                                            {chapter.icon}
-                                        </div>
-                                        <h2 className="text-2xl font-black text-white orbitron uppercase tracking-[0.1em]">{chapter.title}</h2>
-                                        <p className="text-xs text-gray-500 mt-2 font-medium tracking-wide">OBJECTIVE: LOG RECOVERY AND ARCHIVING</p>
-                                    </div>
-                                </div>
+                    {/* [RIGHT] 상세 정보 패널 (VS SCREEN 느낌) */}
+                    <div className="lg:col-span-7">
+                        <AnimatePresence mode="wait">
+                            {selectedStage ? (
+                                <motion.div
+                                    key={selectedStage.id}
+                                    initial={{ opacity: 0, scale: 0.95 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    exit={{ opacity: 0, scale: 0.95 }}
+                                    className="bg-black/60 border border-white/10 rounded-3xl overflow-hidden h-full flex flex-col backdrop-blur-xl relative"
+                                >
+                                    {/* 배경 효과 */}
+                                    <div className="absolute inset-0 bg-gradient-to-br from-cyan-900/10 via-transparent to-purple-900/10 pointer-events-none" />
 
-                                <div className="space-y-6">
-                                    <div className="p-6 rounded-2xl bg-white/5 border border-white/5 space-y-4">
-                                        <div className="flex justify-between items-center text-[10px] font-black orbitron tracking-[0.2em] text-gray-500">
-                                            <span>{t('story.rewards').toUpperCase()}</span>
-                                            <Gift size={14} className="text-blue-400" />
+                                    {/* 상단: 적 정보 */}
+                                    <div className="p-8 pb-4 flex-1 flex flex-col items-center justify-center text-center relative z-10">
+                                        <div className="w-32 h-32 rounded-full border-2 border-white/10 bg-white/5 mb-6 flex items-center justify-center overflow-hidden shadow-2xl relative group">
+                                            {/* 적 이미지 (Placeholder) */}
+                                            {selectedStage.difficulty === 'BOSS' ? (
+                                                <Skull size={48} className="text-red-500 animate-pulse" />
+                                            ) : (
+                                                <div className="text-4xl">🤖</div>
+                                            )}
+
+                                            {/* 글리치 효과 장식 */}
+                                            <div className="absolute inset-0 bg-red-500/10 opacity-0 group-hover:opacity-100 transition-opacity mix-blend-overlay" />
                                         </div>
-                                        <div className="grid grid-cols-2 gap-3">
-                                            <div className="p-4 rounded-xl bg-black/40 border border-white/5 flex flex-col items-center gap-2">
-                                                <Coins className="text-yellow-500" size={20} />
-                                                <span className="text-lg font-black text-white orbitron">{chapter.reward.coins}</span>
-                                                <span className="text-[8px] text-gray-500 font-bold orbitron tracking-widest">{t('common.coins')}</span>
-                                            </div>
-                                            <div className="p-4 rounded-xl bg-black/40 border border-white/5 flex flex-col items-center gap-2">
-                                                <Sparkles className="text-purple-400" size={20} />
-                                                <span className="text-lg font-black text-white orbitron">{chapter.reward.experience}</span>
-                                                <span className="text-[8px] text-gray-500 font-bold orbitron tracking-widest">EXP</span>
-                                            </div>
+
+                                        <h2 className="text-2xl font-black text-white orbitron tracking-widest mb-1">
+                                            {selectedStage.enemy.name}
+                                        </h2>
+                                        <p className="text-xs text-gray-500 font-mono mb-8 uppercase tracking-widest">
+                                            {selectedStage.difficulty} CLASS HOSTILE
+                                        </p>
+
+                                        {/* 대사 박스 */}
+                                        <div className="relative bg-white/5 border border-white/10 p-6 rounded-xl max-w-md w-full">
+                                            <Quote size={20} className="absolute -top-3 -left-3 text-cyan-500 bg-[#050505] p-0.5" fill="currentColor" />
+                                            <p className="text-gray-300 italic text-sm leading-relaxed">
+                                                "{selectedStage.enemy.dialogue.intro}"
+                                            </p>
                                         </div>
                                     </div>
 
-                                    {chapter.completed ? (
+                                    {/* 하단: 미션 정보 및 액션 */}
+                                    <div className="bg-white/5 border-t border-white/5 p-8 relative z-10">
+                                        <div className="grid grid-cols-2 gap-4 mb-8">
+                                            <div className="bg-black/40 p-3 rounded-lg border border-white/5 text-center">
+                                                <div className="text-[9px] text-gray-500 font-bold mb-1">MODE</div>
+                                                <div className="text-xs font-bold text-white">
+                                                    {selectedStage.battleMode === 'ONE_CARD' ? '1-CARD BATTLE' :
+                                                        selectedStage.battleMode === 'TRIPLE_THREAT' ? '3-CARD BATTLE' : '5-CARD STANDARD'}
+                                                </div>
+                                            </div>
+                                            <div className="bg-black/40 p-3 rounded-lg border border-white/5 text-center">
+                                                <div className="text-[9px] text-gray-500 font-bold mb-1">REWARD</div>
+                                                <div className="text-xs font-bold text-yellow-500">
+                                                    {selectedStage.rewards.coins} COINS
+                                                </div>
+                                            </div>
+                                        </div>
+
                                         <Button
                                             fullWidth
                                             size="lg"
                                             variant="shadow"
-                                            color="success"
-                                            className="h-16 orbitron font-black text-sm tracking-[0.2em]"
-                                            onClick={handleClaimChapterReward}
+                                            color={selectedStage.isCleared ? "success" : "primary"}
+                                            className="h-16 orbitron font-black text-lg tracking-[0.2em] relative overflow-hidden group"
+                                            onClick={handleBattleStart}
                                         >
-                                            {t('story.reward.claim').toUpperCase()}
+                                            <span className="relative z-10 flex items-center justify-center gap-3">
+                                                {selectedStage.isCleared ? (
+                                                    <>REPLAY BATTLE <CheckCircle2 /></>
+                                                ) : (
+                                                    <>ENGAGE ENEMY <Swords /></>
+                                                )}
+                                            </span>
+                                            {/* 버튼 호버 효과 */}
+                                            <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
                                         </Button>
-                                    ) : (
-                                        <div className="p-6 rounded-2xl bg-white/5 border border-white/5 text-center">
-                                            <p className="text-[10px] text-gray-500 font-black orbitron tracking-widest">COMPLETE ALL TASKS TO UNLOCK REWARDS</p>
-                                        </div>
-                                    )}
-
-                                    {chapter.number < 90 && (
-                                        <Button
-                                            fullWidth
-                                            size="lg"
-                                            variant="flat"
-                                            className="h-14 orbitron font-black text-xs tracking-[0.2em] border border-white/5 text-blue-400 hover:bg-blue-500/10 transition-colors"
-                                            onClick={() => {
-                                                // 푸터를 활성화하여 전투 준비 상태로 전환
-                                                footer.showFooter();
-                                                footer.setInfo([
-                                                    { label: 'MISSION', value: `Chapter ${chapter.number}`, color: 'text-blue-400' },
-                                                    { label: 'STATUS', value: 'READY', color: 'text-green-400' }
-                                                ]);
-
-                                                // 캐릭터 오버레이 표시 (가이드 역할)
-                                                footer.setCharacterOverlay({
-                                                    characterImage: '/assets/characters/chatgpt.png',
-                                                    position: 'left',
-                                                    name: 'AI GUIDE',
-                                                    dialogue: '전투에 출전할 카드를 선택하세요! 상성을 고려해서 덱을 구성하면 승리 확률이 올라갑니다.',
-                                                    emotion: 'happy'
-                                                });
-
-                                                footer.setAction({
-                                                    label: 'BATTLE START',
-                                                    onClick: () => {
-                                                        footer.clearCharacterOverlay();
-                                                        router.push('/battle');
-                                                    },
-                                                    color: 'primary'
-                                                });
-                                            }}
-                                        >
-                                            {t('story.battle').toUpperCase()}
-                                        </Button>
-                                    )}
+                                    </div>
+                                </motion.div>
+                            ) : (
+                                <div className="h-full flex items-center justify-center text-gray-600 font-mono text-sm border border-white/5 rounded-3xl">
+                                    SELECT A STAGE TO VIEW INTEL
                                 </div>
-                            </CardBody>
-                        </Card>
+                            )}
+                        </AnimatePresence>
                     </div>
                 </div>
             </div>
 
-            {/* 모달 */}
+            {/* Intro Modal */}
             <Modal
                 isOpen={modalConfig.isOpen}
                 onClose={() => setModalConfig(prev => ({ ...prev, isOpen: false }))}
-                size="sm"
-                classNames={{
-                    base: "bg-[#0a0a0a] border border-white/10 shadow-2xl",
-                    header: "border-b border-white/5",
-                    footer: "border-t border-white/5"
-                }}
+                size="md"
             >
                 <ModalContent>
                     {(onClose) => (
                         <>
-                            <ModalHeader className="flex flex-col gap-1">
-                                <div className="flex items-center gap-3">
-                                    {modalConfig.type === 'error' ? (
-                                        <AlertCircle className="text-red-500" size={24} />
-                                    ) : (
-                                        <CheckCircle2 className="text-green-500" size={24} />
-                                    )}
-                                    <h3 className="text-xl font-black text-white orbitron tracking-widest leading-none mt-1">
-                                        {modalConfig.title}
-                                    </h3>
-                                </div>
-                            </ModalHeader>
-                            <ModalBody className="py-8">
-                                <p className="text-gray-400 font-medium leading-relaxed">
-                                    {modalConfig.message}
+                            <ModalHeader>{modalConfig.title}</ModalHeader>
+                            <ModalBody>
+                                <p className="text-lg text-gray-300 italic text-center py-8">
+                                    "{modalConfig.message}"
                                 </p>
                             </ModalBody>
                             <ModalFooter>
                                 <Button
-                                    variant="flat"
-                                    className="orbitron font-black text-[10px] tracking-widest px-8"
-                                    onClick={() => onClose?.()}
+                                    className="w-full h-12 orbitron font-bold"
+                                    color="danger"
+                                    size="lg"
+                                    variant="shadow"
+                                    onClick={() => {
+                                        if (modalConfig.onConfirm) modalConfig.onConfirm();
+                                        else onClose();
+                                    }}
                                 >
-                                    {t('story.modal.close').toUpperCase()}
+                                    FIGHT!
                                 </Button>
-                                {modalConfig.targetPath && (
-                                    <Button
-                                        variant="shadow"
-                                        color="primary"
-                                        className="orbitron font-black text-[10px] tracking-widest px-8"
-                                        onClick={() => {
-                                            onClose?.();
-                                            router.push(modalConfig.targetPath!);
-                                        }}
-                                    >
-                                        {t('story.modal.move').toUpperCase()}
-                                    </Button>
-                                )}
                             </ModalFooter>
                         </>
                     )}

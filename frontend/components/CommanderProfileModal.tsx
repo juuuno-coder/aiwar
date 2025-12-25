@@ -22,13 +22,15 @@ import {
     Award,
     Settings,
     Star,
-    Sparkles
+    Sparkles,
+    Clock
 } from "lucide-react";
 import { useUser } from '@/context/UserContext';
 import { gameStorage } from '@/lib/game-storage';
-import { RESEARCH_STATS, CommanderResearch, getResearchBonus } from '@/lib/research-system';
+import { RESEARCH_STATS, CommanderResearch, getResearchBonus, getResearchTimeBuff } from '@/lib/research-system';
 import { BackgroundBeams } from '@/components/ui/aceternity/background-beams';
 import { cn } from '@/lib/utils';
+import { useFooter } from '@/context/FooterContext'; // 덱 정보 가져오기 위해 추가
 
 interface CommanderProfileModalProps {
     isOpen: boolean;
@@ -37,6 +39,7 @@ interface CommanderProfileModalProps {
 
 export default function CommanderProfileModal({ isOpen, onClose }: CommanderProfileModalProps) {
     const { level, experience, coins, tokens } = useUser();
+    const { state: footerState } = useFooter(); // 덱 정보
     const [research, setResearch] = useState<CommanderResearch | null>(null);
     const [loading, setLoading] = useState(true);
     const [hoveredStat, setHoveredStat] = useState<string | null>(null);
@@ -78,24 +81,6 @@ export default function CommanderProfileModal({ isOpen, onClose }: CommanderProf
         if (saved) setCommanderAvatar(saved);
     }, []);
 
-    if (!isOpen) return null;
-
-    // 방사형 그래프 데이터 준비
-    const radarData = RESEARCH_STATS.map(stat => {
-        const currentLevel = research?.stats[stat.id]?.currentLevel || 0;
-        return {
-            id: stat.id,
-            label: stat.name,
-            value: (currentLevel / stat.maxLevel) * 100,
-            level: currentLevel,
-            description: currentLevel > 0 ? stat.effects[currentLevel - 1].description : '연구 미완료',
-            gradient: stat.gradient
-        };
-    });
-
-    // 현재 호버된 스탯 데이터
-    const hoveredStatData = hoveredStat ? radarData.find(d => d.id === hoveredStat) : null;
-
     // 랑킹/전적 데이터 (가상)
     const commanderStats = {
         rank: 'Gold III',
@@ -109,6 +94,29 @@ export default function CommanderProfileModal({ isOpen, onClose }: CommanderProf
         uniqueCount: 2,
         joinDate: '2025.12.01'
     };
+
+    // 연구 시간 단축 버프 계산
+    const researchTimeBuff = getResearchTimeBuff(footerState.deck);
+
+    if (!isOpen) return null;
+
+    // 방사형 그래프 데이터 준비
+    const radarData = RESEARCH_STATS.map(stat => {
+        const currentLevel = research?.stats[stat.id]?.currentLevel || 1; // 기본값 1
+        return {
+            id: stat.id,
+            label: stat.name,
+            value: (currentLevel / 9) * 100, // 9레벨 기준 백분율 (Lv9 = 100%)
+            level: currentLevel,
+            description: currentLevel > 0
+                ? stat.effects[Math.min(currentLevel - 1, stat.effects.length - 1)].description
+                : '기본 능력치',
+            gradient: stat.gradient
+        };
+    });
+
+    // 현재 호버된 스탯 데이터
+    const hoveredStatData = hoveredStat ? radarData.find(d => d.id === hoveredStat) : null;
 
     return (
         <Modal
@@ -246,45 +254,60 @@ export default function CommanderProfileModal({ isOpen, onClose }: CommanderProf
                                     />
                                 </div>
 
-                                {/* 방사형 그래프 컴포넌트 */}
-                                <div className="relative flex items-center justify-center py-6 bg-white/2 rounded-3xl border border-white/5">
-                                    <RadarChart data={radarData} onHover={setHoveredStat} hoveredId={hoveredStat} />
-                                    <div className="absolute inset-0 flex items-center justify-center opacity-10 pointer-events-none">
-                                        <Shield size={80} className="text-white" />
+                                {/* 연구 시간 버프 정보 */}
+                                <div className="bg-cyan-900/10 p-4 rounded-2xl border border-cyan-500/20">
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <Clock size={14} className="text-cyan-400" />
+                                        <p className="text-xs font-bold text-cyan-400 uppercase tracking-wider">Research Efficiency</p>
                                     </div>
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-xs text-gray-400">Time Reduction Rate</span>
+                                        <span className="text-xl font-black text-white orbitron">-{Math.round(researchTimeBuff * 100)}%</span>
+                                    </div>
+                                    <p className="text-[10px] text-white/40 mt-1">Based on Deck Composition</p>
                                 </div>
 
-                                {/* 호버 시 스탯 설명 */}
-                                <AnimatePresence>
-                                    {hoveredStatData && (
-                                        <motion.div
-                                            initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                                            animate={{ opacity: 1, y: 0, scale: 1 }}
-                                            exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                                            className="p-4 rounded-xl bg-gradient-to-r from-cyan-500/10 to-purple-500/10 border border-cyan-500/30"
-                                        >
-                                            <div className="flex items-center gap-3 mb-2">
-                                                <Sparkles size={16} className="text-cyan-400 animate-pulse" />
-                                                <span className="font-black text-cyan-400 orbitron">{hoveredStatData.label}</span>
-                                                <span className="text-xs text-yellow-400 font-bold">Lv.{hoveredStatData.level}</span>
-                                            </div>
-                                            <p className="text-sm text-white/70">{hoveredStatData.description}</p>
-                                        </motion.div>
-                                    )}
-                                </AnimatePresence>
+
                             </div>
 
 
-                            {/* 우측: 연구 성과 리스트 */}
+                            {/* 우측: 연구 성과 차트 및 리스트 */}
                             <div className="space-y-4 md:col-span-8">
                                 <h3 className="text-xs font-black text-gray-500 orbitron tracking-[0.3em] uppercase flex items-center gap-2">
                                     <FlaskConical size={14} className="text-cyan-400" />
                                     Research Accumulation
                                 </h3>
 
+                                {/* 방사형 그래프 컴포넌트 */}
+                                <div className="relative flex items-center justify-center py-6 bg-white/2 rounded-3xl border border-white/5 min-h-[300px]">
+                                    <RadarChart data={radarData} onHover={setHoveredStat} hoveredId={hoveredStat} />
+                                    <div className="absolute inset-0 flex items-center justify-center opacity-10 pointer-events-none">
+                                        <Shield size={80} className="text-white" />
+                                    </div>
+
+                                    {/* 호버 시 스탯 설명 */}
+                                    <AnimatePresence>
+                                        {hoveredStatData && (
+                                            <motion.div
+                                                initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                                                animate={{ opacity: 1, y: 0, scale: 1 }}
+                                                exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                                                className="absolute bottom-4 left-4 right-4 p-3 rounded-xl bg-black/80 backdrop-blur-md border border-cyan-500/30 z-20 pointer-events-none"
+                                            >
+                                                <div className="flex items-center gap-2 mb-1">
+                                                    <Sparkles size={14} className="text-cyan-400 animate-pulse" />
+                                                    <span className="font-black text-cyan-400 orbitron text-xs">{hoveredStatData.label}</span>
+                                                    <span className="text-[10px] text-yellow-400 font-bold">Lv.{hoveredStatData.level}</span>
+                                                </div>
+                                                <p className="text-[10px] text-white/90">{hoveredStatData.description}</p>
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
+                                </div>
+
                                 <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
                                     {RESEARCH_STATS.map((stat, idx) => {
-                                        const currentLevel = research?.stats[stat.id]?.currentLevel || 0;
+                                        const currentLevel = research?.stats[stat.id]?.currentLevel || 1; // 1레벨 기본값
                                         const bonus = getResearchBonus(stat.id, currentLevel);
 
                                         return (
@@ -294,76 +317,47 @@ export default function CommanderProfileModal({ isOpen, onClose }: CommanderProf
                                                     "p-3 rounded-xl border border-white/5 transition-all flex items-center gap-4",
                                                     currentLevel > 0 ? "bg-white/5" : "bg-black/40 opacity-40"
                                                 )}
+                                                onMouseEnter={() => setHoveredStat(stat.id)}
+                                                onMouseLeave={() => setHoveredStat(null)}
                                             >
                                                 <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center text-xl bg-gradient-to-br", stat.gradient)}>
                                                     {stat.icon}
                                                 </div>
-                                                <div className="flex-1">
-                                                    <div className="flex justify-between items-center mb-0.5">
-                                                        <p className="text-xs font-bold text-white">{stat.name}</p>
-                                                        <span className="text-[9px] font-bold text-cyan-400 orbitron">L.{currentLevel}</span>
+                                                <div>
+                                                    <p className="text-[10px] text-gray-400 font-bold uppercase">{stat.name}</p>
+                                                    <div className="flex items-center gap-2">
+                                                        <span className={cn(
+                                                            "text-lg font-black orbitron",
+                                                            hoveredStat === stat.id ? "text-cyan-400" : "text-white"
+                                                        )}>
+                                                            Lv.{currentLevel}
+                                                        </span>
+                                                        {currentLevel === 9 && (
+                                                            <span className="text-[10px] text-yellow-500 font-bold px-1.5 py-0.5 bg-yellow-500/10 rounded border border-yellow-500/20">MAX</span>
+                                                        )}
                                                     </div>
-                                                    <p className="text-[10px] text-gray-500">
-                                                        {currentLevel > 0 ? stat.effects[currentLevel - 1].description : '연구 미완료'}
-                                                    </p>
                                                 </div>
                                             </div>
                                         );
                                     })}
                                 </div>
-
-                                <Divider className="bg-white/5" />
-
-                                {/* 전적 및 랭킹 */}
-                                <div className="space-y-3 pt-2">
-                                    <h3 className="text-xs font-black text-gray-500 orbitron tracking-[0.3em] uppercase flex items-center gap-2">
-                                        <Award size={14} className="text-yellow-400" />
-                                        Battle Records
-                                    </h3>
-                                    <div className="grid grid-cols-4 gap-2">
-                                        <div className="p-3 rounded-xl bg-green-500/10 border border-green-500/20 text-center">
-                                            <p className="text-[9px] text-green-400/60 font-bold mb-1">WINS</p>
-                                            <p className="text-xl font-black text-green-400 orbitron">{commanderStats.wins}</p>
-                                        </div>
-                                        <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-center">
-                                            <p className="text-[9px] text-red-400/60 font-bold mb-1">LOSSES</p>
-                                            <p className="text-xl font-black text-red-400 orbitron">{commanderStats.losses}</p>
-                                        </div>
-                                        <div className="p-3 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-center">
-                                            <p className="text-[9px] text-cyan-400/60 font-bold mb-1">WIN RATE</p>
-                                            <p className="text-xl font-black text-cyan-400 orbitron">{commanderStats.winRate}%</p>
-                                        </div>
-                                        <div className="p-3 rounded-xl bg-purple-500/10 border border-purple-500/20 text-center">
-                                            <p className="text-[9px] text-purple-400/60 font-bold mb-1">CARDS</p>
-                                            <p className="text-xl font-black text-purple-400 orbitron">{commanderStats.cardCount}</p>
-                                        </div>
-                                    </div>
-                                </div>
                             </div>
                         </ModalBody>
 
-                        <ModalFooter className="p-8 relative z-10 w-full flex justify-between gap-4">
-                            <div className="flex items-center gap-4">
-                                <div className="text-center">
-                                    <p className="text-[8px] text-gray-500 orbitron uppercase font-bold tracking-widest mb-1">Total Research</p>
-                                    <Chip variant="flat" size="sm" className="bg-cyan-500/10 text-cyan-400 orbitron font-black text-xs">
-                                        PTS: {research?.totalResearchPoints || 0}
-                                    </Chip>
+                        <ModalFooter className="flex justify-between items-center p-6 bg-black/40 backdrop-blur-xl">
+                            <div className="flex gap-4">
+                                <div className="text-[10px] text-gray-500">
+                                    <p className="uppercase tracking-widest font-bold mb-1">Total Battles</p>
+                                    <p className="text-white orbitron font-bold">{commanderStats.totalBattles}</p>
                                 </div>
                                 <div className="w-px h-8 bg-white/10" />
-                                <div className="text-center">
-                                    <p className="text-[8px] text-gray-500 orbitron uppercase font-bold tracking-widest mb-1">Neural Core</p>
-                                    <Chip variant="flat" size="sm" className="bg-purple-500/10 text-purple-400 orbitron font-black text-xs">
-                                        STABLE
-                                    </Chip>
+                                <div className="text-[10px] text-gray-500">
+                                    <p className="uppercase tracking-widest font-bold mb-1">Win Rate</p>
+                                    <p className="text-cyan-400 orbitron font-bold">{commanderStats.winRate}%</p>
                                 </div>
                             </div>
-                            <Button
-                                color="primary"
-                                className="px-8 font-black orbitron tracking-[0.2em] text-[10px] bg-gradient-to-r from-cyan-600 to-blue-600"
-                                onPress={onClose}
-                            >
-                                SYSTEM SYNC
+                            <Button onClick={onClose} variant="flat" className="orbitron">
+                                CLOSE TERMINAL
                             </Button>
                         </ModalFooter>
                     </>
@@ -381,13 +375,13 @@ function RadarChart({ data, onHover, hoveredId }: {
     onHover: (id: string | null) => void,
     hoveredId: string | null
 }) {
-    const size = 240;
+    const size = 260; // 사이즈
     const center = size / 2;
-    const radius = center - 25;
+    const radius = center - 35; // 라벨 공간 확보
     const numPoints = data.length;
     const angleStep = (Math.PI * 2) / numPoints;
 
-    // 배경 다각형 선 생성 (그리드)
+    // 배경 다각형 선 생성 (그리드 - 5단계)
     const backgroundPolygons = [0.2, 0.4, 0.6, 0.8, 1].map((scale) => {
         const points = data.map((_, i) => {
             const angle = i * angleStep - Math.PI / 2;
@@ -401,22 +395,34 @@ function RadarChart({ data, onHover, hoveredId }: {
     // 데이터 다각형 생성
     const dataPoints = data.map((d, i) => {
         const angle = i * angleStep - Math.PI / 2;
-        const normalizedValue = Math.max(5, d.value); // 최소값 5%로 시각적 조절
-        const x = center + radius * (normalizedValue / 100) * Math.cos(angle);
-        const y = center + radius * (normalizedValue / 100) * Math.sin(angle);
+        // 최소값 보여주기 위해 value가 작아도 기본 크기 보장 (10%)
+        const displayValue = Math.max(10, d.value);
+        const x = center + radius * (displayValue / 100) * Math.cos(angle);
+        const y = center + radius * (displayValue / 100) * Math.sin(angle);
         return `${x},${y}`;
     }).join(' ');
 
     return (
-        <svg width={size} height={size} className="overflow-visible">
+        <svg width={size} height={size} className="overflow-visible z-10">
+            <defs>
+                <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+                    <feGaussianBlur stdDeviation="3" result="coloredBlur" />
+                    <feMerge>
+                        <feMergeNode in="coloredBlur" />
+                        <feMergeNode in="SourceGraphic" />
+                    </feMerge>
+                </filter>
+            </defs>
+
             {/* 그리드 선 */}
             {backgroundPolygons.map((points, i) => (
                 <polygon
                     key={i}
                     points={points}
                     fill="none"
-                    stroke="rgba(255,255,255,0.05)"
-                    strokeWidth="1"
+                    stroke={i === 4 ? "rgba(6, 182, 212, 0.3)" : "rgba(255,255,255,0.05)"}
+                    strokeWidth={i === 4 ? "1" : "0.5"}
+                    strokeDasharray={i === 4 ? "none" : "4 2"}
                 />
             ))}
 
@@ -441,65 +447,85 @@ function RadarChart({ data, onHover, hoveredId }: {
             {/* 라벨 - 텍스트 위치 계산 */}
             {data.map((d, i) => {
                 const angle = i * angleStep - Math.PI / 2;
-                const x = center + (radius + 15) * Math.cos(angle);
-                const y = center + (radius + 15) * Math.sin(angle);
+                // 라벨 위치를 원 밖으로 더 밀어냄
+                const labelRadius = radius + 20;
+                const x = center + labelRadius * Math.cos(angle);
+                const y = center + labelRadius * Math.sin(angle);
+
                 let anchor = "middle";
                 if (Math.abs(Math.cos(angle)) > 0.1) {
                     anchor = Math.cos(angle) > 0 ? "start" : "end";
                 }
 
+                // 텍스트 미세 조정
+                const isTop = Math.sin(angle) < -0.5;
+                const isBottom = Math.sin(angle) > 0.5;
+                const dy = isTop ? 0 : (isBottom ? "0.8em" : "0.4em");
+
                 return (
-                    <text
-                        key={i}
-                        x={x}
-                        y={y}
-                        fill="rgba(255,255,255,0.4)"
-                        fontSize="8"
-                        fontWeight="bold"
-                        textAnchor={anchor as any}
-                        alignmentBaseline="middle"
-                        className="orbitron"
-                    >
-                        {d.label}
-                    </text>
+                    <g key={i} className="cursor-pointer" onMouseEnter={() => onHover(d.id)} onMouseLeave={() => onHover(null)}>
+                        <text
+                            x={x}
+                            y={y}
+                            dy={dy}
+                            fill={hoveredId === d.id ? "#22d3ee" : "rgba(255,255,255,0.6)"}
+                            fontSize="10"
+                            fontWeight="bold"
+                            textAnchor={anchor as any}
+                            className={cn("orbitron transition-colors", hoveredId === d.id && "font-black")}
+                        >
+                            {d.label}
+                        </text>
+                    </g>
                 );
             })}
 
-            {/* 데이터 영역 */}
+            {/* 데이터 영역 (채우기) */}
             <motion.polygon
                 initial={{ opacity: 0, scale: 0.5 }}
                 animate={{ opacity: 0.6, scale: 1 }}
                 points={dataPoints}
-                fill="rgba(6, 182, 212, 0.4)"
-                stroke="rgba(6, 182, 212, 0.8)"
+                fill="rgba(6, 182, 212, 0.2)"
+                stroke="none"
+            />
+
+            {/* 데이터 영역 (테두리 + 글로우) */}
+            <motion.polygon
+                initial={{ pathLength: 0, opacity: 0 }}
+                animate={{ pathLength: 1, opacity: 1 }}
+                transition={{ duration: 1.5, ease: "easeOut" }}
+                points={dataPoints}
+                fill="none"
+                stroke="#06b6d4"
                 strokeWidth="2"
+                filter="url(#glow)"
             />
 
             {/* 데이터 거점 (Point) */}
             {data.map((d, i) => {
                 const angle = i * angleStep - Math.PI / 2;
-                const normalizedValue = Math.max(5, d.value);
-                const x = center + radius * (normalizedValue / 100) * Math.cos(angle);
-                const y = center + radius * (normalizedValue / 100) * Math.sin(angle);
+                // 최소값 보정 적용
+                const displayValue = Math.max(10, d.value);
+                const x = center + radius * (displayValue / 100) * Math.cos(angle);
+                const y = center + radius * (displayValue / 100) * Math.sin(angle);
+                const isHovered = hoveredId === d.id;
 
                 return (
                     <g key={i}>
                         <circle
                             cx={x}
                             cy={y}
-                            r={hoveredId === d.id ? 6 : 4}
-                            fill="#06b6d4"
+                            r={isHovered ? 6 : 3}
+                            fill={isHovered ? "#fff" : "#06b6d4"}
                             className={cn(
-                                "filter drop-shadow-[0_0_5px_rgba(6,182,212,1)] transition-all cursor-pointer",
-                                hoveredId === d.id && "drop-shadow-[0_0_15px_rgba(6,182,212,1)]"
+                                "transition-all cursor-pointer",
+                                isHovered && "filter drop-shadow-[0_0_8px_rgba(255,255,255,0.8)]"
                             )}
                             onMouseEnter={() => onHover(d.id)}
                             onMouseLeave={() => onHover(null)}
                         />
-                        {hoveredId === d.id && (
-                            <>
-                                <circle cx={x} cy={y} r="12" fill="none" stroke="#06b6d4" strokeWidth="1" className="animate-ping opacity-50" />
-                            </>
+                        {isHovered && (
+                            <circle cx={x} cy={y} r="10" fill="none" stroke="#fff" strokeWidth="1" className="animate-ping opacity-50" />
                         )}
                     </g>
                 );
@@ -507,3 +533,4 @@ function RadarChart({ data, onHover, hoveredId }: {
         </svg>
     );
 }
+

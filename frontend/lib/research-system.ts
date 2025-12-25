@@ -26,9 +26,9 @@ export interface ResearchStat {
     costMultiplier: number;    // 레벨당 비용 증가율
     baseTime: number;          // 레벨 1 연구 시간 (분)
     timeMultiplier: number;    // 레벨당 시간 증가율
-    requiredLevel: number;     // 해금에 필요한 지휘관 레벨
-    requiredResearchId?: ResearchCategory; // 해금에 필요한 선행 연구 ID
-    requiredResearchLevel?: number;        // 해금에 필요한 선행 연구 레벨
+    requiredLevel: number;     // 개방에 필요한 지휘관 레벨
+    requiredResearchId?: ResearchCategory; // 개방에 필요한 선행 연구 ID
+    requiredResearchLevel?: number;        // 개방에 필요한 선행 연구 레벨
     color: string;
     gradient: string;
 }
@@ -39,7 +39,7 @@ export const RESEARCH_STATS: ResearchStat[] = [
         name: '통찰력',
         description: '유닛 생성 시 높은 등급 확률 증가',
         icon: '👁️',
-        maxLevel: 10,
+        maxLevel: 9,
         effects: [
             { level: 1, bonus: 2, description: '희귀 등급 +2%' },
             { level: 2, bonus: 4, description: '희귀 등급 +4%' },
@@ -49,8 +49,7 @@ export const RESEARCH_STATS: ResearchStat[] = [
             { level: 6, bonus: 15, description: '희귀 등급 +15%, 영웅 +3%' },
             { level: 7, bonus: 18, description: '희귀 등급 +18%, 영웅 +5%' },
             { level: 8, bonus: 22, description: '희귀 등급 +22%, 영웅 +7%' },
-            { level: 9, bonus: 26, description: '희귀 등급 +26%, 영웅 +10%' },
-            { level: 10, bonus: 30, description: '희귀 +30%, 영웅 +15%, 전설 +3%' },
+            { level: 9, bonus: 30, description: '희귀 +30%, 영웅 +15%, 전설 +3%' },
         ],
         baseCost: 200,
         costMultiplier: 1.5,
@@ -65,7 +64,7 @@ export const RESEARCH_STATS: ResearchStat[] = [
         name: '효율성',
         description: '모든 슬롯의 유닛 생산 속도 증가',
         icon: '⚡',
-        maxLevel: 10,
+        maxLevel: 9,
         effects: [
             { level: 1, bonus: 5, description: '생산 속도 +5%' },
             { level: 2, bonus: 10, description: '생산 속도 +10%' },
@@ -75,8 +74,7 @@ export const RESEARCH_STATS: ResearchStat[] = [
             { level: 6, bonus: 34, description: '생산 속도 +34%' },
             { level: 7, bonus: 42, description: '생산 속도 +42%' },
             { level: 8, bonus: 50, description: '생산 속도 +50%' },
-            { level: 9, bonus: 60, description: '생산 속도 +60%' },
-            { level: 10, bonus: 75, description: '생산 속도 +75%' },
+            { level: 9, bonus: 75, description: '생산 속도 +75%' },
         ],
         baseCost: 150,
         costMultiplier: 1.4,
@@ -93,7 +91,7 @@ export const RESEARCH_STATS: ResearchStat[] = [
         name: '협상력',
         description: '상점 및 강화 비용 할인',
         icon: '💰',
-        maxLevel: 10,
+        maxLevel: 9,
         effects: [
             { level: 1, bonus: 3, description: '비용 -3%' },
             { level: 2, bonus: 6, description: '비용 -6%' },
@@ -103,8 +101,7 @@ export const RESEARCH_STATS: ResearchStat[] = [
             { level: 6, bonus: 20, description: '비용 -20%' },
             { level: 7, bonus: 24, description: '비용 -24%' },
             { level: 8, bonus: 28, description: '비용 -28%' },
-            { level: 9, bonus: 33, description: '비용 -33%' },
-            { level: 10, bonus: 40, description: '비용 -40%' },
+            { level: 9, bonus: 40, description: '비용 -40%' },
         ],
         baseCost: 250,
         costMultiplier: 1.5,
@@ -121,7 +118,7 @@ export const RESEARCH_STATS: ResearchStat[] = [
         name: '리더십',
         description: '군단 숙련도 획득 속도 증가',
         icon: '👑',
-        maxLevel: 10,
+        maxLevel: 9,
         effects: [
             { level: 1, bonus: 5, description: '숙련도 +5%/일' },
             { level: 2, bonus: 10, description: '숙련도 +10%/일' },
@@ -131,8 +128,7 @@ export const RESEARCH_STATS: ResearchStat[] = [
             { level: 6, bonus: 36, description: '숙련도 +36%/일' },
             { level: 7, bonus: 45, description: '숙련도 +45%/일' },
             { level: 8, bonus: 55, description: '숙련도 +55%/일' },
-            { level: 9, bonus: 70, description: '숙련도 +70%/일' },
-            { level: 10, bonus: 100, description: '숙련도 +100%/일' },
+            { level: 9, bonus: 100, description: '숙련도 +100%/일' },
         ],
         baseCost: 300,
         costMultiplier: 1.6,
@@ -149,7 +145,7 @@ export const RESEARCH_STATS: ResearchStat[] = [
         name: '숙달',
         description: '강화/합성 성공률 증가',
         icon: '🔧',
-        maxLevel: 10,
+        maxLevel: 9,
         effects: [
             { level: 1, bonus: 2, description: '성공률 +2%' },
             { level: 2, bonus: 4, description: '성공률 +4%' },
@@ -159,8 +155,7 @@ export const RESEARCH_STATS: ResearchStat[] = [
             { level: 6, bonus: 14, description: '성공률 +14%' },
             { level: 7, bonus: 17, description: '성공률 +17%' },
             { level: 8, bonus: 21, description: '성공률 +21%' },
-            { level: 9, bonus: 25, description: '성공률 +25%' },
-            { level: 10, bonus: 30, description: '성공률 +30%' },
+            { level: 9, bonus: 30, description: '성공률 +30%' },
         ],
         baseCost: 350,
         costMultiplier: 1.6,
@@ -177,7 +172,7 @@ export const RESEARCH_STATS: ResearchStat[] = [
         name: '행운',
         description: '배틀/스토리 보상 증가',
         icon: '🍀',
-        maxLevel: 10,
+        maxLevel: 9,
         effects: [
             { level: 1, bonus: 3, description: '보상 +3%' },
             { level: 2, bonus: 6, description: '보상 +6%' },
@@ -187,8 +182,7 @@ export const RESEARCH_STATS: ResearchStat[] = [
             { level: 6, bonus: 24, description: '보상 +24%' },
             { level: 7, bonus: 30, description: '보상 +30%' },
             { level: 8, bonus: 37, description: '보상 +37%' },
-            { level: 9, bonus: 45, description: '보상 +45%' },
-            { level: 10, bonus: 55, description: '보상 +55%' },
+            { level: 9, bonus: 55, description: '보상 +55%' },
         ],
         baseCost: 400,
         costMultiplier: 1.7,
@@ -258,22 +252,53 @@ export function checkResearchDependency(stat: ResearchStat, research: CommanderR
  * 군단 카드 기반의 연구 시간 단축 버프 계산 (0 ~ 1 사이의 값)
  * 레전더리/유니크 카드 중 'reduction' 버프가 있는 카드를 찾습니다.
  */
+/**
+ * 연구 시간 단축 버프 계산 (0 ~ 1 사이의 값, 최대 70%)
+ * 덱에 포함된 카드의 특수 능력, 업적, 아이템 등의 효과를 합산합니다.
+ */
 export function getResearchTimeBuff(deck: Card[]): number {
-    let maxBuff = 0;
+    let totalReduction = 0;
+
+    // 1. 덱 카드 효과 (중첩 가능하도록 변경하거나, 최대값만 적용하거나 정책 결정 필요)
+    // 여기서는 가장 높은 효과 하나만 적용하는 것으로 가정하다가, 특정 카드는 중첩 가능하게 할 수 있음
+    let maxCardBuff = 0;
 
     for (const card of deck) {
-        // 카테고리나 등급에 따른 버프 적용 (임의의 로직)
+        // 전설 등급 카드는 기본적으로 연구 효율이 높다고 가정
         if (card.rarity === 'legendary') {
-            maxBuff = Math.max(maxBuff, 0.20); // 20% 단축 (legendary gets the max buff)
+            maxCardBuff = Math.max(maxCardBuff, 0.05); // 전설: 5%
         }
 
-        // 특정 카드 이름이나 태그가 있다면 추가 버프 (예: 'Sora', 'GPT-5' 등)
-        if (card.name && (card.name.includes('Sora') || card.name.includes('GPT-4o'))) {
-            maxBuff = Math.max(maxBuff, 0.3); // 30% 단축
+        // 연구 특화 카드 (이름이나 스킬 설명으로 판단)
+        if (card.name && (card.name.includes('연구원') || card.name.includes('박사') || card.name.includes('Scientist'))) {
+            maxCardBuff = Math.max(maxCardBuff, 0.10); // 연구원: 10%
+        }
+
+        // 특정 네임드 카드 (예시)
+        if (card.name === 'GPT-4o' || card.name === 'Claude 3.5 Sonnet') {
+            maxCardBuff = Math.max(maxCardBuff, 0.15); // 최신 AI: 15%
+        }
+
+        // 특수 스킬에 '연구'가 포함된 경우 (specialSkill이 객체인 경우 처리)
+        if (card.specialSkill && typeof card.specialSkill === 'object') {
+            if (card.specialSkill.description?.includes('연구') || card.specialSkill.name?.includes('연구')) {
+                maxCardBuff = Math.max(maxCardBuff, 0.10);
+            }
+        }
+        // specialSkill이 문자열일 경우 (호환성)
+        else if (typeof card.specialSkill === 'string' && (card.specialSkill as string).includes('연구')) {
+            maxCardBuff = Math.max(maxCardBuff, 0.10);
         }
     }
 
-    return maxBuff;
+    totalReduction += maxCardBuff;
+
+    // TODO: 2. 업적 보너스 추가 (매개변수로 받거나 store에서 조회)
+    // TODO: 3. 아이템 효과 추가
+    // TODO: 4. 구독 티어 보너스 추가
+
+    // 최대 70% 제한
+    return Math.min(totalReduction, 0.70);
 }
 
 /**
@@ -285,9 +310,21 @@ export function getResearchCost(stat: ResearchStat, targetLevel: number): number
 
 /**
  * 연구 시간 계산 (분)
+ * 고정된 시간 값 사용: Lv1=30분, Lv2=60분, Lv3=120분, Lv4=240분, Lv5=480분, Lv6=960분, Lv7=1920분, Lv8=3840분, Lv9=7680분
  */
 export function getResearchTime(stat: ResearchStat, targetLevel: number): number {
-    return Math.floor(stat.baseTime * Math.pow(stat.timeMultiplier, targetLevel - 1));
+    const FIXED_TIMES: Record<number, number> = {
+        1: 30,      // 30분
+        2: 60,      // 1시간
+        3: 120,     // 2시간
+        4: 240,     // 4시간
+        5: 480,     // 8시간
+        6: 960,     // 16시간
+        7: 1920,    // 32시간
+        8: 3840,    // 64시간
+        9: 7680     // 128시간
+    };
+    return FIXED_TIMES[targetLevel] || 30;
 }
 
 /**
@@ -309,7 +346,7 @@ export function createInitialResearchState(): CommanderResearch {
     for (const stat of RESEARCH_STATS) {
         stats[stat.id] = {
             categoryId: stat.id,
-            currentLevel: 0,
+            currentLevel: 1,  // 초기 레벨 1로 시작
             isResearching: false,
             researchStartTime: null,
             researchEndTime: null,
@@ -317,7 +354,7 @@ export function createInitialResearchState(): CommanderResearch {
     }
     return {
         stats,
-        totalResearchPoints: 0
+        totalResearchPoints: 6  // 초기 6개 연구 모두 Lv1
     };
 }
 

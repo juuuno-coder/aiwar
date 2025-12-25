@@ -20,8 +20,8 @@
                 },
                 {
                     "id": "tutorial-2",
-                    "title": "AI 군단 해금",
-                    "description": "첫 번째 AI 군단을 해금하세요 (Gemini는 무료)",
+                    "title": "AI 군단 개방",
+                    "description": "첫 번째 AI 군단을 개방하세요 (Gemini는 무료)",
                     "type": "unlock_factions",
                     "target": {
                         "count": 1
@@ -31,7 +31,7 @@
                 {
                     "id": "tutorial-3",
                     "title": "슬롯 배치",
-                    "description": "슬롯에 AI 군단을 배치하세요",
+                    "description": "모든 AI 군단을 개방하세요",
                     "type": "place_slot",
                     "target": {
                         "count": 1
@@ -74,7 +74,7 @@
                 {
                     "id": "mission-1-1",
                     "title": "다양성의 힘",
-                    "description": "3개 이상의 AI 군단을 해금하세요",
+                    "description": "3개 이상의 AI 군단을 개방하세요",
                     "type": "unlock_factions",
                     "target": {
                         "count": 3
@@ -191,7 +191,7 @@
                 {
                     "id": "mission-3-2",
                     "title": "카테고리 컬렉터",
-                    "description": "모든 카테고리에서 AI 1개씩 해금",
+                    "description": "모든 카테고리에서 AI 1개씩 개방",
                     "type": "collect_diverse",
                     "target": {
                         "factionCount": 5

@@ -12,9 +12,10 @@ interface CardRevealModalProps {
     isOpen: boolean;
     card: CardType | null;
     onClose: () => void;
+    onAddToInventory?: () => void; // 인벤토리 추가 콜백
 }
 
-export default function CardRevealModal({ isOpen, card, onClose }: CardRevealModalProps) {
+export default function CardRevealModal({ isOpen, card, onClose, onAddToInventory }: CardRevealModalProps) {
     const [isFlipped, setIsFlipped] = useState(false);
     const [showContent, setShowContent] = useState(false);
 
@@ -127,7 +128,12 @@ export default function CardRevealModal({ isOpen, card, onClose }: CardRevealMod
                                     </div>
 
                                     <CyberButton
-                                        onClick={onClose}
+                                        onClick={() => {
+                                            if (onAddToInventory) {
+                                                onAddToInventory();
+                                            }
+                                            onClose();
+                                        }}
                                         className="px-16"
                                     >
                                         인벤토리로 이동

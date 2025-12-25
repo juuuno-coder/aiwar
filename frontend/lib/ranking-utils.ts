@@ -53,36 +53,18 @@ export function getCurrentSeason(): Season {
 }
 
 /**
- * 모든 시즌 목록 가져오기
+ * 초기 랭킹 데이터 생성 (한 번만 실행됨)
  */
-export function getAllSeasons(): Season[] {
-    return [
-        getCurrentSeason(),
-        {
-            id: 'season-2',
-            name: '시즌 2: AI 군단의 부상',
-            startDate: new Date('2026-01-01').getTime(),
-            endDate: new Date('2026-01-31').getTime(),
-            status: 'upcoming',
-            rewards: []
-        }
-    ];
-}
-
-/**
- * 시뮬레이션용 랭킹 데이터 생성
- */
-export function generateMockRankings(playerRating: number): RankingEntry[] {
+export function initializeRankings(playerRating: number): RankingEntry[] {
     const rankings: RankingEntry[] = [];
 
-    // 플레이어 순위 계산 (레이팅 기반)
-    const playerRank = Math.max(1, Math.floor((2000 - playerRating) / 10) + 1);
-
     // 상위 100명 생성
+    // 플레이어를 포함하여 함께 정렬할 것이므로 일단 생성하고 나중에 정렬/랭크부여
+
+    // 1. AI 유저들
     for (let i = 1; i <= 100; i++) {
-        const isPlayer = i === playerRank;
-        const baseRating = 2000 - (i - 1) * 10;
-        const rating = isPlayer ? playerRating : baseRating + Math.floor(Math.random() * 10);
+        // 상위권일수록 레이팅 높음 (2000 ~ 1000 분포)
+        const rating = 2000 - (i * 10) + Math.floor(Math.random() * 20);
 
         const totalMatches = 50 + Math.floor(Math.random() * 200);
         const winRate = 40 + Math.floor(Math.random() * 40);
@@ -90,9 +72,9 @@ export function generateMockRankings(playerRating: number): RankingEntry[] {
         const losses = totalMatches - wins;
 
         rankings.push({
-            rank: i,
-            playerId: isPlayer ? 'player' : `ai-${i}`,
-            playerName: isPlayer ? '나' : `플레이어 ${1000 + i}`,
+            rank: 0, // 나중에 계산
+            playerId: `ai-${i}`,
+            playerName: `플레이어 ${1000 + i}`,
             level: Math.max(1, Math.floor(rating / 100)),
             rating,
             wins,
@@ -102,7 +84,93 @@ export function generateMockRankings(playerRating: number): RankingEntry[] {
         });
     }
 
+    // 2. 플레이어 추가
+    rankings.push({
+        rank: 0,
+        playerId: 'player',
+        playerName: '나',
+        level: Math.max(1, Math.floor(playerRating / 100)),
+        rating: playerRating,
+        wins: 0,
+        losses: 0,
+        winRate: 0,
+        highestRating: playerRating
+    });
+
+    // 3. 정렬 및 등수 부여
+    return sortAndRank(rankings);
+}
+
+// 랭킹 정렬 헬퍼
+function sortAndRank(entries: RankingEntry[]): RankingEntry[] {
+    // 레이팅 내림차순 정렬
+    const sorted = [...entries].sort((a, b) => b.rating - a.rating);
+
+    // 순위 부여
+    return sorted.map((entry, index) => ({
+        ...entry,
+        rank: index + 1
+    }));
+}
+
+/**
+ * 랭킹 데이터 저장
+ */
+export function saveRankings(rankings: RankingEntry[]): void {
+    localStorage.setItem('rankings', JSON.stringify(rankings));
+}
+
+/**
+ * 랭킹 데이터 로드
+ */
+export function loadRankings(): RankingEntry[] {
+    const data = localStorage.getItem('rankings');
+    if (data) {
+        return JSON.parse(data);
+    }
+
+    // 초기 데이터 생성
+    const stats = getPvPStats();
+    const rankings = initializeRankings(stats.currentRating);
+    saveRankings(rankings);
     return rankings;
+}
+
+/**
+ * 플레이어 레이팅 업데이트 시 랭킹 테이블 갱신
+ * (다른 AI들도 시뮬레이션하여 순위 변동 생동감 부여)
+ */
+export function updatePlayerRanking(newRating: number, win: boolean): void {
+    let rankings = loadRankings();
+
+    // 1. 플레이어 업데이트
+    const playerIndex = rankings.findIndex(r => r.playerId === 'player');
+    if (playerIndex !== -1) {
+        rankings[playerIndex].rating = newRating;
+        rankings[playerIndex].highestRating = Math.max(rankings[playerIndex].highestRating, newRating);
+        if (win) rankings[playerIndex].wins += 1;
+        else rankings[playerIndex].losses += 1;
+
+        const total = rankings[playerIndex].wins + rankings[playerIndex].losses;
+        rankings[playerIndex].winRate = total > 0 ? Math.round((rankings[playerIndex].wins / total) * 100) : 0;
+    }
+
+    // 2. 다른 AI들 시뮬레이션 (일부만 레이팅 변동)
+    rankings = rankings.map(r => {
+        if (r.playerId === 'player') return r;
+
+        // 30% 확률로 레이팅 변동
+        if (Math.random() < 0.3) {
+            const change = Math.floor(Math.random() * 30) - 15; // -15 ~ +15
+            const newR = Math.max(0, r.rating + change);
+            return { ...r, rating: newR };
+        }
+        return r;
+    });
+
+    // 3. 재정렬 및 저장
+    const newRankings = sortAndRank(rankings);
+    saveRankings(newRankings);
 }
 
 /**
@@ -162,35 +230,4 @@ export function getRatingToNextTier(currentRating: number): number {
     }
 
     return 0; // 이미 최고 티어
-}
-
-/**
- * 랭킹 데이터 저장
- */
-export function saveRankings(rankings: RankingEntry[]): void {
-    localStorage.setItem('rankings', JSON.stringify(rankings));
-}
-
-/**
- * 랭킹 데이터 로드
- */
-export function loadRankings(): RankingEntry[] {
-    const data = localStorage.getItem('rankings');
-    if (data) {
-        return JSON.parse(data);
-    }
-
-    // 초기 데이터 생성
-    const stats = getPvPStats();
-    const rankings = generateMockRankings(stats.currentRating);
-    saveRankings(rankings);
-    return rankings;
-}
-
-/**
- * 랭킹 업데이트 (레이팅 변경 시)
- */
-export function updateRankings(newRating: number): void {
-    const rankings = generateMockRankings(newRating);
-    saveRankings(rankings);
 }

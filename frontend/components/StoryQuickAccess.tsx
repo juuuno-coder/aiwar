@@ -6,17 +6,20 @@ import { loadStoryProgress } from '@/lib/story-system';
 import { Card as UiCard } from '@/components/ui/custom/Card';
 import { Button } from '@/components/ui/custom/Button';
 
+import { useTranslation } from '@/context/LanguageContext';
+
 export default function StoryQuickAccess() {
     const router = useRouter();
+    const { t } = useTranslation();
     const [currentChapter, setCurrentChapter] = useState<number>(1);
 
-    useState(() => {
-        const chapters = loadStoryProgress();
+    useEffect(() => {
+        const chapters = loadStoryProgress(t);
         const current = chapters.find(c => c.unlocked && !c.completed);
         if (current) {
             setCurrentChapter(current.number);
         }
-    });
+    }, [t]);
 
     return (
         <UiCard

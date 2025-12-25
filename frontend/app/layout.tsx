@@ -8,6 +8,7 @@ import { LanguageProvider } from "@/context/LanguageContext";
 import { AlertProvider } from "@/context/AlertContext";
 import { FooterProvider } from "@/context/FooterContext";
 import { UserProvider } from "@/context/UserContext";
+import { SoundProvider } from "@/context/SoundContext";
 import MainLayout from "@/components/MainLayout";
 
 const geistSans = Geist({
@@ -39,15 +40,17 @@ export default function RootLayout({
         <FirebaseProvider>
           <UserProvider>
             <LanguageProvider>
-              <AlertProvider>
-                <FooterProvider>
-                  <ThemeProvider>
-                    <MainLayout>
-                      {children}
-                    </MainLayout>
-                  </ThemeProvider>
-                </FooterProvider>
-              </AlertProvider>
+              <SoundProvider>
+                <AlertProvider>
+                  <FooterProvider>
+                    <ThemeProvider>
+                      <MainLayout>
+                        {children}
+                      </MainLayout>
+                    </ThemeProvider>
+                  </FooterProvider>
+                </AlertProvider>
+              </SoundProvider>
             </LanguageProvider>
           </UserProvider>
         </FirebaseProvider>

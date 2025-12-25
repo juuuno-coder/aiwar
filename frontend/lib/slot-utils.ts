@@ -8,6 +8,7 @@ export interface SlotData {
     slotIndex: number; // 0-4
     factionId: string | null;
     placedAt: number; // timestamp
+    lastCollectedAt?: number;
 }
 
 export interface SynergyBonus {
@@ -59,15 +60,10 @@ export function placeFactonInSlot(slotIndex: number, factionId: string): {
 
     const state = getGameState();
 
-    // 해금 여부 확인
-    if (!state.unlockedFactions.includes(factionId)) {
-        return { success: false, message: '먼저 AI 군단을 해금해야 합니다.' };
-    }
-
-    // 슬롯 배치 비용 확인 및 차감
-    const spendResult = spendTokens(faction.slotCost);
-    if (!spendResult.success) {
-        return { success: false, message: `토큰이 부족합니다. (필요: ${faction.slotCost} 토큰)` };
+    // 구독 여부 확인 (기존 개방 로직 대체)
+    const isSubscribed = state.unlockedFactions?.includes(factionId);
+    if (!isSubscribed) {
+        return { success: false, message: '개방된 AI 군단만 배치할 수 있습니다.' };
     }
 
     // 슬롯 데이터 초기화 (필요시)
@@ -75,7 +71,8 @@ export function placeFactonInSlot(slotIndex: number, factionId: string): {
         state.slots = Array(5).fill(null).map((_, i) => ({
             slotIndex: i,
             factionId: null,
-            placedAt: 0
+            placedAt: 0,
+            lastCollectedAt: Date.now() // 생성 시작 시간
         }));
     }
 
@@ -83,14 +80,15 @@ export function placeFactonInSlot(slotIndex: number, factionId: string): {
     state.slots[slotIndex] = {
         slotIndex,
         factionId,
-        placedAt: Date.now()
+        placedAt: Date.now(),
+        lastCollectedAt: Date.now()
     };
 
     saveGameState(state);
 
     return {
         success: true,
-        message: `${faction.displayName}을(를) 슬롯 ${slotIndex + 1}에 배치했습니다.`
+        message: `${faction.displayName}을(를) 슬롯 ${slotIndex + 1}에 배치했습니다. 카드가 생성되기 시작합니다.`
     };
 }
 
@@ -115,14 +113,15 @@ export function removeFactonFromSlot(slotIndex: number): {
     state.slots[slotIndex] = {
         slotIndex,
         factionId: null,
-        placedAt: 0
+        placedAt: 0,
+        lastCollectedAt: 0
     };
 
     saveGameState(state);
 
     return {
         success: true,
-        message: '슬롯에서 제거했습니다.'
+        message: '슬롯에서 제거했습니다. 생성이 중단됩니다.'
     };
 }
 
@@ -137,7 +136,8 @@ export function getSlots(): SlotData[] {
         return Array(5).fill(null).map((_, i) => ({
             slotIndex: i,
             factionId: null,
-            placedAt: 0
+            placedAt: 0,
+            lastCollectedAt: 0
         }));
     }
 
@@ -148,6 +148,7 @@ export function getSlots(): SlotData[] {
  * 슬롯 시너지 계산
  */
 export function calculateSynergy(): SynergyBonus {
+    // ... (기존 로직 유지) ...
     const slots = getSlots();
     const placedFactions = slots
         .filter(s => s.factionId)
@@ -163,13 +164,11 @@ export function calculateSynergy(): SynergyBonus {
         };
     }
 
-    // 카테고리별 개수 세기
     const categoryCount: Record<string, number> = {};
     for (const faction of placedFactions) {
         categoryCount[faction.category] = (categoryCount[faction.category] || 0) + 1;
     }
 
-    // 기본 효과 합산
     let totalTimeReduction = 0;
     let totalPowerBonus = 0;
     let totalFragmentBonus = 0;
@@ -180,46 +179,106 @@ export function calculateSynergy(): SynergyBonus {
         totalFragmentBonus += faction.effects.fragmentBonus;
     }
 
-    // 시너지 보너스 계산
     let synergyMultiplier = 1.0;
     let synergyTitle: string | undefined;
     let synergyDescription = '';
 
-    // 같은 카테고리 시너지
     for (const [category, count] of Object.entries(categoryCount)) {
         if (count >= 5) {
-            synergyMultiplier = 2.2; // +120%
+            synergyMultiplier = 2.2;
             synergyTitle = `${category.toUpperCase()} 마스터`;
             synergyDescription = `같은 카테고리 5개: 효과 +120%`;
         } else if (count >= 4) {
-            synergyMultiplier = Math.max(synergyMultiplier, 1.8); // +80%
+            synergyMultiplier = 1.8;
             synergyTitle = `${category.toUpperCase()} 전문가`;
             synergyDescription = `같은 카테고리 4개: 효과 +80%`;
         } else if (count >= 3) {
-            synergyMultiplier = Math.max(synergyMultiplier, 1.5); // +50%
+            synergyMultiplier = 1.5;
             synergyTitle = `${category.toUpperCase()} 특화`;
             synergyDescription = `같은 카테고리 3개: 효과 +50%`;
         } else if (count >= 2) {
-            synergyMultiplier = Math.max(synergyMultiplier, 1.25); // +25%
+            synergyMultiplier = 1.25;
             synergyDescription = `같은 카테고리 2개: 효과 +25%`;
         }
     }
 
-    // 모든 카테고리 다른 경우 (올라운더)
     const uniqueCategories = Object.keys(categoryCount).length;
     if (uniqueCategories === 5 && placedFactions.length === 5) {
-        synergyMultiplier = 1.2; // 모든 효과 20%
+        synergyMultiplier = 1.2;
         synergyTitle = 'AI 올라운더';
         synergyDescription = '5개 모두 다른 카테고리: 모든 효과 +20%';
     }
 
     return {
-        timeReduction: totalTimeReduction * synergyMultiplier,
+        timeReduction: Math.min(totalTimeReduction * synergyMultiplier, 0.9), // 최대 90% 감소 제한
         powerBonus: totalPowerBonus * synergyMultiplier,
         fragmentBonus: Math.floor(totalFragmentBonus * synergyMultiplier),
         synergyTitle,
         description: synergyDescription || '시너지 효과 없음'
     };
+}
+
+/**
+ * 카드가 생성되었는지 확인하고 진척도 반환 (0~100)
+ */
+export function getGenerationProgress(slotIndex: number): number {
+    const slots = getSlots();
+    const slot = slots[slotIndex];
+    if (!slot || !slot.factionId) return 0;
+
+    const faction = getFaction(slot.factionId);
+    if (!faction) return 0;
+
+    // 시너지 효과로 시간 감소 적용
+    const synergy = calculateSynergy();
+    const baseIntervalMinutes = faction.generationInterval || 180; // 기본 3시간
+    const reducedIntervalMinutes = baseIntervalMinutes * (1 - synergy.timeReduction);
+    const intervalMs = reducedIntervalMinutes * 60 * 1000;
+
+    const elapsed = Date.now() - (slot.lastCollectedAt || slot.placedAt);
+    const progress = Math.min((elapsed / intervalMs) * 100, 100);
+
+    return progress;
+}
+
+/**
+ * 생성된 카드 수확
+ */
+export async function collectCard(slotIndex: number): Promise<{ success: boolean; card?: any; message: string }> {
+    const progress = getGenerationProgress(slotIndex);
+    if (progress < 100) {
+        return { success: false, message: '아직 카드가 생성되지 않았습니다.' };
+    }
+
+    const slots = getSlots();
+    const slot = slots[slotIndex];
+    if (!slot || !slot.factionId) return { success: false, message: '슬롯 오류' };
+
+    const faction = getFaction(slot.factionId);
+    if (!faction) return { success: false, message: '군단 정보 없음' };
+
+    // 카드 생성 로직 (확률 기반 등급)
+    const synergy = calculateSynergy();
+    // TODO: 실제 카드 생성 함수 호출 (game-storage 등에서)
+    // 여기서는 간단히 모의 객체 반환
+    const newCard = {
+        name: `${faction.displayName} 카드`,
+        rarity: Math.random() > 0.9 ? 'legendary' : (Math.random() > 0.7 ? 'epic' : 'rare'),
+        factionId: faction.id
+    };
+
+    // 슬롯 타이머 리셋
+    const state = getGameState();
+    if (state.slots && state.slots[slotIndex]) {
+        state.slots[slotIndex].lastCollectedAt = Date.now();
+        saveGameState(state);
+    }
+
+    // 실제로는 인벤토리에 추가해야 함 (game-storage 호출 필요)
+    // const { gameStorage } = await import('@/lib/game-storage');
+    // await gameStorage.addCardToInventory(newCard);
+
+    return { success: true, card: newCard, message: `${newCard.rarity} 등급 카드를 획득했습니다!` };
 }
 
 /**
@@ -240,14 +299,10 @@ export function canPlaceInSlot(slotIndex: number, factionId: string): {
 
     const state = getGameState();
 
-    // 해금 여부
-    if (!state.unlockedFactions.includes(factionId)) {
-        return { canPlace: false, reason: '먼저 AI 군단을 해금해야 합니다.' };
-    }
-
-    // 토큰 확인
-    if (state.tokens < faction.slotCost) {
-        return { canPlace: false, reason: `토큰이 부족합니다. (필요: ${faction.slotCost} 토큰)` };
+    // 구독 여부 확인 (기존 개방 로직 대체)
+    const isSubscribed = state.unlockedFactions?.includes(factionId);
+    if (!isSubscribed) {
+        return { canPlace: false, reason: '개방된 AI 군단만 배치할 수 있습니다.' };
     }
 
     return { canPlace: true };

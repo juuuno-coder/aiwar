@@ -12,8 +12,9 @@ import { Card } from './types';
  * 강화 비용 계산 (토큰)
  * 레벨에 따라 증가
  */
-export function getEnhanceCost(level: number): number {
-    return level * 50;
+export function getEnhanceCost(level: number, discountMultiplier: number = 0): number {
+    const baseCost = level * 50;
+    return Math.floor(baseCost * (1 - discountMultiplier));
 }
 
 /**

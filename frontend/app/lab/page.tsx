@@ -2,8 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { motion } from 'framer-motion';
 import CyberPageLayout from '@/components/CyberPageLayout';
 import { Card, CardBody } from '@/components/ui/custom/Card';
 import { Button } from '@/components/ui/custom/Button';
@@ -13,10 +11,7 @@ import { useAlert } from '@/context/AlertContext';
 import { useTranslation } from '@/context/LanguageContext';
 import {
     FlaskConical,
-    Zap,
     Sparkles,
-    Layers,
-    ArrowRight,
     Lock,
     Clock,
     Coins,
@@ -43,13 +38,7 @@ import { useFooter } from '@/context/FooterContext';
 import { Tooltip } from '@/components/ui/custom/Tooltip';
 import { gameStorage } from '@/lib/game-storage';
 
-// 허브 링크
-const hubLinks = [
-    { name: '생성', path: '/slots', icon: <Zap className="w-6 h-6" />, color: 'from-yellow-500 to-amber-600', description: 'AI 군단 유닛 생성' },
-    { name: '강화', path: '/enhance', icon: <Sparkles className="w-6 h-6" />, color: 'from-purple-500 to-pink-600', description: '카드 레벨업' },
-    { name: '합성', path: '/fusion', icon: <Layers className="w-6 h-6" />, color: 'from-blue-500 to-cyan-600', description: '카드 합성' },
-    { name: '유니크', path: '/unique-unit', icon: <FlaskConical className="w-6 h-6" />, color: 'from-pink-500 to-rose-600', description: '유니크 카드 제작' },
-];
+
 
 export default function LabPage() {
     const router = useRouter();
@@ -62,11 +51,14 @@ export default function LabPage() {
     const [currentTime, setCurrentTime] = useState(Date.now());
     const [timeReduction, setTimeReduction] = useState(0);
 
-    // 타이머
+    // 타이머 - 연구 진행 중일 때만 실행
     useEffect(() => {
+        const hasActiveResearch = research && getActiveResearch(research);
+        if (!hasActiveResearch) return;
+
         const timer = setInterval(() => setCurrentTime(Date.now()), 1000);
         return () => clearInterval(timer);
-    }, []);
+    }, [research]);
 
     // 연구 상태 로드
     useEffect(() => {
@@ -115,7 +107,7 @@ export default function LabPage() {
             const activeStat = RESEARCH_STATS.find(s => s.id === activeResearch.categoryId);
             showAlert({
                 title: '연구 중',
-                message: `이미 ${activeStat?.name} 연구가 진행 중입니다. 1번에 1개의 연구만 가능합니다.`,
+                message: `이미 ${activeStat?.name} 연구가 진행 중입니다. 연구가 완료된 후 다른 연구를 시작할 수 있습니다.`,
                 type: 'warning'
             });
             return;
@@ -143,6 +135,7 @@ export default function LabPage() {
             type: 'info',
             confirmText: '연구 시작',
             onConfirm: async () => {
+                // 코인 차감
                 await addCoins(-cost);
 
                 const newResearch: CommanderResearch = {
@@ -209,39 +202,14 @@ export default function LabPage() {
 
     return (
         <CyberPageLayout
-            title="LABORATORY"
-            subtitle="Research Center"
+            title="실험실"
+            englishTitle="LABORATORY"
             description="지휘관 능력을 강화하여 게임 전반의 효율을 높이세요"
             color="cyan"
+            backPath="/main"
         >
 
-            {/* 허브 링크 */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
-                {hubLinks.map((link, i) => (
-                    <motion.div
-                        key={link.path}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: i * 0.1 }}
-                    >
-                        <Link href={link.path}>
-                            <Card className="bg-white/5 hover:bg-white/10 border-white/10 hover:border-white/20 transition-all cursor-pointer group">
-                                <CardBody className="p-4 text-center">
-                                    <div className={cn(
-                                        "w-12 h-12 mx-auto mb-2 rounded-xl flex items-center justify-center bg-gradient-to-br",
-                                        link.color
-                                    )}>
-                                        {link.icon}
-                                    </div>
-                                    <p className="font-bold text-white">{link.name}</p>
-                                    <p className="text-xs text-white/50">{link.description}</p>
-                                    <ArrowRight className="w-4 h-4 mx-auto mt-2 text-white/30 group-hover:text-white/60 transition-all" />
-                                </CardBody>
-                            </Card>
-                        </Link>
-                    </motion.div>
-                ))}
-            </div>
+
 
             {/* 지휘관 연구 */}
             <div className="mb-6">
@@ -262,7 +230,7 @@ export default function LabPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {RESEARCH_STATS.map((stat, i) => {
-                    const progress = research?.stats[stat.id];
+                    const progress = research?.stats?.[stat.id];
                     const isLocked = stat.requiredLevel > level;
                     const isResearching = progress?.isResearching;
                     const canComplete = progress && isResearchComplete(progress);
@@ -275,14 +243,9 @@ export default function LabPage() {
                     const isMaxLevel = currentLevel >= stat.maxLevel;
 
                     return (
-                        <motion.div
-                            key={stat.id}
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: i * 0.05 }}
-                        >
+                        <div key={stat.id}>
                             <Card className={cn(
-                                "border transition-all overflow-hidden",
+                                "border transition-colors overflow-hidden",
                                 isLocked
                                     ? "bg-white/5 border-white/5 opacity-50"
                                     : isResearching
@@ -393,7 +356,7 @@ export default function LabPage() {
                                     )}
                                 </CardBody>
                             </Card>
-                        </motion.div>
+                        </div>
                     );
                 })}
             </div>

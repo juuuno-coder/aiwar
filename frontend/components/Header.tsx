@@ -11,8 +11,9 @@ export default function Header() {
         { name: 'Story', href: '/story' },
         { name: 'Battle', href: '/battle' },
         { name: 'AI Factions', href: '/factions' },
+        { name: 'Shop', href: '/shop' },
         { name: 'Lab', href: '/lab' },
-        { name: 'Arena', href: '/pvp' },
+        { name: 'PVP Arena', href: '/pvp/realtime' },
         { name: 'Ranking', href: '/ranking' },
     ];
 
@@ -48,8 +49,8 @@ export default function Header() {
                                     >
                                         <span
                                             className={`text-sm font-medium tracking-wide transition-colors ${isActive
-                                                    ? 'text-purple-300'
-                                                    : 'text-slate-400 hover:text-white'
+                                                ? 'text-purple-300'
+                                                : 'text-slate-400 hover:text-white'
                                                 }`}
                                         >
                                             {item.name}

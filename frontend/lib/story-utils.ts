@@ -50,7 +50,7 @@ export function getChapter(chapterId: string): Chapter | null {
 }
 
 /**
- * 챕터 해금 여부 확인
+ * 챕터 개방 여부 확인
  */
 export function isChapterUnlocked(chapterId: string): boolean {
     const chapter = getChapter(chapterId);

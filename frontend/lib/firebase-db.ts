@@ -65,7 +65,9 @@ export async function loadUserProfile(): Promise<UserProfile | null> {
 
         if (docSnap.exists()) {
             const data = docSnap.data() as UserProfile;
-            console.log('✅ Firebase 프로필 로드 성공:', data);
+            if (process.env.NODE_ENV === 'development') {
+                console.log('✅ Firebase 프로필 로드 성공:', data);
+            }
             return data;
         }
 
@@ -80,7 +82,9 @@ export async function loadUserProfile(): Promise<UserProfile | null> {
         };
 
         await setDoc(userRef, defaultProfile);
-        console.log('✅ 기본 프로필 생성:', defaultProfile);
+        if (process.env.NODE_ENV === 'development') {
+            console.log('✅ 기본 프로필 생성:', defaultProfile);
+        }
         return defaultProfile;
     } catch (error) {
         console.error('❌ 프로필 로드 실패:', error);

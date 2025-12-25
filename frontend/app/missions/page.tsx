@@ -6,6 +6,7 @@ import CyberPageLayout from '@/components/CyberPageLayout';
 import { storage } from '@/lib/utils';
 import { Mission, DailyMissions } from '@/lib/mission-types';
 import { cn } from '@/lib/utils';
+import { EncryptedText } from '@/components/ui/custom/EncryptedText';
 
 function getTodayDate(): string {
     return new Date().toISOString().split('T')[0];
@@ -146,10 +147,20 @@ export default function MissionsPage() {
                             <div className="flex items-start gap-4">
                                 <div className="text-4xl">{getMissionIcon(mission.type)}</div>
                                 <div className="flex-1">
-                                    <div className="flex items-center gap-2 mb-1">
-                                        <h3 className="text-lg font-bold orbitron text-white">{mission.title}</h3>
-                                        {mission.claimed && <span className="text-[9px] bg-green-500/20 text-green-400 px-2 py-0.5 rounded font-mono">CLAIMED</span>}
-                                        {mission.completed && !mission.claimed && <span className="text-[9px] bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded font-mono animate-pulse">PENDING</span>}
+                                    <div className="flex justify-between items-start mb-1">
+                                        <h3 className="font-bold text-white">
+                                            <EncryptedText
+                                                text={mission.title}
+                                                interval={40}
+                                            />
+                                        </h3>
+                                        <div className="flex items-center gap-2">
+                                            {mission.reward.coins && (
+                                                <span className="text-xs text-yellow-400">+{mission.reward.coins} G</span>
+                                            )}
+                                            {mission.claimed && <span className="text-[9px] bg-green-500/20 text-green-400 px-2 py-0.5 rounded font-mono">CLAIMED</span>}
+                                            {mission.completed && !mission.claimed && <span className="text-[9px] bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded font-mono animate-pulse">PENDING</span>}
+                                        </div>
                                     </div>
                                     <p className="text-sm text-white/40 mb-3">{mission.description}</p>
 

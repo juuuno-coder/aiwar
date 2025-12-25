@@ -17,7 +17,7 @@ export function initializeTimers(): void {
         };
     }
 
-    // 해금된 군단에 대해 타이머 생성
+    // 개방된 군단에 대해 타이머 생성
     for (const factionId of state.unlockedFactions) {
         const existing = state.timers.autoGeneration.find((t: AutoGenerationTimer) => t.factionId === factionId);
         if (!existing) {

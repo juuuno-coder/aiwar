@@ -1,17 +1,17 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import CyberPageLayout from '@/components/CyberPageLayout';
-import GameCard from '@/components/GameCard';
+import { useState, useEffect, useCallback } from 'react';
 import { Card as CardType } from '@/lib/types';
+import { InventoryCard } from '@/lib/inventory-system';
+import CyberPageLayout from '@/components/CyberPageLayout';
+import FusionFooter from '@/components/Footer/FusionFooter';
+import GameCard from '@/components/GameCard';
 import { canFuse, fuseCards, getFusionCost, getFusionPreview, getRarityName } from '@/lib/fusion-utils';
-import { HoverBorderGradient } from '@/components/ui/aceternity/hover-border-gradient';
 import { cn } from '@/lib/utils';
 
 export default function FusionPage() {
-    const [allCards, setAllCards] = useState<CardType[]>([]);
-    const [materialCards, setMaterialCards] = useState<CardType[]>([]);
+    const [allCards, setAllCards] = useState<InventoryCard[]>([]);
+    const [materialSlots, setMaterialSlots] = useState<(InventoryCard | null)[]>(Array(3).fill(null));
     const [userTokens, setUserTokens] = useState(0);
 
     useEffect(() => {
@@ -19,126 +19,159 @@ export default function FusionPage() {
     }, []);
 
     const loadCards = async () => {
-        const { gameStorage } = await import('@/lib/game-storage');
+        const { loadInventory } = await import('@/lib/inventory-system');
         const { getGameState } = await import('@/lib/game-state');
-        const cards = await gameStorage.getCards();
-        const state = getGameState();
+
+        const cards = await loadInventory();
+        const gameState = getGameState();
+
         setAllCards(cards);
-        setUserTokens(state.tokens || 0);
+        setUserTokens(gameState.tokens || 0);
     };
 
-    const handleToggleMaterial = (card: CardType) => {
-        if (materialCards.find(c => c.id === card.id)) {
-            setMaterialCards(prev => prev.filter(c => c.id !== card.id));
-        } else {
-            if (materialCards.length >= 3) return;
-            setMaterialCards(prev => [...prev, card]);
+    // 카드 드래그 시작
+    const handleDragStart = (e: React.DragEvent, card: InventoryCard) => {
+        e.dataTransfer.setData('application/json', JSON.stringify(card));
+    };
+
+    // 카드 클릭
+    const handleCardClick = (card: InventoryCard) => {
+        const emptyIndex = materialSlots.findIndex(s => s === null);
+        if (emptyIndex !== -1) {
+            const newSlots = [...materialSlots];
+            newSlots[emptyIndex] = card;
+            setMaterialSlots(newSlots);
         }
     };
 
-    const handleFusion = async () => {
-        if (materialCards.length !== 3) return;
-        const check = canFuse(materialCards, userTokens);
+    // 재료 드롭
+    const handleMaterialDrop = (card: InventoryCard, index: number) => {
+        const newSlots = [...materialSlots];
+        newSlots[index] = card;
+        setMaterialSlots(newSlots);
+    };
+
+    // 재료 제거
+    const handleMaterialRemove = (index: number) => {
+        const newSlots = [...materialSlots];
+        newSlots[index] = null;
+        setMaterialSlots(newSlots);
+    };
+
+    // 초기화
+    const handleClear = () => {
+        setMaterialSlots(Array(3).fill(null));
+    };
+
+    // 자동 선택 (같은 등급 3개)
+    const handleAutoSelect = async () => {
+        const rarityGroups: Record<string, InventoryCard[]> = {};
+        allCards.forEach(card => {
+            const rarity = card.rarity || 'Common';
+            if (!rarityGroups[rarity]) {
+                rarityGroups[rarity] = [];
+            }
+            rarityGroups[rarity].push(card);
+        });
+
+        for (const [rarity, group] of Object.entries(rarityGroups)) {
+            if (group.length >= 3) {
+                const selected = group.slice(0, 3);
+                setMaterialSlots(selected);
+                return;
+            }
+        }
+
+        alert('같은 등급의 카드가 3장 이상 필요합니다.');
+    };
+
+    // 합성 실행
+    const handleFuse = async () => {
+        const filledMaterials = materialSlots.filter((c): c is InventoryCard => c !== null);
+
+        if (filledMaterials.length !== 3) {
+            alert('재료 카드 3장이 필요합니다.');
+            return;
+        }
+
+        const check = canFuse(filledMaterials as any, userTokens);
         if (!check.canFuse) {
             alert(check.reason);
             return;
         }
 
         const { gameStorage } = await import('@/lib/game-storage');
-        const fusedCard = fuseCards(materialCards, 'guest');
-        const cost = getFusionCost(materialCards[0].rarity!);
+        const fusedCard = fuseCards(filledMaterials as any, 'guest');
+        const cost = getFusionCost(filledMaterials[0].rarity!);
 
-        for (const mat of materialCards) {
+        for (const mat of filledMaterials) {
             await gameStorage.deleteCard(mat.id);
         }
+
         await gameStorage.addCardToInventory(fusedCard);
         await gameStorage.addTokens(-cost);
 
-        alert(`융합 성공! ${fusedCard.rarity} 카드 획득!`);
-        setMaterialCards([]);
+        alert(`합성 성공! ${fusedCard.rarity} 카드 획득!`);
+
+        handleClear();
         await loadCards();
     };
 
-    const preview = materialCards.length === 3 ? getFusionPreview(materialCards) : null;
+    const filledCount = materialSlots.filter(c => c !== null).length;
+    const canFuseNow = filledCount === 3;
 
     return (
         <CyberPageLayout
-            title="FUSION_LAB"
-            subtitle="Card Synthesis"
-            description="같은 등급 카드 3장을 합성하여 상위 등급 카드 1장을 획득합니다. 합성 확률은 100%입니다."
+            title="융합 실험실"
+            englishTitle="CARD SYNTHESIS"
+            description="같은 등급 카드 3장을 합성하여 상위 등급 카드를 획득합니다."
             color="purple"
         >
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                {/* Materials */}
-                <motion.div
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    className="bg-white/5 border border-white/10 rounded-xl p-6"
-                >
-                    <h3 className="text-sm font-mono text-purple-400 uppercase tracking-widest mb-4">
-                        MATERIAL_UNITS ({materialCards.length}/3)
-                    </h3>
+            {/* 메인 영역: 카드 목록 */}
+            <div className="p-6 pb-[140px]"> {/* 푸터 높이 120px + 여유 */}
+                <div className="mb-4 flex items-center justify-between">
+                    <h2 className="text-lg font-bold text-white">내 카드 목록</h2>
+                    <p className="text-sm text-white/60">{allCards.length}장</p>
+                </div>
 
-                    <div className="grid grid-cols-3 gap-4 mb-6 min-h-[200px]">
-                        {materialCards.map(card => (
-                            <div key={card.id} onClick={() => handleToggleMaterial(card)} className="cursor-pointer hover:opacity-70 transition-opacity">
-                                <GameCard card={card} />
-                            </div>
-                        ))}
-                        {Array.from({ length: 3 - materialCards.length }).map((_, i) => (
-                            <div key={i} className="aspect-[2/3] border border-dashed border-white/10 rounded-lg flex items-center justify-center text-white/20 text-sm font-mono">
-                                SLOT_{i + materialCards.length + 1}
-                            </div>
-                        ))}
-                    </div>
+                <div className="grid grid-cols-5 gap-4">
+                    {allCards.map(card => {
+                        const isSelected = materialSlots.some(s => s?.id === card.id);
 
-                    {preview && (
-                        <div className="p-4 bg-purple-500/10 border border-purple-500/30 rounded-lg mb-4">
-                            <p className="text-[9px] font-mono text-white/40 uppercase tracking-widest mb-2">SYNTHESIS_PREVIEW</p>
-                            <p className="text-lg font-bold text-white">
-                                {getRarityName(preview.currentRarity)} → {preview.nextRarity ? getRarityName(preview.nextRarity) : 'MAX_RARITY'}
-                            </p>
-                            <p className="text-sm text-white/60">PWR: {preview.currentAvgStats.totalPower} → {preview.nextStats.totalPower}</p>
-                            <p className="text-sm text-amber-400 mt-2">COST: {preview.cost} TOKEN</p>
-                        </div>
-                    )}
-
-                    {materialCards.length === 3 && (
-                        <HoverBorderGradient
-                            onClick={handleFusion}
-                            className="w-full py-3"
-                            containerClassName="w-full"
-                            duration={2}
-                        >
-                            <span className="font-bold text-white font-mono uppercase tracking-widest">EXECUTE_FUSION 🔮</span>
-                        </HoverBorderGradient>
-                    )}
-                </motion.div>
-
-                {/* Card List */}
-                <motion.div
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.1 }}
-                    className="bg-white/5 border border-white/10 rounded-xl p-6"
-                >
-                    <h3 className="text-sm font-mono text-cyan-400 uppercase tracking-widest mb-4">AVAILABLE_UNITS</h3>
-                    <div className="grid grid-cols-3 gap-2 max-h-[600px] overflow-y-auto">
-                        {allCards.map(card => (
+                        return (
                             <div
                                 key={card.id}
-                                onClick={() => handleToggleMaterial(card)}
+                                draggable
+                                onDragStart={(e) => handleDragStart(e, card)}
+                                onClick={() => handleCardClick(card)}
                                 className={cn(
-                                    "cursor-pointer transition-all",
-                                    materialCards.find(c => c.id === card.id) && "ring-2 ring-purple-500 opacity-50"
+                                    "cursor-grab active:cursor-grabbing transition-all hover:scale-105",
+                                    isSelected && "opacity-50 ring-2 ring-purple-500"
                                 )}
                             >
                                 <GameCard card={card} />
                             </div>
-                        ))}
+                        );
+                    })}
+                </div>
+
+                {allCards.length === 0 && (
+                    <div className="text-center py-20 text-white/40">
+                        카드가 없습니다.
                     </div>
-                </motion.div>
+                )}
             </div>
+
+            {/* 푸터: 슬롯 + 버튼 */}
+            <FusionFooter
+                materialSlots={materialSlots}
+                onMaterialDrop={handleMaterialDrop}
+                onMaterialRemove={handleMaterialRemove}
+                onClear={handleClear}
+                onAutoSelect={handleAutoSelect}
+                onFuse={handleFuse}
+                canFuse={canFuseNow}
+            />
         </CyberPageLayout>
     );
 }

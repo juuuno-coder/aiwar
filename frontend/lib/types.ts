@@ -3,7 +3,7 @@
 export type Rarity = 'common' | 'rare' | 'epic' | 'legendary' | 'unique' | 'commander';
 export type Specialty = 'text' | 'image' | 'video' | 'music' | 'voice' | 'code';
 export type CardType = 'normal' | 'automated';
-export type AIType = 'EFFICIENCY' | 'CREATIVITY' | 'COST';
+export type AIType = 'EFFICIENCY' | 'CREATIVITY' | 'FUNCTION';
 export type BattleMode = '1-card' | '3-card' | '5-card';
 
 export interface Stats {
@@ -43,6 +43,7 @@ export interface CardTemplate {
     rarity: Rarity;
     cardType: CardType;
     imageUrl: string;
+    videoUrl?: string;
     description: string;
     baseStats: {
         creativity: { min: number; max: number };
@@ -146,15 +147,13 @@ export interface BattleGenre {
     };
 }
 
-export interface User {
+export interface UserProfile {
     id: string;
-    email: string;
-    nickname: string;
-    avatarUrl?: string;
+    username: string;
     level: number;
-    experience: number;
-    dataCoin: number;
-    researchPoint: number;
+    exp: number;
+    coins: number;
+    tokens: number;
     createdAt: Date;
     lastLogin: Date;
 }

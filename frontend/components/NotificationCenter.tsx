@@ -5,7 +5,7 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/custom/Button';
 
-export type NotificationType = 'reward' | 'levelup' | 'card' | 'quest' | 'achievement';
+export type NotificationType = 'reward' | 'levelup' | 'card' | 'quest' | 'achievement' | 'warning' | 'error';
 
 export interface Notification {
     id: string;
@@ -80,7 +80,9 @@ export default function NotificationCenter({ onNotificationClick }: Notification
             levelup: 'text-purple-400',
             card: 'text-blue-400',
             quest: 'text-green-400',
-            achievement: 'text-pink-400'
+            achievement: 'text-pink-400',
+            warning: 'text-orange-400',
+            error: 'text-red-400'
         };
         return colors[type];
     };
@@ -91,7 +93,9 @@ export default function NotificationCenter({ onNotificationClick }: Notification
             levelup: 'bg-purple-900/20 border-purple-500/30',
             card: 'bg-blue-900/20 border-blue-500/30',
             quest: 'bg-green-900/20 border-green-500/30',
-            achievement: 'bg-pink-900/20 border-pink-500/30'
+            achievement: 'bg-pink-900/20 border-pink-500/30',
+            warning: 'bg-orange-900/20 border-orange-500/30',
+            error: 'bg-red-900/20 border-red-500/30'
         };
         return colors[type];
     };

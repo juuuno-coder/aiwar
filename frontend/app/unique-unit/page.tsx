@@ -13,6 +13,7 @@ import { calculateSynergy } from '@/lib/slot-utils';
 import { Card } from '@/components/ui/custom/Card';
 import { Button } from '@/components/ui/custom/Button';
 import CircularProgress from '@/components/CircularProgress';
+import CyberPageLayout from '@/components/CyberPageLayout';
 
 export default function UniqueUnitPage() {
     const [progress, setProgress] = useState<any>(null);
@@ -71,16 +72,12 @@ export default function UniqueUnitPage() {
     };
 
     return (
-        <div className="h-full">
-            {/* 헤더 */}
-            <div className="mb-8 animate-slide-down">
-                <h1 className="text-4xl font-bold text-gradient mb-2">
-                    🌟 유니크 유닛
-                </h1>
-                <p className="text-lg text-gray-400">
-                    24시간마다 생성되는 특별한 유닛을 획득하세요
-                </p>
-            </div>
+        <CyberPageLayout
+            title="유니크 유닛"
+            englishTitle="LEGENDARY PRODUCTION"
+            description="24시간마다 생성되는 특별한 유닛을 획득하세요."
+            color="pink"
+        >
 
             {/* 타이머 영역 */}
             <Card variant="glow" className="mb-8 animate-slide-up">
@@ -243,6 +240,6 @@ export default function UniqueUnitPage() {
                     <li>• 특수 스킬은 전투에서 강력한 효과를 발휘합니다</li>
                 </ul>
             </Card>
-        </div>
+        </CyberPageLayout>
     );
 }

@@ -1,56 +1,66 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Card as CardType, Rarity } from '@/lib/types';
-import { getCardCharacterImage, getFactionIcon } from '@/lib/card-images';
+import { InventoryCard } from '@/lib/inventory-system';
+import { getCardCharacterImage, getFactionIcon, getCardCharacterVideo } from '@/lib/card-images';
+import { getTypeIcon, getTypeColor } from '@/lib/type-system';
 import { cn } from '@/lib/utils';
 
 interface GameCardProps {
-    card: CardType;
+    card: CardType | InventoryCard;
     onClick?: () => void;
     isSelected?: boolean;
     isDisabled?: boolean;
     isHolographic?: boolean;
+    showDetails?: boolean;
 }
 
 // 등급별 색상 설정
-const RARITY_CONFIG: Record<Rarity, { border: string; glow: string; badge: string; bgGradient: string }> = {
+const RARITY_CONFIG: Record<Rarity, { border: string; glow: string; badge: string; bgGradient: string; glowColor: string }> = {
     common: {
         border: 'border-gray-500/50',
         glow: '',
         badge: 'bg-gray-600 text-gray-200',
-        bgGradient: 'from-gray-800/50 to-gray-900/50'
+        bgGradient: 'from-gray-800/50 to-gray-900/50',
+        glowColor: 'rgba(156,163,175,0.3)'
     },
     rare: {
         border: 'border-blue-500/50',
         glow: 'shadow-[0_0_15px_rgba(59,130,246,0.3)]',
         badge: 'bg-blue-600 text-blue-100',
-        bgGradient: 'from-blue-900/30 to-gray-900/50'
+        bgGradient: 'from-blue-900/30 to-gray-900/50',
+        glowColor: 'rgba(59,130,246,0.5)'
     },
     epic: {
         border: 'border-purple-500/50',
         glow: 'shadow-[0_0_20px_rgba(168,85,247,0.4)]',
         badge: 'bg-purple-600 text-purple-100',
-        bgGradient: 'from-purple-900/30 to-gray-900/50'
+        bgGradient: 'from-purple-900/30 to-gray-900/50',
+        glowColor: 'rgba(168,85,247,0.6)'
     },
     legendary: {
-        border: 'border-amber-500/50',
-        glow: 'shadow-[0_0_25px_rgba(245,158,11,0.5)]',
+        border: 'border-amber-500/60',
+        glow: 'shadow-[0_0_30px_rgba(245,158,11,0.6)]',
         badge: 'bg-gradient-to-r from-amber-500 to-orange-500 text-white',
-        bgGradient: 'from-amber-900/30 to-gray-900/50'
+        bgGradient: 'from-amber-900/40 to-gray-900/50',
+        glowColor: 'rgba(245,158,11,0.7)'
     },
     unique: {
-        border: 'border-red-500/50',
-        glow: 'shadow-[0_0_30px_rgba(239,68,68,0.5)]',
+        border: 'border-red-500/60',
+        glow: 'shadow-[0_0_35px_rgba(239,68,68,0.6)]',
         badge: 'bg-gradient-to-r from-red-500 to-pink-500 text-white',
-        bgGradient: 'from-red-900/30 to-gray-900/50'
+        bgGradient: 'from-red-900/40 to-gray-900/50',
+        glowColor: 'rgba(239,68,68,0.7)'
     },
     commander: {
-        border: 'border-emerald-500/50',
-        glow: 'shadow-[0_0_30px_rgba(16,185,129,0.5)]',
+        border: 'border-emerald-500/60',
+        glow: 'shadow-[0_0_35px_rgba(16,185,129,0.6)]',
         badge: 'bg-gradient-to-r from-emerald-500 to-cyan-500 text-white',
-        bgGradient: 'from-emerald-900/30 to-gray-900/50'
+        bgGradient: 'from-emerald-900/40 to-gray-900/50',
+        glowColor: 'rgba(16,185,129,0.7)'
     }
 };
 
@@ -79,109 +89,214 @@ export default function GameCard({
     onClick,
     isSelected = false,
     isDisabled = false,
-    isHolographic = false
+    isHolographic = false,
+    showDetails = true
 }: GameCardProps) {
     const [imageError, setImageError] = useState(false);
+    const [isHovered, setIsHovered] = useState(false);
+    const [videoLoaded, setVideoLoaded] = useState(false);
+    const videoRef = useRef<HTMLVideoElement>(null);
 
     // 실제 카드 등급 사용 (fallback: common)
     const rarity: Rarity = card.rarity || 'common';
     const config = RARITY_CONFIG[rarity];
 
-    // 카드 이미지 가져오기
+    // 카드 이미지/영상 가져오기
     const characterImage = getCardCharacterImage(card.templateId, card.name, rarity);
     const factionIcon = card.templateId ? getFactionIcon(card.templateId.split('-')[0]) : null;
+    const characterVideo = getCardCharacterVideo(card.templateId, rarity);
+
+    // 호버 시 영상 재생 제어
+    useEffect(() => {
+        if (videoRef.current && characterVideo) {
+            if (isHovered) {
+                videoRef.current.play().catch(() => { });
+            } else {
+                videoRef.current.pause();
+                videoRef.current.currentTime = 0;
+            }
+        }
+    }, [isHovered, characterVideo]);
+
+    // 전설/유니크는 상시 영상 표시 가능
+    const shouldShowVideo = characterVideo && (isHovered || rarity === 'unique');
+    const isHighRarity = rarity === 'legendary' || rarity === 'unique' || rarity === 'commander';
 
     return (
-        <div
+        <motion.div
             className={cn(
-                "relative transition-all duration-300 rounded-xl overflow-hidden",
+                "relative transition-all duration-300 rounded-xl overflow-hidden border-2",
                 config.border,
-                config.glow,
+                isHighRarity && config.glow,
                 isSelected && "scale-105 ring-2 ring-cyan-400",
-                !isSelected && !isDisabled && "hover:scale-105",
+                !isSelected && !isDisabled && "hover:scale-110 hover:z-10",
                 isDisabled && "opacity-50 cursor-not-allowed grayscale",
-                !isDisabled && "cursor-pointer",
-                isHolographic && "animate-pulse"
+                !isDisabled && "cursor-pointer"
             )}
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => setIsHovered(false)}
             onClick={isDisabled ? undefined : onClick}
             style={{ width: '160px', height: '240px' }}
+            whileHover={!isDisabled ? { scale: 1.08 } : undefined}
+            transition={{ duration: 0.2 }}
         >
+            {/* 고급 등급 글로우 이펙트 */}
+            {isHighRarity && (
+                <motion.div
+                    className="absolute inset-0 z-0 pointer-events-none rounded-xl"
+                    animate={{
+                        boxShadow: isHovered
+                            ? `0 0 40px ${config.glowColor}, 0 0 60px ${config.glowColor}, inset 0 0 20px ${config.glowColor}`
+                            : `0 0 20px ${config.glowColor}`
+                    }}
+                    transition={{ duration: 0.3 }}
+                />
+            )}
+
             {/* Holographic Overlay */}
-            {isHolographic && (
-                <div className="absolute inset-0 z-20 pointer-events-none bg-gradient-to-tr from-transparent via-white/20 to-transparent" />
+            {(isHolographic || rarity === 'unique') && (
+                <motion.div
+                    className="absolute inset-0 z-30 pointer-events-none"
+                    animate={{
+                        background: isHovered
+                            ? 'linear-gradient(135deg, transparent 0%, rgba(255,255,255,0.2) 50%, transparent 100%)'
+                            : 'linear-gradient(135deg, transparent 0%, rgba(255,255,255,0.1) 50%, transparent 100%)'
+                    }}
+                />
             )}
 
             {/* 카드 배경 */}
             <div className={cn("absolute inset-0 bg-gradient-to-b", config.bgGradient)} />
 
-            {/* 카드 이미지 영역 */}
+            {/* 카드 이미지/영상 영역 */}
             <div className="relative h-[55%] flex items-center justify-center overflow-hidden bg-black/30">
                 {/* 배경 그라데이션 */}
-                <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/50" />
+                <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/50 z-10" />
 
-                {/* 카드 이미지 */}
-                {characterImage && !imageError ? (
-                    <Image
-                        src={characterImage}
-                        alt={card.name || 'Card'}
-                        fill
-                        className="object-cover"
-                        onError={() => setImageError(true)}
-                    />
-                ) : factionIcon && !imageError ? (
-                    <Image
-                        src={factionIcon}
-                        alt={card.name || 'Card'}
-                        width={80}
-                        height={80}
-                        className="object-contain drop-shadow-lg"
-                        onError={() => setImageError(true)}
-                    />
-                ) : (
-                    <div className="text-5xl">🤖</div>
+                {/* 영상 (호버 시 또는 고급 등급) */}
+                <AnimatePresence>
+                    {shouldShowVideo && (
+                        <motion.video
+                            ref={videoRef}
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            transition={{ duration: 0.3 }}
+                            src={characterVideo}
+                            className="absolute inset-0 w-full h-full object-cover z-5"
+                            muted
+                            loop
+                            playsInline
+                            onLoadedData={() => setVideoLoaded(true)}
+                        />
+                    )}
+                </AnimatePresence>
+
+                {/* 이미지 (영상 없을 때 또는 로딩 중) */}
+                {(!shouldShowVideo || !videoLoaded) && (
+                    <>
+                        {characterImage && !imageError ? (
+                            <Image
+                                src={characterImage}
+                                alt={card.name || 'Card'}
+                                fill
+                                className="object-cover"
+                                onError={() => setImageError(true)}
+                            />
+                        ) : factionIcon && !imageError ? (
+                            <Image
+                                src={factionIcon}
+                                alt={card.name || 'Card'}
+                                width={80}
+                                height={80}
+                                className="object-contain drop-shadow-lg"
+                                onError={() => setImageError(true)}
+                            />
+                        ) : (
+                            <div className="text-5xl">🤖</div>
+                        )}
+                    </>
                 )}
 
                 {/* 레벨 표시 */}
-                <div className="absolute top-1.5 right-1.5 bg-black/70 px-2 py-0.5 rounded text-[10px] font-bold text-white border border-white/10">
+                <div className="absolute top-1.5 right-1.5 bg-black/70 px-2 py-0.5 rounded text-[10px] font-bold text-white border border-white/10 z-20">
                     Lv.{card.level}
                 </div>
 
+                {/* 타입 아이콘 (가위바위보) */}
+                {card.type && (
+                    <div
+                        className="absolute top-8 right-1.5 w-6 h-6 rounded-full flex items-center justify-center text-xs border border-white/20 z-20"
+                        style={{ backgroundColor: getTypeColor(card.type) }}
+                    >
+                        {getTypeIcon(card.type)}
+                    </div>
+                )}
+
                 {/* 등급 배지 */}
-                <div className={cn("absolute top-1.5 left-1.5 px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider", config.badge)}>
+                <motion.div
+                    className={cn("absolute top-1.5 left-1.5 px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider z-20", config.badge)}
+                    animate={isHighRarity ? { scale: [1, 1.05, 1] } : undefined}
+                    transition={isHighRarity ? { repeat: Infinity, duration: 2 } : undefined}
+                >
                     {RARITY_NAMES[rarity]}
-                </div>
+                </motion.div>
+
+                {/* 영상 재생 인디케이터 */}
+                {characterVideo && isHovered && (
+                    <div className="absolute bottom-1 right-1 z-20">
+                        <motion.div
+                            animate={{ opacity: [0.5, 1, 0.5] }}
+                            transition={{ repeat: Infinity, duration: 1 }}
+                            className="w-2 h-2 bg-red-500 rounded-full"
+                        />
+                    </div>
+                )}
             </div>
 
             {/* 카드 정보 영역 */}
-            <div className="relative h-[45%] p-2.5 flex flex-col bg-black/60">
-                {/* 카드 이름 */}
-                <h3 className="text-xs font-bold text-white truncate orbitron mb-1">
-                    {card.name || `AI 유닛 #${card.id?.slice(0, 5) || '???'}`}
-                </h3>
+            {showDetails && (
+                <div className="relative h-[45%] p-2.5 flex flex-col bg-black/60 z-10">
+                    {/* 카드 이름 */}
+                    <h3 className="text-xs font-bold text-white truncate orbitron mb-1">
+                        {card.name || `AI 유닛 #${card.id?.slice(0, 5) || '???'}`}
+                    </h3>
 
-                {/* 등급 별 표시 */}
-                <div className="flex items-center gap-0.5 mb-2">
-                    {Array.from({ length: RARITY_STARS[rarity] }).map((_, i) => (
-                        <span key={i} className="text-[10px] text-amber-400">★</span>
-                    ))}
-                </div>
+                    {/* 등급 별 표시 */}
+                    <div className="flex items-center gap-0.5 mb-2">
+                        {Array.from({ length: RARITY_STARS[rarity] }).map((_, i) => (
+                            <motion.span
+                                key={i}
+                                className="text-[10px] text-amber-400"
+                                animate={isHighRarity && isHovered ? { scale: [1, 1.2, 1] } : undefined}
+                                transition={{ delay: i * 0.1, repeat: Infinity, duration: 1 }}
+                            >
+                                ★
+                            </motion.span>
+                        ))}
+                    </div>
 
-                {/* 스탯 - 올바른 이름으로 표시 */}
-                <div className="flex-1 space-y-1 text-[10px]">
-                    <StatBar label="효율" value={card.stats?.efficiency || 0} color="cyan" />
-                    <StatBar label="창의" value={card.stats?.creativity || 0} color="purple" />
-                    <StatBar label="기능" value={card.stats?.function || 0} color="green" />
-                </div>
+                    {/* 스탯 - 올바른 이름으로 표시 */}
+                    <div className="flex-1 space-y-1 text-[10px]">
+                        <StatBar label="효율" value={card.stats?.efficiency || 0} color="cyan" />
+                        <StatBar label="창의" value={card.stats?.creativity || 0} color="purple" />
+                        <StatBar label="기능" value={card.stats?.function || 0} color="green" />
+                    </div>
 
-                {/* 총 전투력 */}
-                <div className="mt-1.5 pt-1.5 border-t border-white/10 flex justify-between items-center">
-                    <span className="text-[9px] text-white/50 font-mono">PWR</span>
-                    <span className="text-sm font-black orbitron bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
-                        {card.stats?.totalPower || 0}
-                    </span>
+                    {/* 총 전투력 */}
+                    <div className="mt-1.5 pt-1.5 border-t border-white/10 flex justify-between items-center">
+                        <span className="text-[9px] text-white/50 font-mono">PWR</span>
+                        <motion.span
+                            className="text-sm font-black orbitron bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent"
+                            animate={isHovered ? { scale: [1, 1.05, 1] } : undefined}
+                            transition={{ repeat: Infinity, duration: 0.5 }}
+                        >
+                            {card.stats?.totalPower || 0}
+                        </motion.span>
+                    </div>
                 </div>
-            </div>
-        </div>
+            )}
+        </motion.div>
     );
 }
 
@@ -199,9 +314,11 @@ function StatBar({ label, value, color }: { label: string; value: number; color:
         <div className="flex items-center gap-1.5">
             <span className="text-white/50 w-6 font-mono">{label}</span>
             <div className="flex-1 h-1.5 bg-white/10 rounded-full overflow-hidden">
-                <div
+                <motion.div
                     className={cn("h-full bg-gradient-to-r rounded-full", colorClasses[color])}
-                    style={{ width: `${percentage}%` }}
+                    initial={{ width: 0 }}
+                    animate={{ width: `${percentage}%` }}
+                    transition={{ duration: 0.5, ease: "easeOut" }}
                 />
             </div>
             <span className="text-white/70 w-5 text-right font-mono">{value}</span>

@@ -6,6 +6,7 @@ import Button from './ui/Button';
 
 interface BattleResultProps {
     isVictory: boolean;
+    isLevelUp?: boolean; // New prop
     playerWins: number;
     aiWins: number;
     rewards: {
@@ -18,6 +19,7 @@ interface BattleResultProps {
 
 export default function BattleResult({
     isVictory,
+    isLevelUp,
     playerWins,
     aiWins,
     rewards,
@@ -62,7 +64,20 @@ export default function BattleResult({
 
     return (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 animate-fadeIn">
-            <div className="max-w-2xl w-full mx-4">
+            <div className="max-w-2xl w-full mx-4 relative">
+
+                {/* Level Up Overlay */}
+                {isLevelUp && (
+                    <div className="absolute top-0 left-0 right-0 z-50 transform -translate-y-24 flex flex-col items-center animate-bounce-custom">
+                        <div className="text-6xl font-black italic text-transparent bg-clip-text bg-gradient-to-t from-yellow-300 to-yellow-100 drop-shadow-[0_0_20px_rgba(250,204,21,0.8)] orbitron">
+                            LEVEL UP!
+                        </div>
+                        <div className="text-xl text-yellow-200 mt-2 font-bold animate-pulse">
+                            MAX POWER INCREASED
+                        </div>
+                    </div>
+                )}
+
                 {/* 승패 결과 */}
                 <div
                     className={`text-center mb-8 transition-all duration-700 ${showResult ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-10'
@@ -93,17 +108,18 @@ export default function BattleResult({
 
                     <div className="grid grid-cols-2 gap-6 mb-8">
                         {/* 경험치 */}
-                        <div className="bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-xl p-6 border border-blue-500/30">
+                        <div className={`rounded-xl p-6 border transition-all duration-500 ${isLevelUp ? 'bg-gradient-to-br from-yellow-500/30 to-orange-500/30 border-yellow-500 shadow-[0_0_20px_rgba(234,179,8,0.3)]' : 'bg-gradient-to-br from-blue-500/20 to-purple-500/20 border-blue-500/30'}`}>
                             <div className="flex items-center justify-between mb-2">
-                                <span className="text-gray-400">경험치</span>
+                                <span className={isLevelUp ? 'text-yellow-200 font-bold' : 'text-gray-400'}>경험치</span>
                                 <span className="text-2xl">⭐</span>
                             </div>
-                            <div className="text-4xl font-bold text-blue-400 animate-scaleIn">
+                            <div className={`text-4xl font-bold animate-scaleIn ${isLevelUp ? 'text-yellow-300' : 'text-blue-400'}`}>
                                 +{animatedExp}
                             </div>
+                            {isLevelUp && <div className="text-xs text-yellow-300 font-bold mt-1 animate-pulse">LEVEL UP!!</div>}
                             <div className="mt-2 h-2 bg-gray-700 rounded-full overflow-hidden">
                                 <div
-                                    className="h-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all duration-1000"
+                                    className={`h-full bg-gradient-to-r transition-all duration-1000 ${isLevelUp ? 'from-yellow-400 to-orange-500' : 'from-blue-500 to-purple-500'}`}
                                     style={{ width: `${(animatedExp / rewards.exp) * 100}%` }}
                                 />
                             </div>

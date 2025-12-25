@@ -26,7 +26,7 @@ export default function RankingPage() {
 
     if (!currentSeason || !pvpStats) {
         return (
-            <CyberPageLayout title="GLOBAL_RANKING" subtitle="Leaderboard" description="로딩 중..." color="pink">
+            <CyberPageLayout title="글로벌 랭킹" englishTitle="GLOBAL LEADERBOARD" description="로딩 중..." color="pink">
                 <div className="text-center py-20 text-white/30 font-mono">LOADING_DATA...</div>
             </CyberPageLayout>
         );
@@ -38,8 +38,8 @@ export default function RankingPage() {
 
     return (
         <CyberPageLayout
-            title="GLOBAL_RANKING"
-            subtitle="Leaderboard"
+            title="글로벌 랭킹"
+            englishTitle="GLOBAL LEADERBOARD"
             description="시즌 랭킹을 확인하고 상위 랭커들과 경쟁하세요. 시즌 종료 시 순위에 따라 보상이 지급됩니다."
             color="pink"
         >

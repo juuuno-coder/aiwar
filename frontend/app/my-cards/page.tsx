@@ -1,35 +1,45 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useRouter } from 'next/navigation';
 import CyberPageLayout from '@/components/CyberPageLayout';
 import GameCard from '@/components/GameCard';
-import { Button } from '@/components/ui/custom/Button';
 import { useFooter } from '@/context/FooterContext';
 import { useUser } from '@/context/UserContext';
 import { useAlert } from '@/context/AlertContext';
-import { gameStorage } from '@/lib/game-storage';
-import { SortAsc, SortDesc, Grid3X3, LayoutList, Lock, Unlock } from 'lucide-react';
+import { loadInventory, InventoryCard, filterCards, sortCards, getInventoryStats } from '@/lib/inventory-system';
+import { SortAsc, SortDesc, Grid3X3, LayoutList, Lock } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useTranslation } from '@/context/LanguageContext';
 
-type SortOption = 'power' | 'rarity' | 'name';
-type FilterOption = 'all' | 'common' | 'rare' | 'epic' | 'legendary' | 'mythic';
+type SortOption = 'power' | 'rarity' | 'name' | 'acquiredAt';
+type FilterOption = 'all' | 'common' | 'rare' | 'epic' | 'legendary' | 'unique' | 'commander';
 
-const rarityOrder = { common: 1, rare: 2, epic: 3, legendary: 4, mythic: 5 };
+// Requested Order: Common -> Rare -> Hero(Epic) -> Legend -> Unique -> Commander
+const rarityOrder = {
+    common: 1,
+    rare: 2,
+    epic: 3,
+    legendary: 4,
+    unique: 5,
+    commander: 6
+};
 
 export default function MyCardsPage() {
+    const router = useRouter();
+    const { t } = useTranslation();
     const footer = useFooter();
     const { addCoins, refreshData } = useUser();
     const { showAlert } = useAlert();
 
-    const [cards, setCards] = useState<any[]>([]);
+    const [cards, setCards] = useState<InventoryCard[]>([]);
     const [loading, setLoading] = useState(true);
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-    const [sortBy, setSortBy] = useState<SortOption>('power');
-    const [sortAsc, setSortAsc] = useState(false);
+    const [sortBy, setSortBy] = useState<SortOption>('rarity'); // Default by rarity
+    const [sortAsc, setSortAsc] = useState(true); // Low to High (Common to Commander)
     const [filterRarity, setFilterRarity] = useState<FilterOption>('all');
-    const [isMultiSelectMode, setIsMultiSelectMode] = useState(false);
-    const [selectedCard, setSelectedCard] = useState<any | null>(null);
+    const [selectedCard, setSelectedCard] = useState<InventoryCard | null>(null);
 
     useEffect(() => {
         loadCards();
@@ -37,61 +47,50 @@ export default function MyCardsPage() {
 
     const loadCards = async () => {
         setLoading(true);
-        const userCards = await gameStorage.getCards();
-        setCards(userCards);
-        setLoading(false);
+        try {
+            const inventory = await loadInventory();
+            setCards(inventory);
+        } catch (error) {
+            console.error('Failed to load inventory:', error);
+            showAlert({ title: '오류', message: '인벤토리 로드에 실패했습니다.', type: 'error' });
+        } finally {
+            setLoading(false);
+        }
     };
 
     const filteredAndSortedCards = useMemo(() => {
         let result = [...cards];
+
+        // Filter by rarity
         if (filterRarity !== 'all') {
-            result = result.filter(c => c.rarity === filterRarity);
+            result = filterCards(result, { rarity: [filterRarity] });
         }
-        result.sort((a, b) => {
-            let comparison = 0;
-            switch (sortBy) {
-                case 'power':
-                    comparison = (b.stats?.totalPower || 0) - (a.stats?.totalPower || 0);
-                    break;
-                case 'rarity':
-                    comparison = (rarityOrder[b.rarity as keyof typeof rarityOrder] || 0) -
-                        (rarityOrder[a.rarity as keyof typeof rarityOrder] || 0);
-                    break;
-                case 'name':
-                    comparison = (a.name || '').localeCompare(b.name || '');
-                    break;
-            }
-            return sortAsc ? -comparison : comparison;
-        });
+
+        // Sort
+        result = sortCards(result, sortBy, sortAsc);
+
         return result;
     }, [cards, filterRarity, sortBy, sortAsc]);
 
     const statsOverview = useMemo(() => {
-        const total = cards.length;
-        const byRarity: Record<string, number> = {};
-        cards.forEach(c => {
-            byRarity[c.rarity || 'common'] = (byRarity[c.rarity || 'common'] || 0) + 1;
-        });
-        const avgPower = cards.length > 0
-            ? Math.round(cards.reduce((sum, c) => sum + (c.stats?.totalPower || 0), 0) / cards.length)
-            : 0;
-        return { total, byRarity, avgPower };
+        return getInventoryStats(cards);
     }, [cards]);
 
     return (
         <CyberPageLayout
-            title="UNIT_ARCHIVE"
-            subtitle="Card Management"
-            description="보유 중인 모든 유닛 카드를 확인하고 관리하세요. 강화, 합성, 판매가 가능합니다."
+            title="보유 카드 목록"
+            englishTitle="MY INVENTORY"
+            subtitle="Card Inventory"
+            description="Manage your generated units. Cards are sorted by rarity tier from Common to Commander."
             color="purple"
         >
             {/* Stats Overview */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
                 {[
                     { label: 'TOTAL_UNITS', value: statsOverview.total, color: 'text-white' },
+                    { label: 'COMMANDER', value: statsOverview.byRarity['commander'] || 0, color: 'text-red-500' },
+                    { label: 'UNIQUE', value: statsOverview.byRarity['unique'] || 0, color: 'text-pink-500' },
                     { label: 'LEGENDARY', value: statsOverview.byRarity['legendary'] || 0, color: 'text-amber-400' },
-                    { label: 'EPIC', value: statsOverview.byRarity['epic'] || 0, color: 'text-purple-400' },
-                    { label: 'AVG_POWER', value: statsOverview.avgPower, color: 'text-cyan-400' },
                 ].map((stat, i) => (
                     <motion.div
                         key={stat.label}
@@ -107,33 +106,33 @@ export default function MyCardsPage() {
             </div>
 
             {/* Filters */}
-            <div className="flex flex-wrap gap-3 mb-6">
-                <div className="flex gap-2">
-                    {(['all', 'legendary', 'epic', 'rare', 'common'] as FilterOption[]).map(rarity => (
+            <div className="flex flex-wrap gap-3 mb-6 bg-black/20 p-3 rounded-xl border border-white/5">
+                <div className="flex gap-2 overflow-x-auto pb-2 md:pb-0">
+                    {(['all', 'common', 'rare', 'epic', 'legendary', 'unique', 'commander'] as FilterOption[]).map(rarity => (
                         <button
                             key={rarity}
                             onClick={() => setFilterRarity(rarity)}
                             className={cn(
-                                "px-3 py-1.5 rounded text-[10px] font-mono uppercase tracking-widest transition-all",
+                                "px-3 py-1.5 rounded text-[10px] font-mono uppercase tracking-widest transition-all whitespace-nowrap",
                                 filterRarity === rarity
                                     ? 'bg-purple-500/20 text-purple-400 border border-purple-500/50'
                                     : 'bg-white/5 text-white/40 border border-white/10 hover:border-white/20'
                             )}
                         >
-                            {rarity === 'all' ? '전체' : rarity === 'legendary' ? '전설' : rarity === 'epic' ? '영웅' : rarity === 'rare' ? '희귀' : '일반'}
+                            {rarity === 'all' ? 'ALL' : rarity.toUpperCase()}
                         </button>
                     ))}
                 </div>
 
-                <div className="flex-1" />
+                <div className="flex-1 min-w-[20px]" />
 
                 <div className="flex gap-2">
-                    {(['power', 'rarity', 'name'] as SortOption[]).map(option => (
+                    {(['rarity', 'power', 'name', 'acquiredAt'] as SortOption[]).map(option => (
                         <button
                             key={option}
                             onClick={() => {
                                 if (sortBy === option) setSortAsc(!sortAsc);
-                                else { setSortBy(option); setSortAsc(false); }
+                                else { setSortBy(option); setSortAsc(true); }
                             }}
                             className={cn(
                                 "px-3 py-1.5 rounded text-[10px] font-mono uppercase tracking-widest transition-all flex items-center gap-1",
@@ -142,43 +141,28 @@ export default function MyCardsPage() {
                                     : 'bg-white/5 text-white/40 border border-white/10 hover:border-white/20'
                             )}
                         >
-                            {option === 'power' ? '파워' : option === 'rarity' ? '등급' : '이름'}
+                            {option === 'acquiredAt' ? 'DATE' : option.toUpperCase()}
                             {sortBy === option && (sortAsc ? <SortAsc size={12} /> : <SortDesc size={12} />)}
                         </button>
                     ))}
-                </div>
-
-                <div className="flex gap-1">
-                    <button
-                        onClick={() => setViewMode('grid')}
-                        className={cn("p-2 rounded transition-all", viewMode === 'grid' ? 'bg-white/10 text-white' : 'text-white/40 hover:text-white')}
-                    >
-                        <Grid3X3 size={16} />
-                    </button>
-                    <button
-                        onClick={() => setViewMode('list')}
-                        className={cn("p-2 rounded transition-all", viewMode === 'list' ? 'bg-white/10 text-white' : 'text-white/40 hover:text-white')}
-                    >
-                        <LayoutList size={16} />
-                    </button>
                 </div>
             </div>
 
             {/* Cards Grid */}
             {loading ? (
-                <div className="text-center py-20 text-white/30 font-mono">LOADING_DATA...</div>
+                <div className="text-center py-20 text-white/30 font-mono">LOADING_INVENTORY_DATA...</div>
             ) : filteredAndSortedCards.length === 0 ? (
-                <div className="text-center py-20">
+                <div className="text-center py-20 bg-white/5 rounded-xl border border-white/10 border-dashed">
                     <p className="text-white/30 mb-4 font-mono">NO_UNITS_FOUND</p>
                     <button
-                        onClick={() => window.location.href = '/slots'}
+                        onClick={() => router.push('/factions')}
                         className="px-6 py-3 bg-purple-500/20 border border-purple-500/50 text-purple-400 rounded-lg text-sm font-mono uppercase tracking-widest hover:bg-purple-500/30 transition-all"
                     >
-                        GENERATE_UNITS
+                        GO_TO_GENERATION
                     </button>
                 </div>
             ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 pb-20">
                     {filteredAndSortedCards.map((card, i) => (
                         <motion.div
                             key={card.id}
@@ -190,7 +174,7 @@ export default function MyCardsPage() {
                         >
                             <GameCard card={card} isSelected={selectedCard?.id === card.id} />
                             {card.isLocked && (
-                                <div className="absolute top-2 left-2 w-6 h-6 bg-amber-500/80 rounded-full flex items-center justify-center">
+                                <div className="absolute top-2 left-2 w-6 h-6 bg-amber-500/80 rounded-full flex items-center justify-center pointer-events-none">
                                     <Lock size={12} className="text-black" />
                                 </div>
                             )}
@@ -199,41 +183,56 @@ export default function MyCardsPage() {
                 </div>
             )}
 
-            {/* Selected Card Actions */}
-            {selectedCard && (
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50"
-                >
-                    <div className="bg-black/90 border border-white/20 backdrop-blur-xl rounded-lg p-4 flex items-center gap-4">
-                        <div className="text-center">
-                            <p className="font-bold text-white text-sm">{selectedCard.name}</p>
-                            <p className="text-[10px] text-white/40 font-mono">LV.{selectedCard.level || 1}</p>
+            {/* Selected Card Quick Actions Overlay */}
+            <AnimatePresence>
+                {selectedCard && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 20 }}
+                        className="fixed bottom-0 left-0 right-0 z-50 p-4 bg-gradient-to-t from-black via-black/90 to-transparent flex justify-center pb-8 pointer-events-none"
+                    >
+                        <div className="bg-black/80 border border-white/20 backdrop-blur-xl rounded-2xl p-4 flex items-center gap-6 shadow-2xl shadow-purple-500/20 pointer-events-auto max-w-2xl w-full">
+                            {/* Mini Card Preview */}
+                            <div className="w-16 h-20 bg-white/5 rounded border border-white/10 flex-none hidden md:block" />
+
+                            <div className="flex-1 min-w-0">
+                                <p className="font-bold text-white text-lg truncate font-orbitron">{selectedCard.name}</p>
+                                <div className="flex gap-2 mt-1">
+                                    <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded bg-white/10 uppercase",
+                                        selectedCard.rarity === 'legendary' ? 'text-amber-400' :
+                                            selectedCard.rarity === 'epic' ? 'text-purple-400' : 'text-white/60'
+                                    )}>
+                                        {selectedCard.rarity}
+                                    </span>
+                                    <span className="text-[10px] text-white/40 font-mono py-0.5">LV.{selectedCard.level || 1}</span>
+                                </div>
+                            </div>
+
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={() => router.push(`/enhance?cardId=${selectedCard.id}`)}
+                                    className="px-4 py-3 bg-amber-500/10 border border-amber-500/40 text-amber-400 rounded-lg text-xs font-mono uppercase font-bold hover:bg-amber-500/20 transition-all"
+                                >
+                                    Enhance
+                                </button>
+                                <button
+                                    onClick={() => router.push(`/fusion?cardId=${selectedCard.id}`)}
+                                    className="px-4 py-3 bg-purple-500/10 border border-purple-500/40 text-purple-400 rounded-lg text-xs font-mono uppercase font-bold hover:bg-purple-500/20 transition-all"
+                                >
+                                    Fuse
+                                </button>
+                                <button
+                                    onClick={() => setSelectedCard(null)}
+                                    className="w-10 h-10 flex items-center justify-center bg-white/5 border border-white/10 rounded-lg text-white/40 hover:text-white hover:bg-white/10 transition-all"
+                                >
+                                    ✕
+                                </button>
+                            </div>
                         </div>
-                        <div className="flex gap-2">
-                            <button
-                                onClick={() => window.location.href = '/enhance'}
-                                className="px-4 py-2 bg-amber-500/20 border border-amber-500/50 text-amber-400 rounded text-[10px] font-mono uppercase tracking-widest hover:bg-amber-500/30 transition-all"
-                            >
-                                ENHANCE
-                            </button>
-                            <button
-                                onClick={() => window.location.href = '/fusion'}
-                                className="px-4 py-2 bg-purple-500/20 border border-purple-500/50 text-purple-400 rounded text-[10px] font-mono uppercase tracking-widest hover:bg-purple-500/30 transition-all"
-                            >
-                                FUSION
-                            </button>
-                            <button
-                                onClick={() => setSelectedCard(null)}
-                                className="px-4 py-2 bg-white/5 border border-white/10 text-white/40 rounded text-[10px] font-mono uppercase tracking-widest hover:text-white transition-all"
-                            >
-                                CLOSE
-                            </button>
-                        </div>
-                    </div>
-                </motion.div>
-            )}
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </CyberPageLayout>
     );
 }
