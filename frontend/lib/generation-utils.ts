@@ -1,3 +1,5 @@
+import aiFactionsData from '@/data/ai-factions.json';
+
 // 카드 생성 슬롯 시스템 (티어 기반)
 // Free/Pro/Ultra 티어에 따라 생성 시간과 일일 제한이 다름
 
@@ -90,9 +92,9 @@ export function assignFactionToSlot(slotIndex: number, factionId: string): { suc
     slot.generationInterval = subscription.generationInterval;
 
     if (canGenerate) {
-        slot.status = 'active';
-        // 첫 배치는 즉시 생성 가능하도록 과거 시간으로 설정
-        slot.nextGenerationAt = new Date(Date.now() - 1000);
+        slot.status = 'waiting';
+        // 첫 배치 시에도 대기 시간 적용 (30분/20분/10분)
+        slot.nextGenerationAt = new Date(Date.now() + subscription.generationInterval * 60 * 1000);
     } else {
         slot.status = 'limit_reached';
         slot.nextGenerationAt = null;
@@ -169,9 +171,13 @@ export async function generateCard(slotIndex: number): Promise<{ success: boolea
         return { success: false, message: '구독 정보를 찾을 수 없습니다.' };
     }
 
-    // 실제 카드 생성 (등급별 확률 적용)
+    const factionData = (aiFactionsData as any).factions.find((f: any) => f.id === slot.factionId);
+
+    // 실제 카드 생성 (등급별 확률 적용 + 친밀도 + 군단 효과)
     const { generateRandomCard } = await import('./card-generation-system');
-    const newCard = generateRandomCard(subscription.tier);
+    // 친밀도와 군단 효과를 전달하여 생성
+    const newCard = generateRandomCard(subscription.tier, subscription.affinity || 0, factionData?.effects);
+
 
     // 생성 카운터 증가
     incrementGenerationCount(slot.factionId!);

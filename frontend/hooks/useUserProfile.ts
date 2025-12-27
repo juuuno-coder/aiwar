@@ -16,10 +16,11 @@ export function useUserProfile() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<Error | null>(null);
 
-    const loadProfile = useCallback(async () => {
+    const loadProfile = useCallback(async (uid?: string) => {
         try {
             setLoading(true);
-            const data = await loadUserProfile();
+            const userId = uid || user?.uid;
+            const data = await loadUserProfile(userId);
             setProfile(data);
             setError(null);
         } catch (err) {
@@ -27,14 +28,21 @@ export function useUserProfile() {
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [user]);
 
     useEffect(() => {
         if (authLoading) return;
-        if (!user) return;
 
-        loadProfile();
-    }, [user, authLoading, loadProfile]);
+        if (!user) {
+            setProfile(null);
+            setLoading(false);
+            return;
+        }
+
+        // If user changed, clear old profile first
+        setProfile(null);
+        loadProfile(user.uid);
+    }, [user?.uid, authLoading, loadProfile]);
 
     const updateProfile = async (updates: Partial<UserProfile>) => {
         try {

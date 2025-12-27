@@ -1,9 +1,10 @@
 'use client';
 
 import { motion, AnimatePresence } from 'framer-motion';
-import { Trophy, Zap, Users, Sparkles, ChevronRight, Star } from 'lucide-react';
+import { Trophy, Zap, Users, Sparkles, ChevronRight, Star, Coins, Gift } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { LevelReward, LEVEL_REWARDS, getNextFactionUnlock, getNextSlotUnlock } from '@/lib/faction-subscription';
+import { getLevelReward, LevelRewardExtended } from '@/lib/level-rewards';
 import Image from 'next/image';
 import { getCardCharacterImage, getFactionIcon } from '@/lib/card-images';
 
@@ -41,6 +42,7 @@ const factionKoreanNames: Record<string, string> = {
 export default function LevelUpModal({ isOpen, onClose, newLevel, reward }: LevelUpModalProps) {
     const nextFaction = getNextFactionUnlock(newLevel);
     const nextSlot = getNextSlotUnlock(newLevel);
+    const levelReward = getLevelReward(newLevel);
 
     return (
         <AnimatePresence>
@@ -132,6 +134,69 @@ export default function LevelUpModal({ isOpen, onClose, newLevel, reward }: Leve
                                         축하합니다! 지휘관 레벨이 <span className="text-yellow-400 font-bold">{newLevel}</span>이 되었습니다!
                                     </p>
                                 </motion.div>
+
+                                {/* 코인/토큰 보상 */}
+                                <motion.div
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: 0.35 }}
+                                    className="relative z-10 flex justify-center gap-4 mb-4"
+                                >
+                                    {/* 코인 */}
+                                    <div className="flex items-center gap-2 bg-amber-500/20 px-4 py-2 rounded-xl border border-amber-500/30">
+                                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-400 to-yellow-600 flex items-center justify-center">
+                                            <span className="text-sm">💰</span>
+                                        </div>
+                                        <div>
+                                            <p className="text-[10px] text-amber-400/60 uppercase">Coins</p>
+                                            <p className="text-lg font-black text-amber-400 orbitron">+{levelReward.coins.toLocaleString()}</p>
+                                        </div>
+                                    </div>
+
+                                    {/* 토큰 (있을 경우) */}
+                                    {levelReward.tokens > 0 && (
+                                        <div className="flex items-center gap-2 bg-purple-500/20 px-4 py-2 rounded-xl border border-purple-500/30">
+                                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-400 to-pink-600 flex items-center justify-center">
+                                                <span className="text-sm">💎</span>
+                                            </div>
+                                            <div>
+                                                <p className="text-[10px] text-purple-400/60 uppercase">Tokens</p>
+                                                <p className="text-lg font-black text-purple-400 orbitron">+{levelReward.tokens}</p>
+                                            </div>
+                                        </div>
+                                    )}
+                                </motion.div>
+
+                                {/* 카드팩 보상 (있을 경우) */}
+                                {levelReward.cardPack && (
+                                    <motion.div
+                                        initial={{ opacity: 0, scale: 0.9 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        transition={{ delay: 0.4 }}
+                                        className="relative z-10 flex justify-center mb-4"
+                                    >
+                                        <div className={cn(
+                                            "flex items-center gap-3 px-5 py-3 rounded-xl border",
+                                            levelReward.cardPack.type === 'epic'
+                                                ? "bg-purple-500/20 border-purple-500/40"
+                                                : levelReward.cardPack.type === 'rare'
+                                                    ? "bg-blue-500/20 border-blue-500/40"
+                                                    : "bg-gray-500/20 border-gray-500/40"
+                                        )}>
+                                            <Gift size={24} className={cn(
+                                                levelReward.cardPack.type === 'epic' ? "text-purple-400" :
+                                                    levelReward.cardPack.type === 'rare' ? "text-blue-400" : "text-gray-400"
+                                            )} />
+                                            <div>
+                                                <p className="text-[10px] text-white/60 uppercase">Bonus Card Pack</p>
+                                                <p className="font-bold text-white">
+                                                    {levelReward.cardPack.type.toUpperCase()} 카드팩 x{levelReward.cardPack.count}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </motion.div>
+                                )
+                                }
 
                                 {/* 보상 정보 */}
                                 {reward && (

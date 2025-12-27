@@ -54,21 +54,36 @@ export function canEnhance(
 
 /**
  * 강화 시 스탯 증가량 계산
- * 레벨업 시 모든 스탯 5% 증가
+ * 레벨업 시 주요 스탯 (효율, 창의력, 기능) 각각 +1~3 랜덤 증가
  */
 export function calculateEnhancedStats(card: Card): Card['stats'] {
-    const multiplier = 1.05; // 5% 증가
+    // 3개 스탯 각각 +1 ~ +3 랜덤 증가
+    const incEfficiency = Math.floor(Math.random() * 3) + 1;
+    const incCreativity = Math.floor(Math.random() * 3) + 1;
+    const incFunction = Math.floor(Math.random() * 3) + 1;
+
+    const newEfficiency = (card.stats.efficiency || 0) + incEfficiency;
+    const newCreativity = (card.stats.creativity || 0) + incCreativity;
+    const newFunction = (card.stats.function || 0) + incFunction;
+
+    // Recalculate Total Power based on new stats
+    const calculatedTotalPower = newEfficiency + newCreativity + newFunction;
 
     return {
-        creativity: Math.floor((card.stats.creativity || 0) * multiplier),
-        accuracy: Math.floor((card.stats.accuracy || 0) * multiplier),
-        speed: Math.floor((card.stats.speed || 0) * multiplier),
-        stability: Math.floor((card.stats.stability || 0) * multiplier),
-        ethics: Math.floor((card.stats.ethics || 0) * multiplier),
-        totalPower: Math.floor(card.stats.totalPower * multiplier),
-        efficiency: card.stats.efficiency ? Math.floor(card.stats.efficiency * multiplier) : undefined,
-        function: card.stats.function ? Math.floor(card.stats.function * multiplier) : undefined,
-        cost: card.stats.cost ? Math.floor(card.stats.cost * multiplier) : undefined
+        efficiency: newEfficiency,
+        creativity: newCreativity,
+        function: newFunction,
+
+        // Legacy stats support (maintain existing values)
+        accuracy: card.stats.accuracy || 0,
+        speed: card.stats.speed || 0,
+        stability: card.stats.stability || 0,
+        ethics: card.stats.ethics || 0,
+
+        // Use calculated total power
+        totalPower: calculatedTotalPower > 0 ? calculatedTotalPower : (card.stats.totalPower + 3), // Fallback
+
+        cost: card.stats.cost
     };
 }
 

@@ -121,7 +121,7 @@
                     "id": "ch1-intro-1",
                     "background": "multiple_ai_logos",
                     "character": null,
-                    "narration": "AI 대전의 세계에는 다양한 군단이 존재한다. 각자의 철학과 능력을 가진 20개의 세력.",
+                    "narration": "AI WAR의 세계에는 다양한 군단이 존재한다. 각자의 철학과 능력을 가진 20개의 세력.",
                     "dialogue": null,
                     "effect": "pan_across"
                 },
@@ -274,7 +274,7 @@
                     "narration": null,
                     "dialogue": {
                         "speaker": "제미나이",
-                        "text": "여기까지 와줘서 고마워, 지휘관. 이제 네가 진정한 AI 대전 챔피언임을 증명할 시간이야."
+                        "text": "여기까지 와줘서 고마워, 지휘관. 이제 네가 진정한 AI WAR 챔피언임을 증명할 시간이야."
                     },
                     "effect": "dramatic_zoom"
                 }
@@ -289,7 +289,7 @@
                     "id": "ch4-outro-1",
                     "background": "champion_ceremony",
                     "character": null,
-                    "narration": "당신은 해냈다. AI 대전의 정점에 서다.",
+                    "narration": "당신은 해냈다. AI WAR의 정점에 서다.",
                     "dialogue": null,
                     "effect": "confetti"
                 },
@@ -297,7 +297,7 @@
                     "id": "ch4-outro-2",
                     "background": "champion_title",
                     "character": null,
-                    "narration": "🌟 AI 대전 챔피언 🌟 칭호를 획득했다!",
+                    "narration": "🌟 AI WAR 챔피언 🌟 칭호를 획득했다!",
                     "dialogue": null,
                     "effect": "title_flash"
                 },

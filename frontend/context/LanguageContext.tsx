@@ -25,10 +25,10 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
 
             // 2. 브라우저 언어 확인
             const browserLang = navigator.language;
-            if (browserLang.startsWith('ko')) return 'ko';
+            if (browserLang.startsWith('en')) return 'en';
 
-            // 3. 기본값 영어 (해외 접속 상황 가정)
-            return 'en';
+            // 3. 기본값 한글 (한국 서비스 우선)
+            return 'ko';
         };
 
         const initialLang = detectLanguage();

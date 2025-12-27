@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
     Modal,
     ModalContent,
@@ -30,7 +30,9 @@ import { gameStorage } from '@/lib/game-storage';
 import { RESEARCH_STATS, CommanderResearch, getResearchBonus, getResearchTimeBuff } from '@/lib/research-system';
 import { BackgroundBeams } from '@/components/ui/aceternity/background-beams';
 import { cn } from '@/lib/utils';
-import { useFooter } from '@/context/FooterContext'; // 덱 정보 가져오기 위해 추가
+import { useFooter } from '@/context/FooterContext';
+import { useUserProfile } from '@/hooks/useUserProfile';
+import { useFirebase } from '@/components/FirebaseProvider';
 
 interface CommanderProfileModalProps {
     isOpen: boolean;
@@ -39,17 +41,31 @@ interface CommanderProfileModalProps {
 
 export default function CommanderProfileModal({ isOpen, onClose }: CommanderProfileModalProps) {
     const { level, experience, coins, tokens } = useUser();
-    const { state: footerState } = useFooter(); // 덱 정보
+    const { state: footerState } = useFooter();
+    const { profile } = useUserProfile();
+    const { user } = useFirebase();
     const [research, setResearch] = useState<CommanderResearch | null>(null);
     const [loading, setLoading] = useState(true);
     const [hoveredStat, setHoveredStat] = useState<string | null>(null);
     const [commanderAvatar, setCommanderAvatar] = useState<string>('/assets/commander/default.png');
     const [showAvatarSelect, setShowAvatarSelect] = useState(false);
 
+    // ESC key handler
+    const handleEscKey = useCallback((e: KeyboardEvent) => {
+        if (e.key === 'Escape' && isOpen) {
+            onClose();
+        }
+    }, [isOpen, onClose]);
+
+    useEffect(() => {
+        document.addEventListener('keydown', handleEscKey);
+        return () => document.removeEventListener('keydown', handleEscKey);
+    }, [handleEscKey]);
+
     useEffect(() => {
         if (isOpen) {
             const loadData = async () => {
-                const state = await gameStorage.loadGameState();
+                const state = await gameStorage.loadGameState(user?.uid);
                 if (state.research) {
                     setResearch(state.research);
                 }
@@ -57,9 +73,9 @@ export default function CommanderProfileModal({ isOpen, onClose }: CommanderProf
             };
             loadData();
         }
-    }, [isOpen]);
+    }, [isOpen, user?.uid]);
 
-    // 아바타 선택 옵션
+    // 아바타 선택 옵션 (카드 이미지 포함)
     const avatarOptions = [
         { id: 'default', src: '/assets/commander/default.png', name: '기본' },
         { id: 'gemini', src: '/assets/factions/gemini.png', name: 'Gemini' },
@@ -67,17 +83,25 @@ export default function CommanderProfileModal({ isOpen, onClose }: CommanderProf
         { id: 'claude', src: '/assets/factions/claude.png', name: 'Claude' },
         { id: 'llama', src: '/assets/factions/llama.png', name: 'Llama' },
         { id: 'deepseek', src: '/assets/factions/deepseek.png', name: 'DeepSeek' },
+        // Card-based avatars
+        { id: 'card-commander', src: '/images/cards/real/commander.png', name: 'Commander' },
+        { id: 'card-code-warrior', src: '/images/cards/real/epic-code-warrior.png', name: 'Code Warrior' },
+        { id: 'card-titan-walker', src: '/images/cards/real/epic-titan-walker.png', name: 'Titan Walker' },
+        { id: 'card-cyber-medic', src: '/images/cards/real/rare-cyber-medic.png', name: 'Cyber Medic' },
+        { id: 'card-ghost-sniper', src: '/images/cards/real/rare-ghost-sniper.png', name: 'Ghost Sniper' },
+        { id: 'card-glitch-entity', src: '/images/cards/real/unique-glitch-entity.png', name: 'Glitch Entity' },
     ];
 
     const handleAvatarChange = (src: string) => {
         setCommanderAvatar(src);
-        localStorage.setItem('commanderAvatar', src);
+        // Use same key as Sidebar for consistency
+        localStorage.setItem('user_avatar', src);
         setShowAvatarSelect(false);
     };
 
-    // 저장된 아바타 로드
+    // 저장된 아바타 로드 (Sidebar와 동일한 키 사용)
     useEffect(() => {
-        const saved = localStorage.getItem('commanderAvatar');
+        const saved = localStorage.getItem('user_avatar');
         if (saved) setCommanderAvatar(saved);
     }, []);
 
@@ -125,8 +149,9 @@ export default function CommanderProfileModal({ isOpen, onClose }: CommanderProf
             size="xl"
             backdrop="blur"
             classNames={{
-                base: "bg-black/90 backdrop-blur-3xl border border-white/10 shadow-2xl relative overflow-hidden !max-w-5xl",
+                base: "bg-black/90 backdrop-blur-3xl border border-white/10 shadow-2xl relative overflow-hidden !max-w-7xl !max-h-[92vh]",
                 header: "border-b border-white/5",
+                body: "overflow-y-auto max-h-[calc(92vh-180px)]",
                 footer: "border-t border-white/5 bg-black/40",
                 closeButton: "hover:bg-white/10 active:scale-95 transition-all text-white z-50",
             }}
@@ -145,11 +170,8 @@ export default function CommanderProfileModal({ isOpen, onClose }: CommanderProf
                             </div>
                             <div className="flex items-center justify-between w-full">
                                 <h2 className="text-4xl font-black text-white orbitron tracking-tighter italic">
-                                    COMMANDER_7429
+                                    {profile?.nickname || '지휘관'}
                                 </h2>
-                                <Button size="sm" variant="flat" color="secondary" className="orbitron text-[10px]">
-                                    <Edit3 size={14} className="mr-1" /> EDIT ID
-                                </Button>
                             </div>
                         </ModalHeader>
 

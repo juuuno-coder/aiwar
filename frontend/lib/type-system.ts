@@ -5,7 +5,7 @@ import { AIType } from './types';
 /**
  * AI 타입 정보
  */
-export const AI_TYPE_INFO = {
+export const AI_TYPE_INFO: Record<string, { name: string; nameEn: string; icon: string; color: string; description: string; examples: string[] }> = {
     EFFICIENCY: {
         name: '효율 (ROCK)',
         nameEn: 'Efficiency',
@@ -22,15 +22,23 @@ export const AI_TYPE_INFO = {
         description: '혁신적인 아이디어와 예술성 (바위 감싸기)',
         examples: ['DALL-E', 'Midjourney', 'GPT-4']
     },
-    COST: {
+    FUNCTION: {
         name: '기능 (SCISSORS)',
         nameEn: 'Function',
         icon: '✌️',
-        color: '#f59e0b', // yellow
+        color: '#4ade80', // light green
         description: '날카로운 분석과 경제적 솔루션 (보자기 절단)',
         examples: ['Llama', 'Open Source AI']
+    },
+    COST: {
+        name: '비용 (COST)',
+        nameEn: 'Cost',
+        icon: '💰',
+        color: '#f59e0b', // amber
+        description: '비용 효율적인 솔루션',
+        examples: ['Lite Models', 'Edge AI']
     }
-} as const;
+};
 
 /**
  * 타입 상성 체크
@@ -40,10 +48,11 @@ export const AI_TYPE_INFO = {
  */
 export function hasTypeAdvantage(attackerType: AIType | undefined, defenderType: AIType | undefined): boolean {
     if (!attackerType || !defenderType) return false;
-    const advantages: Record<AIType, AIType> = {
-        EFFICIENCY: 'COST',      // 효율성 > 비용
-        COST: 'CREATIVITY',      // 비용 > 창의성
-        CREATIVITY: 'EFFICIENCY' // 창의성 > 효율성
+    const advantages: Record<string, AIType> = {
+        EFFICIENCY: 'FUNCTION',      // 효율성 > 비용/기능
+        FUNCTION: 'CREATIVITY',      // 비용/기능 > 창의성
+        CREATIVITY: 'EFFICIENCY',    // 창의성 > 효율성
+        COST: 'FUNCTION'             // 비용 > 기능
     };
 
     return advantages[attackerType] === defenderType;
@@ -62,10 +71,11 @@ export const SAME_TYPE_COMBO_BONUS = 0.3;
 /**
  * 타입별 랜덤 생성 가중치
  */
-export const TYPE_WEIGHTS = {
-    EFFICIENCY: 33,
-    CREATIVITY: 33,
-    COST: 34
+export const TYPE_WEIGHTS: Record<string, number> = {
+    EFFICIENCY: 25,
+    CREATIVITY: 25,
+    FUNCTION: 25,
+    COST: 25
 };
 
 /**
@@ -121,8 +131,8 @@ export function getTypeAdvantageDescription(attackerType: AIType | undefined, de
     const defender = AI_TYPE_INFO[defenderType].name;
 
     const descriptions: Record<string, string> = {
-        'EFFICIENCY-COST': `${attacker}이(가) ${defender}을(를) 압도합니다! (빠른 처리가 비용을 절감)`,
-        'COST-CREATIVITY': `${attacker}이(가) ${defender}을(를) 압도합니다! (저렴한 솔루션이 과도한 창의성을 이김)`,
+        'EFFICIENCY-FUNCTION': `${attacker}이(가) ${defender}을(를) 압도합니다! (빠른 처리가 비용을 절감)`,
+        'FUNCTION-CREATIVITY': `${attacker}이(가) ${defender}을(를) 압도합니다! (저렴한 솔루션이 과도한 창의성을 이김)`,
         'CREATIVITY-EFFICIENCY': `${attacker}이(가) ${defender}을(를) 압도합니다! (혁신이 단순 효율을 뛰어넘음)`
     };
 

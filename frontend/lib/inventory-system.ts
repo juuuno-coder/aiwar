@@ -17,7 +17,8 @@ import {
     where,
     orderBy,
     serverTimestamp,
-    Timestamp
+    Timestamp,
+    writeBatch
 } from 'firebase/firestore';
 
 export interface InventoryCard extends Omit<Card, 'acquiredAt'> {
@@ -36,21 +37,30 @@ export type CardFilter = {
 export type CardSortBy = 'name' | 'power' | 'acquiredAt' | 'rarity';
 
 /**
+ * UID 기반 인벤토리 저장 키 생성
+ */
+function getInventoryKey(uid?: string): string {
+    if (!uid) return 'inventory_guest';
+    return `inventory_${uid}`;
+}
+
+/**
  * 인벤토리에 카드 추가
  */
-export async function addCardToInventory(card: Card): Promise<string> {
+export async function addCardToInventory(card: Card, uid?: string): Promise<string> {
     if (!isFirebaseConfigured || !db) {
         console.warn('Firebase가 설정되지 않았습니다.');
         // localStorage fallback
-        const inventory = JSON.parse(localStorage.getItem('inventory') || '[]');
+        const key = getInventoryKey(uid);
+        const inventory = JSON.parse(localStorage.getItem(key) || '[]');
         const instanceId = `${card.id}-${Date.now()}`;
         inventory.push({ ...card, instanceId, acquiredAt: new Date() });
-        localStorage.setItem('inventory', JSON.stringify(inventory));
+        localStorage.setItem(key, JSON.stringify(inventory));
         return instanceId;
     }
 
     try {
-        const userId = await getUserId();
+        const userId = uid || await getUserId();
         const instanceId = `${card.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
         const cardRef = doc(db, 'users', userId, 'inventory', instanceId);
 
@@ -70,20 +80,69 @@ export async function addCardToInventory(card: Card): Promise<string> {
 }
 
 /**
+ * 인벤토리에 여러 카드 추가 (배치 작업)
+ */
+export async function addCardsToInventory(cards: Card[], uid?: string): Promise<string[]> {
+    if (!isFirebaseConfigured || !db) {
+        console.warn('Firebase가 설정되지 않았습니다.');
+        const key = getInventoryKey(uid);
+        const inventory = JSON.parse(localStorage.getItem(key) || '[]');
+
+        const instanceIds: string[] = [];
+        const newCards = cards.map(card => {
+            const instanceId = `${card.id}-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
+            instanceIds.push(instanceId);
+            return { ...card, instanceId, acquiredAt: new Date() };
+        });
+
+        inventory.push(...newCards);
+        localStorage.setItem(key, JSON.stringify(inventory));
+        return instanceIds;
+    }
+
+    try {
+        const userId = uid || await getUserId();
+        const batch = writeBatch(db);
+        const instanceIds: string[] = [];
+
+        for (const card of cards) {
+            const instanceId = `${card.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+            instanceIds.push(instanceId);
+            const cardRef = doc(db, 'users', userId, 'inventory', instanceId);
+
+            const inventoryCard: InventoryCard = {
+                ...card,
+                instanceId,
+                acquiredAt: serverTimestamp() as Timestamp
+            };
+            batch.set(cardRef, inventoryCard);
+        }
+
+        await batch.commit();
+        console.log(`✅ ${cards.length}개 카드 배치 추가 완료`);
+        return instanceIds;
+    } catch (error) {
+        console.error('❌ 카드 배치 추가 실패:', error);
+        throw error;
+    }
+}
+
+/**
  * 인벤토리에서 카드 제거
  */
-export async function removeCardFromInventory(instanceId: string): Promise<void> {
+export async function removeCardFromInventory(instanceId: string, uid?: string): Promise<void> {
     if (!isFirebaseConfigured || !db) {
         console.warn('Firebase가 설정되지 않았습니다.');
         // localStorage fallback
-        const inventory = JSON.parse(localStorage.getItem('inventory') || '[]');
+        const key = getInventoryKey(uid);
+        const inventory = JSON.parse(localStorage.getItem(key) || '[]');
         const filtered = inventory.filter((c: InventoryCard) => c.instanceId !== instanceId);
-        localStorage.setItem('inventory', JSON.stringify(filtered));
+        localStorage.setItem(key, JSON.stringify(filtered));
         return;
     }
 
     try {
-        const userId = await getUserId();
+        const userId = uid || await getUserId();
         const cardRef = doc(db, 'users', userId, 'inventory', instanceId);
         await deleteDoc(cardRef);
         console.log('✅ 카드 제거:', instanceId);
@@ -96,15 +155,16 @@ export async function removeCardFromInventory(instanceId: string): Promise<void>
 /**
  * 전체 인벤토리 로드
  */
-export async function loadInventory(): Promise<InventoryCard[]> {
+export async function loadInventory(uid?: string): Promise<InventoryCard[]> {
     if (!isFirebaseConfigured || !db) {
         console.warn('Firebase가 설정되지 않았습니다. localStorage 사용.');
-        const inventory = JSON.parse(localStorage.getItem('inventory') || '[]');
+        const key = getInventoryKey(uid);
+        const inventory = JSON.parse(localStorage.getItem(key) || '[]');
         return inventory;
     }
 
     try {
-        const userId = await getUserId();
+        const userId = uid || await getUserId();
         const inventoryRef = collection(db, 'users', userId, 'inventory');
         const querySnapshot = await getDocs(inventoryRef);
 
@@ -127,14 +187,15 @@ export async function loadInventory(): Promise<InventoryCard[]> {
 /**
  * 특정 카드 조회
  */
-export async function getCardByInstanceId(instanceId: string): Promise<InventoryCard | null> {
+export async function getCardByInstanceId(instanceId: string, uid?: string): Promise<InventoryCard | null> {
     if (!isFirebaseConfigured || !db) {
-        const inventory = JSON.parse(localStorage.getItem('inventory') || '[]');
+        const key = getInventoryKey(uid);
+        const inventory = JSON.parse(localStorage.getItem(key) || '[]');
         return inventory.find((c: InventoryCard) => c.instanceId === instanceId) || null;
     }
 
     try {
-        const userId = await getUserId();
+        const userId = uid || await getUserId();
         const cardRef = doc(db, 'users', userId, 'inventory', instanceId);
         const docSnap = await getDoc(cardRef);
 

@@ -70,15 +70,25 @@ export default function Sidebar({ isOpen, onToggle }: SidebarProps) {
             <Card
                 className="h-full bg-black/40 backdrop-blur-2xl border-l border-white/5 shadow-2xl overflow-hidden rounded-lg"
             >
-                {/* 토글 버튼 */}
-                <Button
-                    size="sm"
-                    variant="light"
-                    onPress={onToggle}
-                    className="absolute top-2 left-1 z-50 text-gray-500 hover:text-white min-w-0 px-2"
+                {/* 토글 버튼 - 우아한 플로팅 디자인 */}
+                <motion.button
+                    whileHover={{ scale: 1.05, x: -2 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={onToggle}
+                    className="absolute top-6 -left-4 z-50 w-8 h-14 
+                        bg-gradient-to-b from-cyan-600/90 to-purple-600/90 
+                        backdrop-blur-md rounded-l-xl border border-white/20
+                        flex items-center justify-center
+                        shadow-lg shadow-cyan-500/20 hover:shadow-cyan-500/40 
+                        transition-shadow duration-300"
                 >
-                    {isOpen ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
-                </Button>
+                    <motion.div
+                        animate={{ rotate: isOpen ? 0 : 180 }}
+                        transition={{ duration: 0.3 }}
+                    >
+                        <ChevronRight size={22} className="text-white" />
+                    </motion.div>
+                </motion.button>
 
                 <CardBody className="p-0 flex flex-col h-full overflow-hidden">
                     {/* 프로필 섹션 */}

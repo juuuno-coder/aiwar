@@ -56,7 +56,7 @@ export function isChapterUnlocked(chapterId: string): boolean {
     const chapter = getChapter(chapterId);
     if (!chapter) return false;
 
-    // 첫 번째 챕터는 항상 해금
+    // 첫 번째 챕터는 항상 활성화
     if (!chapter.unlockCondition) return true;
 
     const state = getGameState();

@@ -11,13 +11,14 @@ interface Card3DGameCardProps {
     className?: string;
 }
 
-const TYPE_ICONS = {
+const TYPE_ICONS: Record<string, string> = {
     EFFICIENCY: '✂️',
     CREATIVITY: '🪨',
     COST: '📄',
+    FUNCTION: '⚙️',
 };
 
-const TYPE_COLORS = {
+const TYPE_COLORS: Record<string, { gradient: string; glow: string; text: string }> = {
     EFFICIENCY: {
         gradient: 'from-blue-500/30 via-cyan-500/20 to-blue-500/30',
         glow: 'shadow-blue-500/50',
@@ -32,6 +33,11 @@ const TYPE_COLORS = {
         gradient: 'from-amber-500/30 via-orange-500/20 to-amber-500/30',
         glow: 'shadow-amber-500/50',
         text: 'text-amber-300',
+    },
+    FUNCTION: {
+        gradient: 'from-green-500/30 via-emerald-500/20 to-green-500/30',
+        glow: 'shadow-green-500/50',
+        text: 'text-green-300',
     },
 };
 
@@ -148,8 +154,8 @@ export default function Card3DGameCard({
                                 onClick();
                             }}
                             className={`w-full py-3 rounded-xl font-medium transition-all ${isSelected
-                                    ? `bg-gradient-to-r ${typeStyle.gradient} border-2 border-white/30 text-white`
-                                    : 'bg-slate-800/50 border border-white/10 text-slate-300 hover:bg-slate-700/50'
+                                ? `bg-gradient-to-r ${typeStyle.gradient} border-2 border-white/30 text-white`
+                                : 'bg-slate-800/50 border border-white/10 text-slate-300 hover:bg-slate-700/50'
                                 }`}
                         >
                             {isSelected ? 'Selected' : 'Select Card'}

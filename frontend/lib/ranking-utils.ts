@@ -13,7 +13,7 @@ export function getCurrentSeason(): Season {
 
     return {
         id: 'season-1',
-        name: '시즌 1: AI 대전의 시작',
+        name: 'AI WAR : 전쟁의 서막 시즌1',
         startDate: seasonStart,
         endDate: seasonEnd,
         status: now < seasonStart ? 'upcoming' : now > seasonEnd ? 'ended' : 'active',
@@ -53,40 +53,15 @@ export function getCurrentSeason(): Season {
 }
 
 /**
- * 초기 랭킹 데이터 생성 (한 번만 실행됨)
+ * 초기 랭킹 데이터 생성 (실제 유저만 포함)
+ * 더 이상 더미 AI 플레이어를 생성하지 않음
  */
 export function initializeRankings(playerRating: number): RankingEntry[] {
     const rankings: RankingEntry[] = [];
 
-    // 상위 100명 생성
-    // 플레이어를 포함하여 함께 정렬할 것이므로 일단 생성하고 나중에 정렬/랭크부여
-
-    // 1. AI 유저들
-    for (let i = 1; i <= 100; i++) {
-        // 상위권일수록 레이팅 높음 (2000 ~ 1000 분포)
-        const rating = 2000 - (i * 10) + Math.floor(Math.random() * 20);
-
-        const totalMatches = 50 + Math.floor(Math.random() * 200);
-        const winRate = 40 + Math.floor(Math.random() * 40);
-        const wins = Math.floor(totalMatches * winRate / 100);
-        const losses = totalMatches - wins;
-
-        rankings.push({
-            rank: 0, // 나중에 계산
-            playerId: `ai-${i}`,
-            playerName: `플레이어 ${1000 + i}`,
-            level: Math.max(1, Math.floor(rating / 100)),
-            rating,
-            wins,
-            losses,
-            winRate,
-            highestRating: rating + Math.floor(Math.random() * 100)
-        });
-    }
-
-    // 2. 플레이어 추가
+    // 플레이어만 추가 (더미 데이터 제거)
     rankings.push({
-        rank: 0,
+        rank: 1,
         playerId: 'player',
         playerName: '나',
         level: Math.max(1, Math.floor(playerRating / 100)),
@@ -97,8 +72,7 @@ export function initializeRankings(playerRating: number): RankingEntry[] {
         highestRating: playerRating
     });
 
-    // 3. 정렬 및 등수 부여
-    return sortAndRank(rankings);
+    return rankings;
 }
 
 // 랭킹 정렬 헬퍼
@@ -122,11 +96,31 @@ export function saveRankings(rankings: RankingEntry[]): void {
 
 /**
  * 랭킹 데이터 로드
+ * 기존 더미 데이터가 있다면 필터링하여 실제 유저만 남김
  */
 export function loadRankings(): RankingEntry[] {
     const data = localStorage.getItem('rankings');
     if (data) {
-        return JSON.parse(data);
+        let rankings = JSON.parse(data) as RankingEntry[];
+
+        // 더미 AI 플레이어 필터링 (playerId가 'ai-'로 시작하거나 '플레이어 1XXX' 패턴)
+        const hasOldDummy = rankings.some(r => r.playerId.startsWith('ai-') || /플레이어 \d+/.test(r.playerName));
+
+        if (hasOldDummy) {
+            // 오래된 더미 데이터 발견 - 실제 플레이어만 남기고 재설정
+            rankings = rankings.filter(r => r.playerId === 'player');
+
+            // 플레이어도 없으면 새로 생성
+            if (rankings.length === 0) {
+                const stats = getPvPStats();
+                rankings = initializeRankings(stats.currentRating);
+            }
+
+            // 업데이트된 랭킹 저장
+            saveRankings(rankings);
+        }
+
+        return rankings;
     }
 
     // 초기 데이터 생성

@@ -166,7 +166,7 @@ export default function EnhancePage() {
                     </p>
                 </div>
 
-                <div className="grid grid-cols-5 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
                     {displayCards.map(card => {
                         const isSelected =
                             card.id === targetCard?.id ||

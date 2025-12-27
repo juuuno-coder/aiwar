@@ -5,9 +5,13 @@ import CyberPageLayout from '@/components/CyberPageLayout';
 import { AIFaction } from '@/lib/types';
 import aiFactionsData from '@/data/ai-factions.json';
 import { cn } from '@/lib/utils';
-import { useUser } from '@/context/UserContext';
+import { useUserProfile } from '@/hooks/useUserProfile';
 import { useAlert } from '@/context/AlertContext';
-import { Info, X, Check, Crown, Zap, Clock, Infinity } from 'lucide-react';
+import { Info, X, Check, Crown, Zap, Clock, Infinity, Globe } from 'lucide-react';
+import Image from 'next/image';
+import FactionLoreModal from '@/components/FactionLoreModal';
+import { FACTION_LORE_DATA, FactionLore } from '@/lib/faction-lore';
+import { getCardCharacterImage } from '@/lib/card-images';
 import {
     getSubscribedFactions,
     subscribeFaction,
@@ -19,14 +23,28 @@ import {
 } from '@/lib/faction-subscription-utils';
 
 export default function FactionsPage() {
-    const { coins } = useUser();
+    const { profile, reload: refreshProfile } = useUserProfile();
     const { showAlert, showConfirm } = useAlert();
+
+    // Derived state for easier access
+    const coins = profile?.coins || 0;
+    const level = profile?.level || 1;
 
     const [factions, setFactions] = useState<AIFaction[]>([]);
     const [subscriptions, setSubscriptions] = useState(getSubscribedFactions());
     const [totalCost, setTotalCost] = useState(0);
     const [selectedFaction, setSelectedFaction] = useState<AIFaction | null>(null);
     const [selectedTier, setSelectedTier] = useState<SubscriptionTier>('free');
+
+    // Lore Modal State
+    const [selectedLoreFaction, setSelectedLoreFaction] = useState<FactionLore | null>(null);
+    const [isLoreModalOpen, setIsLoreModalOpen] = useState(false);
+
+    const TIER_LEVEL_REQ: Record<SubscriptionTier, number> = {
+        free: 1,
+        pro: 10,
+        ultra: 30
+    };
 
     useEffect(() => {
         // Load factions data
@@ -51,6 +69,12 @@ export default function FactionsPage() {
     const handleSubscribe = (factionId: string, tier: SubscriptionTier) => {
         const config = TIER_CONFIG[tier];
         const costMsg = config.cost > 0 ? `${config.cost.toLocaleString()} 코인` : '무료';
+        const reqLevel = TIER_LEVEL_REQ[tier];
+
+        if (level < reqLevel) {
+            showAlert({ title: '레벨 부족', message: `${config.name} 티어는 레벨 ${reqLevel} 이상부터 구독 가능합니다.`, type: 'error' });
+            return;
+        }
 
         showConfirm({
             title: `${config.name} 티어 구독`,
@@ -59,6 +83,7 @@ export default function FactionsPage() {
                 const result = subscribeFaction(factionId, tier);
                 if (result.success) {
                     showAlert({ title: '구독 완료', message: result.message, type: 'success' });
+                    refreshProfile(); // 코인 잔액 갱신
                     loadSubscriptions();
                     setSelectedFaction(null);
                 } else {
@@ -106,6 +131,7 @@ export default function FactionsPage() {
                 const result = unsubscribeFaction(factionId);
                 if (result.success) {
                     showAlert({ title: '취소 완료', message: result.message, type: 'success' });
+                    refreshProfile(); // 코인 잔액 갱신 (환불 시)
                     loadSubscriptions();
                 } else {
                     showAlert({ title: '취소 실패', message: result.message, type: 'error' });
@@ -159,11 +185,11 @@ export default function FactionsPage() {
                                 </div>
                                 <div className="bg-blue-500/10 border border-blue-500/20 rounded p-2">
                                     <p className="font-bold text-blue-400 mb-1">Pro</p>
-                                    <p className="text-white/60">500코인 • 20분 • 20회/일</p>
+                                    <p className="text-white/60">500코인 • Lv.10 • 20회/일</p>
                                 </div>
                                 <div className="bg-purple-500/10 border border-purple-500/20 rounded p-2">
                                     <p className="font-bold text-purple-400 mb-1">Ultra</p>
-                                    <p className="text-white/60">2000코인 • 10분 • 무제한</p>
+                                    <p className="text-white/60">2000코인 • Lv.30 • 무제한</p>
                                 </div>
                             </div>
                         </div>
@@ -176,70 +202,126 @@ export default function FactionsPage() {
                         전체 AI 군단 ({factions.length})
                     </h2>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 pb-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 pb-4">
                         {factions.map(faction => {
                             const subscription = getFactionSubscription(faction.id);
+                            const loreData = FACTION_LORE_DATA[faction.id];
+                            const koreanName = loreData?.koreanName || faction.displayName;
+
+                            // Background Image Selection (Try to use character/hero image for the faction)
+                            const bgImage = getCardCharacterImage(faction.id) || faction.iconUrl;
 
                             return (
                                 <div
                                     key={faction.id}
+                                    onClick={() => {
+                                        if (loreData) {
+                                            setSelectedLoreFaction(loreData);
+                                            setIsLoreModalOpen(true);
+                                        } else {
+                                            showAlert({ title: '정보 없음', message: '상세 정보가 준비 중입니다.', type: 'info' });
+                                        }
+                                    }}
                                     className={cn(
-                                        "relative bg-zinc-900/50 border rounded-xl p-5 hover:border-white/20 transition-all",
+                                        "group relative border rounded-xl overflow-hidden transition-all h-[320px] flex flex-col cursor-pointer",
                                         subscription
                                             ? "border-green-500/50 shadow-lg shadow-green-500/20"
-                                            : "border-white/10"
+                                            : "border-white/10 hover:border-white/30"
                                     )}
                                 >
-                                    {/* Subscription Badge */}
-                                    {subscription && (
-                                        <div className={cn(
-                                            "absolute -top-2 -right-2 bg-gradient-to-r text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg flex items-center gap-1",
-                                            getTierBadgeColor(subscription.tier)
-                                        )}>
-                                            <Check size={12} />
-                                            {TIER_CONFIG[subscription.tier].name}
-                                        </div>
-                                    )}
-
-                                    {/* Faction Icon */}
-                                    <div className="w-12 h-12 bg-black rounded-lg flex items-center justify-center text-2xl mb-3">
-                                        🤖
+                                    {/* Background Image Area */}
+                                    <div
+                                        className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-105"
+                                        style={{
+                                            backgroundImage: bgImage ? `url(${bgImage})` : undefined,
+                                            backgroundColor: '#111',
+                                            filter: 'brightness(0.6)'
+                                        }}
+                                    >
+                                        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/80 to-transparent" />
                                     </div>
 
-                                    {/* Faction Info */}
-                                    <h3 className="text-lg font-bold text-white mb-1">{faction.displayName}</h3>
-                                    <p className="text-xs text-gray-400 line-clamp-2 h-8 mb-3">{faction.description}</p>
+                                    {/* Content Overlay */}
+                                    <div className="relative z-10 flex flex-col h-full p-5">
 
-                                    {/* Subscription Info */}
-                                    {subscription && (
-                                        <div className="mb-3 text-xs space-y-1">
-                                            <div className="flex items-center gap-1 text-white/60">
-                                                <Clock size={12} />
-                                                <span>{subscription.generationInterval}분 주기</span>
+                                        {/* Header: Icon & Name */}
+                                        <div className="flex items-start justify-between mb-2">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-12 h-12 bg-black/50 backdrop-blur border border-white/10 rounded-lg flex items-center justify-center text-2xl shadow-lg relative shrink-0">
+                                                    {faction.iconUrl ? (
+                                                        <Image
+                                                            src={faction.iconUrl}
+                                                            alt={faction.id}
+                                                            fill
+                                                            className="object-contain p-2"
+                                                        />
+                                                    ) : (
+                                                        <span>🤖</span>
+                                                    )}
+                                                </div>
+                                                <div>
+                                                    <h3 className="text-xl font-black text-white leading-tight">
+                                                        {koreanName}
+                                                    </h3>
+                                                    <p className="text-xs text-white/50 font-bold tracking-wider uppercase">
+                                                        {faction.displayName}
+                                                    </p>
+                                                </div>
                                             </div>
-                                            <div className="flex items-center gap-1 text-white/60">
-                                                <Zap size={12} />
-                                                <span>오늘: {subscription.generationsToday}/{subscription.dailyGenerationLimit === 999999 ? '∞' : subscription.dailyGenerationLimit}</span>
-                                            </div>
+
+                                            {/* Subscription Badge */}
+                                            {subscription && (
+                                                <div className={cn(
+                                                    "bg-gradient-to-r text-white text-[10px] font-bold px-2 py-1 rounded-full shadow-lg flex items-center gap-1",
+                                                    getTierBadgeColor(subscription.tier)
+                                                )}>
+                                                    <Check size={10} />
+                                                    {TIER_CONFIG[subscription.tier].name}
+                                                </div>
+                                            )}
                                         </div>
-                                    )}
 
-                                    {/* Actions */}
-                                    <div className="flex gap-2">
-                                        <button
-                                            onClick={() => setSelectedFaction(faction)}
-                                            className="flex-1 py-2 bg-white/5 text-white text-xs font-bold rounded hover:bg-white/10 transition-colors"
-                                        >
-                                            {subscription ? '티어 변경' : '구독하기'}
-                                        </button>
+                                        {/* Description Removed from Card Face */}
+                                        <div className="flex-1" />
+
+                                        {/* Subscription Stats (If Subscribed) */}
                                         {subscription && (
-                                            <button
-                                                onClick={() => handleUnsubscribe(faction.id)}
-                                                className="flex-1 py-2 bg-red-500/20 text-red-400 text-xs font-bold rounded hover:bg-red-500/30 transition-colors"
-                                            >
-                                                취소
-                                            </button>
+                                            <div className="mb-4 text-xs space-y-1 bg-green-900/20 p-2 rounded border border-green-500/20">
+                                                <div className="flex items-center justify-between text-green-200">
+                                                    <div className="flex items-center gap-1">
+                                                        <Clock size={12} />
+                                                        <span>생성 주기</span>
+                                                    </div>
+                                                    <span className="font-bold">{subscription.generationInterval}분</span>
+                                                </div>
+                                                <div className="flex items-center justify-between text-green-200">
+                                                    <div className="flex items-center gap-1">
+                                                        <Zap size={12} />
+                                                        <span>오늘 생성</span>
+                                                    </div>
+                                                    <span className="font-bold">{subscription.generationsToday} / {subscription.dailyGenerationLimit === 999999 ? '∞' : subscription.dailyGenerationLimit}</span>
+                                                </div>
+                                            </div>
                                         )}
+
+                                        {/* Action Buttons */}
+                                        <div className="mt-auto">
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation(); // Prevent opening modal
+                                                    setSelectedFaction(faction);
+                                                }}
+                                                className={cn(
+                                                    "w-full py-2.5 text-white text-xs font-bold rounded flex items-center justify-center gap-1 transition-colors z-20 relative",
+                                                    subscription
+                                                        ? "bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 border border-white/20"
+                                                        : "bg-cyan-600/80 hover:bg-cyan-500/80 border border-cyan-400/30 backdrop-blur-sm"
+                                                )}
+                                            >
+                                                {subscription ? <Zap size={14} /> : <Check size={14} />}
+                                                {subscription ? '구독 관리' : '구독하기'}
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             );
@@ -275,20 +357,30 @@ export default function FactionsPage() {
                                         const config = TIER_CONFIG[tier];
                                         const isSelected = selectedTier === tier;
                                         const canAfford = coins >= config.cost;
+                                        const reqLevel = TIER_LEVEL_REQ[tier];
+                                        const isLevelSufficient = level >= reqLevel;
 
                                         return (
                                             <button
                                                 key={tier}
                                                 onClick={() => setSelectedTier(tier)}
-                                                disabled={!canAfford && tier !== 'free'}
+                                                disabled={(!canAfford && tier !== 'free') || !isLevelSufficient}
                                                 className={cn(
-                                                    "p-4 rounded-xl border-2 transition-all text-left",
+                                                    "p-4 rounded-xl border-2 transition-all text-left relative overflow-hidden",
                                                     isSelected
                                                         ? "border-cyan-500 bg-cyan-500/10"
                                                         : "border-white/10 hover:border-white/30",
-                                                    !canAfford && tier !== 'free' && "opacity-50 cursor-not-allowed"
+                                                    ((!canAfford && tier !== 'free') || !isLevelSufficient) && "opacity-50 cursor-not-allowed"
                                                 )}
                                             >
+                                                {/* Lock Overlay if level insufficient */}
+                                                {!isLevelSufficient && (
+                                                    <div className="absolute inset-0 bg-black/80 flex flex-col items-center justify-center z-10 backdrop-blur-[1px] border border-white/5">
+                                                        <span className="text-xl mb-1">🔒</span>
+                                                        <span className="text-xs font-bold text-red-400">Lv.{reqLevel} 필요</span>
+                                                    </div>
+                                                )}
+
                                                 <div className="font-bold text-white mb-2">{config.name}</div>
                                                 <div className="text-2xl font-black text-yellow-400 mb-2">
                                                     {config.cost === 0 ? 'FREE' : `${config.cost.toLocaleString()}`}
@@ -312,21 +404,31 @@ export default function FactionsPage() {
                                 {/* Subscribe Button */}
                                 <button
                                     onClick={() => handleSubscribe(selectedFaction.id, selectedTier)}
-                                    disabled={coins < TIER_CONFIG[selectedTier].cost && selectedTier !== 'free'}
+                                    disabled={(coins < TIER_CONFIG[selectedTier].cost && selectedTier !== 'free') || level < TIER_LEVEL_REQ[selectedTier]}
                                     className={cn(
                                         "w-full py-3 rounded-lg font-bold transition-colors",
-                                        coins >= TIER_CONFIG[selectedTier].cost || selectedTier === 'free'
+                                        (coins >= TIER_CONFIG[selectedTier].cost || selectedTier === 'free') && level >= TIER_LEVEL_REQ[selectedTier]
                                             ? "bg-gradient-to-r from-purple-500 to-cyan-500 text-white hover:from-purple-400 hover:to-cyan-400"
                                             : "bg-gray-700 text-gray-400 cursor-not-allowed"
                                     )}
                                 >
-                                    {TIER_CONFIG[selectedTier].name} 티어로 구독하기
+                                    {level < TIER_LEVEL_REQ[selectedTier]
+                                        ? `Lv.${TIER_LEVEL_REQ[selectedTier]} 도달 시 활성화`
+                                        : `${TIER_CONFIG[selectedTier].name} 티어로 구독하기`}
                                 </button>
                             </div>
                         </div>
                     </div>
                 )}
+
+                {/* Lore Modal */}
+                <FactionLoreModal
+                    faction={selectedLoreFaction}
+                    isOpen={isLoreModalOpen}
+                    onClose={() => setIsLoreModalOpen(false)}
+                    allFactions={Object.values(FACTION_LORE_DATA)}
+                />
             </div>
-        </CyberPageLayout>
+        </CyberPageLayout >
     );
 }

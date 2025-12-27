@@ -82,6 +82,7 @@ export interface FooterState {
 
     // 푸터 표시 여부
     visible: boolean;
+    isMinimized: boolean; // 최소화 여부
 
     // 덱 슬롯 표시 여부 (강화/합성 등에서 숨김) - 하위 호환
     showDeckSlots: boolean;
@@ -138,6 +139,7 @@ interface FooterContextType {
     // 푸터 표시/숨김
     showFooter: () => void;
     hideFooter: () => void;
+    setMinimized: (minimized: boolean) => void;
 
     // 덱 슬롯 표시/숨김 (하위 호환)
     showDeckSlots: () => void;
@@ -165,8 +167,9 @@ const defaultState: FooterState = {
             faction: [],
         },
     },
-    visible: true,
-    showDeckSlots: false,
+    visible: false,
+    isMinimized: false,
+    showDeckSlots: true,
 };
 
 const FooterContext = createContext<FooterContextType | undefined>(undefined);
@@ -301,6 +304,10 @@ export function FooterProvider({ children }: { children: ReactNode }) {
 
     const hideFooter = useCallback(() => {
         setState(prev => ({ ...prev, visible: false }));
+    }, []);
+
+    const setMinimized = useCallback((minimized: boolean) => {
+        setState(prev => ({ ...prev, isMinimized: minimized }));
     }, []);
 
     const showDeckSlotsFunc = useCallback(() => {
@@ -545,6 +552,7 @@ export function FooterProvider({ children }: { children: ReactNode }) {
             autoSelectMaterials,
             showFooter,
             hideFooter,
+            setMinimized,
             showDeckSlots: showDeckSlotsFunc,
             hideDeckSlots: hideDeckSlotsFunc,
             resetFooter,

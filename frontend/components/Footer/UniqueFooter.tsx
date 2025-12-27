@@ -1,11 +1,12 @@
 import { InventoryCard } from '@/lib/inventory-system';
+import { Card } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import FooterSlot from './FooterSlot';
 import { Sparkles } from 'lucide-react';
 
 interface UniqueFooterProps {
-    materialSlots: (InventoryCard | null)[];
-    onMaterialDrop: (card: InventoryCard, index: number) => void;
+    materialSlots: (Card | InventoryCard | null)[];
+    onMaterialDrop: (card: Card | InventoryCard, index: number) => void;
     onMaterialRemove: (index: number) => void;
     onClear: () => void;
     onAutoSelect: () => void;

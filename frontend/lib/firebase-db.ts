@@ -6,6 +6,8 @@ import {
     updateDoc,
     collection,
     getDocs,
+    query,
+    where,
     serverTimestamp,
     increment,
     DocumentData
@@ -16,6 +18,7 @@ import { getUserId } from './firebase-auth';
 // ==================== 사용자 프로필 ====================
 
 export interface UserProfile {
+    nickname?: string;
     coins: number;
     tokens: number;
     level: number;
@@ -27,14 +30,14 @@ export interface UserProfile {
 /**
  * 사용자 프로필 저장
  */
-export async function saveUserProfile(profile: Partial<UserProfile>): Promise<void> {
+export async function saveUserProfile(profile: Partial<UserProfile>, uid?: string): Promise<void> {
     if (!isFirebaseConfigured || !db) {
         console.warn('Firebase가 설정되지 않았습니다. localStorage를 사용하세요.');
         return;
     }
 
     try {
-        const userId = await getUserId();
+        const userId = uid || await getUserId();
         const userRef = doc(db, 'users', userId, 'profile', 'data');
 
         await setDoc(userRef, {
@@ -52,14 +55,14 @@ export async function saveUserProfile(profile: Partial<UserProfile>): Promise<vo
 /**
  * 사용자 프로필 로드
  */
-export async function loadUserProfile(): Promise<UserProfile | null> {
+export async function loadUserProfile(uid?: string): Promise<UserProfile | null> {
     if (!isFirebaseConfigured || !db) {
         console.warn('Firebase가 설정되지 않았습니다. localStorage를 사용하세요.');
         return null;
     }
 
     try {
-        const userId = await getUserId();
+        const userId = uid || await getUserId();
         const userRef = doc(db, 'users', userId, 'profile', 'data');
         const docSnap = await getDoc(userRef);
 
@@ -93,16 +96,75 @@ export async function loadUserProfile(): Promise<UserProfile | null> {
 }
 
 /**
- * 코인 업데이트 (증감)
+ * 닉네임 중복 체크
  */
-export async function updateCoins(amount: number): Promise<void> {
+export async function checkNicknameUnique(nickname: string, currentUid?: string): Promise<boolean> {
+    if (!isFirebaseConfigured || !db) {
+        console.warn('Firebase가 설정되지 않았습니다.');
+        return true; // Firebase 미설정 시 로컬 체크로 넘어감
+    }
+
+    try {
+        const usersRef = collection(db, 'users');
+        const snapshot = await getDocs(usersRef);
+
+        for (const userDoc of snapshot.docs) {
+            const profileRef = doc(db, 'users', userDoc.id, 'profile', 'data');
+            const profileSnap = await getDoc(profileRef);
+
+            if (profileSnap.exists()) {
+                const data = profileSnap.data();
+                if (data.nickname?.toLowerCase() === nickname.toLowerCase() && userDoc.id !== currentUid) {
+                    return false; // 중복됨
+                }
+            }
+        }
+
+        return true; // 중복 없음
+    } catch (error) {
+        console.error('❌ 닉네임 중복 체크 실패:', error);
+        return true; // 에러 시 통과
+    }
+}
+
+/**
+ * 닉네임 업데이트
+ */
+export async function updateNickname(nickname: string, uid?: string): Promise<void> {
     if (!isFirebaseConfigured || !db) {
         console.warn('Firebase가 설정되지 않았습니다.');
         return;
     }
 
     try {
-        const userId = await getUserId();
+        const userId = uid || await getUserId();
+
+        // 중복 체크
+        const isUnique = await checkNicknameUnique(nickname, userId);
+        if (!isUnique) {
+            throw new Error('이미 사용 중인 닉네임입니다.');
+        }
+
+        const userRef = doc(db, 'users', userId, 'profile', 'data');
+        await updateDoc(userRef, { nickname });
+        console.log('✅ 닉네임 업데이트 성공:', nickname);
+    } catch (error) {
+        console.error('❌ 닉네임 업데이트 실패:', error);
+        throw error;
+    }
+}
+
+/**
+ * 코인 업데이트 (증감)
+ */
+export async function updateCoins(amount: number, uid?: string): Promise<void> {
+    if (!isFirebaseConfigured || !db) {
+        console.warn('Firebase가 설정되지 않았습니다.');
+        return;
+    }
+
+    try {
+        const userId = uid || await getUserId();
         const userRef = doc(db, 'users', userId, 'profile', 'data');
 
         await updateDoc(userRef, {
@@ -119,14 +181,14 @@ export async function updateCoins(amount: number): Promise<void> {
 /**
  * 토큰 업데이트 (증감)
  */
-export async function updateTokens(amount: number): Promise<void> {
+export async function updateTokens(amount: number, uid?: string): Promise<void> {
     if (!isFirebaseConfigured || !db) {
         console.warn('Firebase가 설정되지 않았습니다.');
         return;
     }
 
     try {
-        const userId = await getUserId();
+        const userId = uid || await getUserId();
         const userRef = doc(db, 'users', userId, 'profile', 'data');
 
         await updateDoc(userRef, {
@@ -143,14 +205,14 @@ export async function updateTokens(amount: number): Promise<void> {
 /**
  * 경험치 및 레벨 업데이트
  */
-export async function updateExpAndLevel(exp: number, level: number): Promise<void> {
+export async function updateExpAndLevel(exp: number, level: number, uid?: string): Promise<void> {
     if (!isFirebaseConfigured || !db) {
         console.warn('Firebase가 설정되지 않았습니다.');
         return;
     }
 
     try {
-        const userId = await getUserId();
+        const userId = uid || await getUserId();
         const userRef = doc(db, 'users', userId, 'profile', 'data');
 
         await updateDoc(userRef, {

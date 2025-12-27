@@ -5,6 +5,8 @@ import CyberPageLayout from '@/components/CyberPageLayout';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import WelcomeTutorialModal from '@/components/WelcomeTutorialModal';
+import { BackgroundBeams } from "@/components/ui/aceternity/background-beams";
+import { CardBody, Card3D as CardContainer, CardItem } from "@/components/ui/aceternity/3d-card";
 
 export default function MainPage() {
   const [showTutorial, setShowTutorial] = useState(false);
@@ -42,33 +44,41 @@ export default function MainPage() {
       subtitle="Select Operation"
       color="cyan"
     >
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-10">
+      {/* Background Beams Effect - Restored from Log 2025-12-22 */}
+      <div className="absolute inset-0 z-0 pointer-events-none opacity-40">
+        <BackgroundBeams />
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-10 relative z-10">
         {menuItems.map((item, idx) => (
           <Link key={idx} href={item.path}>
-            <motion.div
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className={`
-                                h-64 rounded-2xl border border-${item.color}-500/30 bg-black/40 backdrop-blur-md
-                                flex flex-col items-center justify-center gap-4 relative overflow-hidden group
-                                hover:border-${item.color}-500 hover:bg-${item.color}-500/10 transition-all
-                            `}
-            >
-              <div className={`absolute inset-0 bg-gradient-to-b from-${item.color}-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity`} />
+            <CardContainer className="inter-var w-full h-full">
+              <CardBody className={`
+                    bg-black/40 relative group/card dark:hover:shadow-2xl dark:hover:shadow-${item.color}-500/[0.1]
+                    dark:bg-black dark:border-white/[0.2] border-black/[0.1]
+                    w-full h-64 rounded-xl p-6 border border-${item.color}-500/30
+                    flex flex-col items-center justify-center gap-4 overflow-hidden
+                    hover:border-${item.color}-500 transition-colors duration-300
+                `}>
 
-              <span className="text-6xl group-hover:scale-110 transition-transform duration-300 drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]">
-                {item.icon}
-              </span>
+                <div className={`absolute inset-0 bg-gradient-to-b from-${item.color}-500/5 to-transparent opacity-0 group-hover/card:opacity-100 transition-opacity`} />
 
-              <div className="text-center z-10">
-                <h3 className="text-2xl font-bold text-white mb-1 group-hover:text-${item.color}-400 transition-colors">
-                  {item.title}
-                </h3>
-                <p className="text-xs font-mono text-white/50 tracking-widest uppercase">
-                  {item.subtitle}
-                </p>
-              </div>
-            </motion.div>
+                <CardItem translateZ="50" className="w-full flex justify-center items-center">
+                  <span className="text-6xl drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]">
+                    {item.icon}
+                  </span>
+                </CardItem>
+
+                <CardItem translateZ="60" className="text-center z-10 mt-4">
+                  <h3 className={`text-2xl font-bold text-white mb-1 group-hover/card:text-${item.color}-400 transition-colors`}>
+                    {item.title}
+                  </h3>
+                  <p className="text-xs font-mono text-white/50 tracking-widest uppercase">
+                    {item.subtitle}
+                  </p>
+                </CardItem>
+              </CardBody>
+            </CardContainer>
           </Link>
         ))}
       </div>

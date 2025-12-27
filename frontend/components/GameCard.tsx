@@ -71,7 +71,7 @@ const RARITY_NAMES: Record<Rarity, string> = {
     epic: '영웅',
     legendary: '전설',
     unique: '유니크',
-    commander: '지휘관'
+    commander: '군단장'
 };
 
 // 등급별 별 개수
@@ -96,6 +96,19 @@ export default function GameCard({
     const [isHovered, setIsHovered] = useState(false);
     const [videoLoaded, setVideoLoaded] = useState(false);
     const videoRef = useRef<HTMLVideoElement>(null);
+
+    // 🛡️ Null check: card가 없으면 플레이스홀더 표시 (대전 멈춤 버그 방지)
+    if (!card) {
+        return (
+            <div
+                className="relative rounded-xl overflow-hidden border-2 border-gray-500/50 bg-gray-900/80 flex items-center justify-center"
+                style={{ width: '160px', height: '240px' }}
+            >
+                <div className="text-4xl opacity-50">❓</div>
+                <span className="absolute bottom-2 text-xs text-white/30">No Card</span>
+            </div>
+        );
+    }
 
     // 실제 카드 등급 사용 (fallback: common)
     const rarity: Rarity = card.rarity || 'common';
@@ -218,20 +231,26 @@ export default function GameCard({
                     </>
                 )}
 
-                {/* 레벨 표시 */}
-                <div className="absolute top-1.5 right-1.5 bg-black/70 px-2 py-0.5 rounded text-[10px] font-bold text-white border border-white/10 z-20">
-                    Lv.{card.level}
-                </div>
-
-                {/* 타입 아이콘 (가위바위보) */}
+                {/* 타입 아이콘 (가위바위보) - 상단 우측 배치 및 크기 확대 */}
                 {card.type && (
                     <div
-                        className="absolute top-8 right-1.5 w-6 h-6 rounded-full flex items-center justify-center text-xs border border-white/20 z-20"
+                        className="absolute top-1.5 right-1.5 w-10 h-10 rounded-full flex items-center justify-center text-xl border-2 border-white/50 z-50 shadow-2xl backdrop-blur-sm"
                         style={{ backgroundColor: getTypeColor(card.type) }}
+                        title={card.type}
                     >
-                        {getTypeIcon(card.type)}
+                        <span className="drop-shadow-[0_0_5px_rgba(255,255,255,0.5)]">
+                            {getTypeIcon(card.type)}
+                        </span>
                     </div>
                 )}
+
+                {/* 레벨 표시 - 하단 우측으로 이동 */}
+                <div
+                    className="absolute bottom-1.5 right-1.5 bg-black/80 px-2 py-0.5 rounded text-[10px] font-black text-white border border-white/20 z-20 shadow-lg font-mono"
+                    suppressHydrationWarning
+                >
+                    LV.{card.level}
+                </div>
 
                 {/* 등급 배지 */}
                 <motion.div
@@ -290,6 +309,7 @@ export default function GameCard({
                             className="text-sm font-black orbitron bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent"
                             animate={isHovered ? { scale: [1, 1.05, 1] } : undefined}
                             transition={{ repeat: Infinity, duration: 0.5 }}
+                            suppressHydrationWarning
                         >
                             {card.stats?.totalPower || 0}
                         </motion.span>

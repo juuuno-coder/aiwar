@@ -4,27 +4,11 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
+import { useUser } from '@/context/UserContext';
+
 export default function GameHeader() {
     const pathname = usePathname();
-    const [userTokens, setUserTokens] = useState(0);
-    const [userLevel, setUserLevel] = useState(1);
-
-    useEffect(() => {
-        // 게임 상태 로드
-        const loadGameState = () => {
-            if (typeof window !== 'undefined') {
-                const state = JSON.parse(localStorage.getItem('gameState') || '{}');
-                setUserTokens(state.tokens || 2000);
-                setUserLevel(state.level || 1);
-            }
-        };
-
-        loadGameState();
-
-        // 1초마다 상태 업데이트
-        const interval = setInterval(loadGameState, 1000);
-        return () => clearInterval(interval);
-    }, []);
+    const { tokens, level } = useUser();
 
     const menuItems = [
         { name: '스토리', path: '/story', icon: '📖' },
@@ -41,8 +25,8 @@ export default function GameHeader() {
             <div className="h-full px-6 flex items-center justify-between">
                 {/* 로고 */}
                 <Link href="/" className="flex items-center gap-3 hover:scale-105 transition-transform">
-                    <div className="text-3xl font-bold text-gradient">AI War</div>
-                    <div className="text-sm text-gray-400">AI 대전</div>
+                    <div className="text-3xl font-bold text-gradient">AI WAR</div>
+                    <div className="text-sm text-gray-400">전쟁의 서막</div>
                 </Link>
 
                 {/* 메인 메뉴 */}
@@ -66,11 +50,11 @@ export default function GameHeader() {
                 <div className="flex items-center gap-4">
                     <div className="flex items-center gap-2 bg-yellow-500/20 px-4 py-2 rounded-lg border border-yellow-500/50">
                         <span className="text-yellow-400">💰</span>
-                        <span className="font-bold text-yellow-300">{userTokens.toLocaleString()}</span>
+                        <span className="font-bold text-yellow-300">{tokens.toLocaleString()}</span>
                     </div>
                     <div className="flex items-center gap-2 bg-blue-500/20 px-4 py-2 rounded-lg border border-blue-500/50">
                         <span className="text-blue-400">⭐</span>
-                        <span className="font-bold text-blue-300">Lv.{userLevel}</span>
+                        <span className="font-bold text-blue-300">Lv.{level}</span>
                     </div>
                 </div>
             </div>

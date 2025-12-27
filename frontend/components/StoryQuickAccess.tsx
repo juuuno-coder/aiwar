@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { loadStoryProgress } from '@/lib/story-system';
 import { Card as UiCard } from '@/components/ui/custom/Card';

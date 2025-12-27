@@ -83,6 +83,76 @@
             "faction": "Coding",
             "imageUrl": "/assets/factions/copilot.png",
             "description": "GitHub의 AI 코딩 도우미"
+        },
+        {
+            "id": "card-commander",
+            "name": "Commander",
+            "faction": "Card",
+            "imageUrl": "/images/cards/real/commander.png",
+            "description": "AI 군단 지휘관"
+        },
+        {
+            "id": "card-code-warrior",
+            "name": "Code Warrior",
+            "faction": "Card",
+            "imageUrl": "/images/cards/real/epic-code-warrior.png",
+            "description": "에픽 코드 전사"
+        },
+        {
+            "id": "card-titan-walker",
+            "name": "Titan Walker",
+            "faction": "Card",
+            "imageUrl": "/images/cards/real/epic-titan-walker.png",
+            "description": "에픽 타이탄 워커"
+        },
+        {
+            "id": "card-cyber-medic",
+            "name": "Cyber Medic",
+            "faction": "Card",
+            "imageUrl": "/images/cards/real/rare-cyber-medic.png",
+            "description": "레어 사이버 메딕"
+        },
+        {
+            "id": "card-ghost-sniper",
+            "name": "Ghost Sniper",
+            "faction": "Card",
+            "imageUrl": "/images/cards/real/rare-ghost-sniper.png",
+            "description": "레어 고스트 스나이퍼"
+        },
+        {
+            "id": "card-tactical-android",
+            "name": "Tactical Android",
+            "faction": "Card",
+            "imageUrl": "/images/cards/real/rare-tactical-android.png",
+            "description": "레어 택티컬 안드로이드"
+        },
+        {
+            "id": "card-glitch-entity",
+            "name": "Glitch Entity",
+            "faction": "Card",
+            "imageUrl": "/images/cards/real/unique-glitch-entity.png",
+            "description": "유니크 글리치 엔티티"
+        },
+        {
+            "id": "card-project-2501",
+            "name": "Project 2501",
+            "faction": "Card",
+            "imageUrl": "/images/cards/real/unique-project-2501.png",
+            "description": "유니크 프로젝트 2501"
+        },
+        {
+            "id": "card-dreadnought",
+            "name": "Dreadnought CPU",
+            "faction": "Card",
+            "imageUrl": "/images/cards/real/epic-dreadnought-cpu.png",
+            "description": "에픽 드레드노트 CPU"
+        },
+        {
+            "id": "card-code-assistant",
+            "name": "Code Assistant",
+            "faction": "Card",
+            "imageUrl": "/images/cards/real/code-assistant.png",
+            "description": "코드 어시스턴트"
         }
     ]
 }

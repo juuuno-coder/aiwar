@@ -9,7 +9,9 @@ import { AlertProvider } from "@/context/AlertContext";
 import { FooterProvider } from "@/context/FooterContext";
 import { UserProvider } from "@/context/UserContext";
 import { SoundProvider } from "@/context/SoundContext";
+import { NotificationProvider } from "@/context/NotificationContext";
 import MainLayout from "@/components/MainLayout";
+import TutorialManager from "@/components/TutorialManager";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -22,8 +24,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "AI War - AI 카드 전략 게임",
-  description: "2030년의 미래를 바꿀 AI 카드 전략 게임. 20개 AI 군단을 모아 최강의 시너지를 만들어보세요!",
+  title: "AI WAR : 전쟁의 서막 | 시즌1",
+  description: "2030년의 미래를 바꿀 AI 카드 전략 게임 AI WAR. 20개 AI 군단을 모아 최강의 시너지로 전쟁의 서막을 열어보세요!",
 };
 
 export default function RootLayout({
@@ -42,13 +44,16 @@ export default function RootLayout({
             <LanguageProvider>
               <SoundProvider>
                 <AlertProvider>
-                  <FooterProvider>
-                    <ThemeProvider>
-                      <MainLayout>
-                        {children}
-                      </MainLayout>
-                    </ThemeProvider>
-                  </FooterProvider>
+                  <NotificationProvider>
+                    <FooterProvider>
+                      <ThemeProvider>
+                        <MainLayout>
+                          <TutorialManager />
+                          {children}
+                        </MainLayout>
+                      </ThemeProvider>
+                    </FooterProvider>
+                  </NotificationProvider>
                 </AlertProvider>
               </SoundProvider>
             </LanguageProvider>

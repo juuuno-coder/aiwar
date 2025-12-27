@@ -107,14 +107,15 @@ export function calculateCommanderBonus(deck: Card[]): number {
  * 타입 시너지 계산
  */
 export function calculateTypeSynergy(cards: Card[]): number {
-    const typeCounts = {
+    const typeCounts: Record<string, number> = {
         EFFICIENCY: 0,
         CREATIVITY: 0,
+        FUNCTION: 0,
         COST: 0
     };
 
     cards.forEach(card => {
-        if (card.type) {
+        if (card.type && typeCounts[card.type] !== undefined) {
             typeCounts[card.type]++;
         }
     });

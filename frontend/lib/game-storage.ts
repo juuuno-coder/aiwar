@@ -70,6 +70,14 @@ class UnifiedStorage {
     }
 
     /**
+     * UID 기반 저장 키 생성
+     */
+    private getStorageKey(uid?: string): string {
+        if (!uid) return 'gameState_guest';
+        return `gameState_${uid}`;
+    }
+
+    /**
      * 에러 로깅 시스템
      */
     private logError(message: string, error: any, metadata?: any) {
@@ -120,10 +128,12 @@ class UnifiedStorage {
     /**
      * 자동 백업 시스템 (3-slot rotation)
      */
-    private backupToLocalStorage(state: GameState) {
+    private backupToLocalStorage(state: GameState, uid?: string) {
         try {
-            const backupSlots = ['backup_1', 'backup_2', 'backup_3'];
-            const lastBackupIndex = parseInt(localStorage.getItem('lastBackupIndex') || '0', 10);
+            const key = this.getStorageKey(uid);
+            const backupSlots = [`${key}_backup_1`, `${key}_backup_2`, `${key}_backup_3`];
+            const lastBackupIndexKey = `${key}_lastBackupIndex`;
+            const lastBackupIndex = parseInt(localStorage.getItem(lastBackupIndexKey) || '0', 10);
             const nextIndex = (lastBackupIndex + 1) % 3;
 
             const backupData = {
@@ -131,8 +141,8 @@ class UnifiedStorage {
                 state
             };
 
-            localStorage.setItem(`gameState_${backupSlots[nextIndex]}`, JSON.stringify(backupData));
-            localStorage.setItem('lastBackupIndex', nextIndex.toString());
+            localStorage.setItem(backupSlots[nextIndex], JSON.stringify(backupData));
+            localStorage.setItem(lastBackupIndexKey, nextIndex.toString());
 
             // console.log(`[SafetySystem] Backup created in slot ${backupSlots[nextIndex]}`);
         } catch (error) {
@@ -158,7 +168,7 @@ class UnifiedStorage {
     /**
      * 게임 상태 로드
      */
-    async loadGameState(): Promise<GameState> {
+    async loadGameState(uid?: string): Promise<GameState> {
         let loadedState: Partial<GameState> = {};
 
         // 기본 상태 정의
@@ -172,15 +182,18 @@ class UnifiedStorage {
             slots: [],
             equipment: [],
             decks: [],
-            research: undefined
+            research: undefined,
+            subscriptions: [],
+            uniqueApplications: []
         };
 
         if (this.useFirebase) {
             try {
-                const profile = await loadUserProfile();
+                const profile = await loadUserProfile(uid);
                 if (profile) {
                     // Firebase에서 로드 성공
-                    const localState = storage.get<Partial<GameState>>('gameState', {});
+                    const storageKey = this.getStorageKey(uid);
+                    const localState = storage.get<Partial<GameState>>(storageKey, {});
                     // Check if inventory needs initialization (Starter Deck)
                     let inventory = localState.inventory || [];
                     if (inventory.length === 0) {
@@ -207,7 +220,8 @@ class UnifiedStorage {
 
         // Firebase 로드 실패했거나 미사용 시 localStorage 확인
         if (Object.keys(loadedState).length === 0) {
-            loadedState = storage.get('gameState', defaultState);
+            const storageKey = this.getStorageKey(uid);
+            loadedState = storage.get(storageKey, defaultState);
         }
 
         // 데이터 검증 및 복구
@@ -223,21 +237,22 @@ class UnifiedStorage {
     /**
      * 게임 상태 저장
      */
-    async saveGameState(state: Partial<GameState>): Promise<void> {
+    async saveGameState(state: Partial<GameState>, uid?: string): Promise<void> {
         try {
             // 1. 데이터 검증
             const validatedStateUpdate = this.validateState(state);
 
             // 2. 현재 상태와 병합하여 전체 상태 구성 (백업용)
-            const currentState = storage.get('gameState', {});
+            const storageKey = this.getStorageKey(uid);
+            const currentState = storage.get(storageKey, {});
             const newState = { ...currentState, ...validatedStateUpdate };
 
             // 3. localStorage 저장 (Primary Save)
-            storage.set('gameState', newState);
+            storage.set(storageKey, newState);
 
             // 4. 자동 백업 실행 (중요 변경사항일 때만 하거나 주기적으로 할 수 있으나, 여기선 저장 시마다 수행 안전하게)
             // 성능 이슈가 있다면 debounce 처리 필요. 현재는 안전 우선.
-            this.backupToLocalStorage(newState as GameState);
+            this.backupToLocalStorage(newState as GameState, uid);
 
             // 5. Firebase 저장
             if (this.useFirebase) {
@@ -249,7 +264,7 @@ class UnifiedStorage {
                     if (validatedStateUpdate.experience !== undefined) profileUpdate.exp = validatedStateUpdate.experience;
 
                     if (Object.keys(profileUpdate).length > 0) {
-                        await saveUserProfile(profileUpdate);
+                        await saveUserProfile(profileUpdate, uid);
                     }
                 } catch (error) {
                     this.logError('Firebase save failed', error);
@@ -263,50 +278,50 @@ class UnifiedStorage {
     /**
      * 코인 추가/차감
      */
-    async addCoins(amount: number): Promise<number> {
-        const state = await this.loadGameState();
+    async addCoins(amount: number, uid?: string): Promise<number> {
+        const state = await this.loadGameState(uid);
         const newCoins = Math.max(0, state.coins + amount); // validateState에서도 체크하지만 이중 안전장치
 
         // Firebase 업데이트
         if (this.useFirebase && amount !== 0) {
             try {
-                await updateCoins(amount);
+                await updateCoins(amount, uid);
             } catch (error) {
                 this.logError('Firebase coin update failed', error);
             }
         }
 
         // localStorage 업데이트
-        await this.saveGameState({ coins: newCoins });
+        await this.saveGameState({ coins: newCoins }, uid);
         return newCoins;
     }
 
     /**
      * 토큰 추가/차감
      */
-    async addTokens(amount: number): Promise<number> {
-        const state = await this.loadGameState();
+    async addTokens(amount: number, uid?: string): Promise<number> {
+        const state = await this.loadGameState(uid);
         const newTokens = Math.max(0, state.tokens + amount);
 
         // Firebase 업데이트
         if (this.useFirebase && amount !== 0) {
             try {
-                await updateTokens(amount);
+                await updateTokens(amount, uid);
             } catch (error) {
                 this.logError('Firebase token update failed', error);
             }
         }
 
         // localStorage 업데이트
-        await this.saveGameState({ tokens: newTokens });
+        await this.saveGameState({ tokens: newTokens }, uid);
         return newTokens;
     }
 
     /**
      * 경험치 추가 및 레벨업 처리
      */
-    async addExperience(amount: number): Promise<{ level: number; experience: number; leveledUp: boolean }> {
-        const state = await this.loadGameState();
+    async addExperience(amount: number, uid?: string): Promise<{ level: number; experience: number; leveledUp: boolean }> {
+        const state = await this.loadGameState(uid);
         let { level, experience } = state;
 
         experience += amount;
@@ -326,14 +341,14 @@ class UnifiedStorage {
         // Firebase 업데이트
         if (this.useFirebase) {
             try {
-                await updateExpAndLevel(experience, level);
+                await updateExpAndLevel(experience, level, uid);
             } catch (error) {
                 this.logError('Firebase exp update failed', error);
             }
         }
 
         // localStorage 업데이트 (중요 이벤트이므로 즉시 백업됨)
-        await this.saveGameState({ level, experience });
+        await this.saveGameState({ level, experience }, uid);
 
         return { level, experience, leveledUp };
     }
@@ -341,132 +356,132 @@ class UnifiedStorage {
     /**
      * 코인으로 구매 (충분한 코인이 있는지 확인)
      */
-    async purchaseWithCoins(cost: number): Promise<boolean> {
-        const state = await this.loadGameState();
+    async purchaseWithCoins(cost: number, uid?: string): Promise<boolean> {
+        const state = await this.loadGameState(uid);
         if (state.coins < cost) {
             return false;
         }
 
-        await this.addCoins(-cost);
+        await this.addCoins(-cost, uid);
         return true;
     }
 
     /**
      * 토큰으로 구매
      */
-    async purchaseWithTokens(cost: number): Promise<boolean> {
-        const state = await this.loadGameState();
+    async purchaseWithTokens(cost: number, uid?: string): Promise<boolean> {
+        const state = await this.loadGameState(uid);
         if (state.tokens < cost) {
             return false;
         }
 
-        await this.addTokens(-cost);
+        await this.addTokens(-cost, uid);
         return true;
     }
 
     /**
      * 인벤토리에 카드 추가
      */
-    async addCardToInventory(card: any): Promise<void> {
-        const state = await this.loadGameState();
+    async addCardToInventory(card: any, uid?: string): Promise<void> {
+        const state = await this.loadGameState(uid);
         const inventory = [...(state.inventory || []), card];
-        await this.saveGameState({ inventory });
+        await this.saveGameState({ inventory }, uid);
     }
 
     /**
      * 팩션 개방
      */
-    async unlockFaction(factionId: string): Promise<void> {
-        const state = await this.loadGameState();
+    async unlockFaction(factionId: string, uid?: string): Promise<void> {
+        const state = await this.loadGameState(uid);
         const unlockedFactions = [...(state.unlockedFactions || [])];
         if (!unlockedFactions.includes(factionId)) {
             unlockedFactions.push(factionId);
-            await this.saveGameState({ unlockedFactions });
+            await this.saveGameState({ unlockedFactions }, uid);
         }
     }
 
     /**
      * 카드 목록 조회
      */
-    async getCards(): Promise<any[]> {
-        const state = await this.loadGameState();
+    async getCards(uid?: string): Promise<any[]> {
+        const state = await this.loadGameState(uid);
         return state.inventory || [];
     }
 
     /**
      * 장비 목록 조회
      */
-    async getEquipment(): Promise<any[]> {
-        const state = await this.loadGameState();
+    async getEquipment(uid?: string): Promise<any[]> {
+        const state = await this.loadGameState(uid);
         return state.equipment || [];
     }
 
     /**
      * 장비 추가
      */
-    async addEquipment(equipment: any): Promise<void> {
-        const state = await this.loadGameState();
+    async addEquipment(equipment: any, uid?: string): Promise<void> {
+        const state = await this.loadGameState(uid);
         const currentEquipment = state.equipment || [];
-        await this.saveGameState({ equipment: [...currentEquipment, equipment] });
+        await this.saveGameState({ equipment: [...currentEquipment, equipment] }, uid);
     }
 
     /**
      * 카드 업데이트
      */
-    async updateCard(cardId: string, updates: any): Promise<void> {
-        const state = await this.loadGameState();
+    async updateCard(cardId: string, updates: any, uid?: string): Promise<void> {
+        const state = await this.loadGameState(uid);
         const inventory = state.inventory || [];
         const index = inventory.findIndex((c: any) => c.id === cardId);
         if (index !== -1) {
             inventory[index] = { ...inventory[index], ...updates };
-            await this.saveGameState({ inventory });
+            await this.saveGameState({ inventory }, uid);
         }
     }
 
     /**
      * 장비 업데이트
      */
-    async updateEquipment(equipment: any): Promise<void> {
-        const state = await this.loadGameState();
+    async updateEquipment(equipment: any, uid?: string): Promise<void> {
+        const state = await this.loadGameState(uid);
         const currentEquipment = state.equipment || [];
         const index = currentEquipment.findIndex((e: any) => e.id === equipment.id);
         if (index !== -1) {
             currentEquipment[index] = equipment;
-            await this.saveGameState({ equipment: currentEquipment });
+            await this.saveGameState({ equipment: currentEquipment }, uid);
         }
     }
 
     /**
      * 카드 삭제
      */
-    async deleteCard(cardId: string): Promise<void> {
-        const state = await this.loadGameState();
+    async deleteCard(cardId: string, uid?: string): Promise<void> {
+        const state = await this.loadGameState(uid);
         const inventory = state.inventory || [];
         const newInventory = inventory.filter((c: any) => c.id !== cardId);
-        await this.saveGameState({ inventory: newInventory });
+        await this.saveGameState({ inventory: newInventory }, uid);
     }
 
     /**
      * 레벨 조회
      */
-    async getLevel(): Promise<number> {
-        const state = await this.loadGameState();
+    async getLevel(uid?: string): Promise<number> {
+        const state = await this.loadGameState(uid);
         return state.level || 1;
     }
 
     /**
      * 경험치 조회
      */
-    async getExperience(): Promise<number> {
-        const state = await this.loadGameState();
+    async getExperience(uid?: string): Promise<number> {
+        const state = await this.loadGameState(uid);
         return state.experience || 0;
     }
 
     /**
      * 덱 조회 (카드 객체 반환)
      */
-    async getDeck(deckId: string): Promise<any[]> {
-        const state = await this.loadGameState();
+    async getDeck(deckId: string, uid?: string): Promise<any[]> {
+        const state = await this.loadGameState(uid);
         const decks = state.decks || [];
         const deck = decks.find((d: any) => d.id === deckId);
         if (!deck) return [];
@@ -480,8 +495,8 @@ class UnifiedStorage {
     /**
      * 활성 덱 카드 조회
      */
-    async getActiveDeckCards(): Promise<any[]> {
-        const state = await this.loadGameState();
+    async getActiveDeckCards(uid?: string): Promise<any[]> {
+        const state = await this.loadGameState(uid);
         const decks = state.decks || [];
         const activeDeck = decks.find((d: any) => d.isActive);
 

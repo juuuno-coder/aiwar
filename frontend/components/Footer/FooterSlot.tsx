@@ -5,10 +5,10 @@ import GameCard from '@/components/GameCard';
 import { X } from 'lucide-react';
 
 interface FooterSlotProps {
-    card: InventoryCard | null;
+    card: Card | InventoryCard | null;
     index: number;
     onRemove?: () => void;
-    onDrop?: (card: InventoryCard) => void;
+    onDrop?: (card: Card | InventoryCard) => void;
     size?: 'small' | 'medium' | 'large';
     label?: string;
     type?: 'target' | 'material';

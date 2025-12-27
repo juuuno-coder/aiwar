@@ -8,7 +8,7 @@ export default function GameFooter() {
             <div className="h-full px-6 flex items-center justify-between text-sm">
                 {/* 왼쪽 - 빠른 액세스 */}
                 <div className="flex items-center gap-4">
-                    <Link href="/inventory" className="text-gray-400 hover:text-white transition-colors">
+                    <Link href="/my-cards" className="text-gray-400 hover:text-white transition-colors">
                         📦 인벤토리
                     </Link>
                     <Link href="/missions" className="text-gray-400 hover:text-white transition-colors">

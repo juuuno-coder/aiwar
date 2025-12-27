@@ -6,6 +6,8 @@ import { useTranslation } from '@/context/LanguageContext';
 import { useState, useEffect } from 'react';
 import { Settings, LogOut, ChevronLeft, ChevronRight } from 'lucide-react';
 import { logout } from '@/lib/auth-utils';
+import CommanderProfileModal from '@/components/CommanderProfileModal';
+import { useUserProfile } from '@/hooks/useUserProfile';
 
 interface GameSidebarProps {
     isCollapsed: boolean;
@@ -15,12 +17,19 @@ interface GameSidebarProps {
 export default function GameSidebar({ isCollapsed, onToggle }: GameSidebarProps) {
     const pathname = usePathname();
     const { t } = useTranslation();
+    const { profile } = useUserProfile();
     const [nickname, setNickname] = useState('COMMANDER');
+    const [showProfileModal, setShowProfileModal] = useState(false);
 
     useEffect(() => {
-        const stored = localStorage.getItem('nickname');
-        if (stored) setNickname(stored);
-    }, []);
+        // Use Firebase profile nickname if available
+        if (profile?.nickname) {
+            setNickname(profile.nickname);
+        } else {
+            const stored = localStorage.getItem('nickname');
+            if (stored) setNickname(stored);
+        }
+    }, [profile]);
 
     const menuItems = [
         { name: t('menu.myCards'), path: '/my-cards', icon: '📦', color: 'purple' },
@@ -74,10 +83,13 @@ export default function GameSidebar({ isCollapsed, onToggle }: GameSidebarProps)
             </button>
 
             {/* 1. Commander Profile */}
-            <div className="p-6 border-b border-white/5 flex flex-col items-center flex-none">
-                <div className={`relative mb-3 transition-all ${isCollapsed ? 'w-10 h-10' : 'w-20 h-20'}`}>
-                    <div className="absolute inset-0 bg-gradient-to-br from-cyan-500 to-purple-500 rounded-full opacity-20 animate-pulse" />
-                    <div className="absolute inset-0 border border-white/10 rounded-full" />
+            <div
+                className="p-6 border-b border-white/5 flex flex-col items-center flex-none cursor-pointer hover:bg-white/5 transition-all group"
+                onClick={() => setShowProfileModal(true)}
+            >
+                <div className={`relative mb-3 transition-all ${isCollapsed ? 'w-10 h-10' : 'w-20 h-20'} group-hover:scale-105`}>
+                    <div className="absolute inset-0 bg-gradient-to-br from-cyan-500 to-purple-500 rounded-full opacity-20 animate-pulse group-hover:opacity-30" />
+                    <div className="absolute inset-0 border border-white/10 rounded-full group-hover:border-cyan-500/50" />
                     <div className="w-full h-full rounded-full bg-black/50 flex items-center justify-center text-2xl overflow-hidden relative">
                         {/* Placeholder Avatar */}
                         <span className="z-10 relative">👨‍✈️</span>
@@ -89,11 +101,12 @@ export default function GameSidebar({ isCollapsed, onToggle }: GameSidebarProps)
 
                 {!isCollapsed && (
                     <div className="text-center w-full">
-                        <h3 className="font-bold text-white text-sm mb-1 truncate px-2 font-orbitron">{nickname}</h3>
+                        <h3 className="font-bold text-white text-sm mb-1 truncate px-2 font-orbitron group-hover:text-cyan-400 transition-colors">{nickname}</h3>
                         <div className="flex items-center justify-center gap-1.5">
                             <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
                             <span className="text-[9px] font-mono text-cyan-400">SYSTEM_ONLINE</span>
                         </div>
+                        <p className="text-[8px] text-cyan-400/60 mt-1 font-mono">프로필 보기</p>
                     </div>
                 )}
             </div>
@@ -135,6 +148,12 @@ export default function GameSidebar({ isCollapsed, onToggle }: GameSidebarProps)
 
             {/* Bottom Gradient Overlay */}
             <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-black via-black/80 to-transparent pointer-events-none z-10" />
+
+            {/* Commander Profile Modal */}
+            <CommanderProfileModal
+                isOpen={showProfileModal}
+                onClose={() => setShowProfileModal(false)}
+            />
         </aside>
     );
 }

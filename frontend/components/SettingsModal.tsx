@@ -7,7 +7,9 @@ import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from '@/comp
 import { Button } from '@/components/ui/custom/Button';
 import { Switch } from '@/components/ui/custom/Switch';
 import { Slider } from '@/components/ui/custom/Slider';
-import { Volume2, VolumeX, Music, Bell, Settings2, Sliders, ShieldCheck } from 'lucide-react';
+import { Volume2, VolumeX, Music, Bell, Settings2, Sliders, ShieldCheck, Zap } from 'lucide-react';
+import { useFirebase } from '@/components/FirebaseProvider';
+import { useUser } from '@/context/UserContext';
 
 interface SettingsModalProps {
     isOpen: boolean;
@@ -16,13 +18,13 @@ interface SettingsModalProps {
 
 export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     const {
-        bgmEnabled,
-        sfxEnabled,
-        volume,
-        toggleBgm,
-        toggleSfx,
-        setVolume
+        isMuted,
+        toggleMute
     } = useSound();
+    const { user } = useFirebase();
+    const { applyAdminCheat } = useUser();
+
+    const isAdmin = user?.email === 'nerounni@gmail.com';
 
     return (
         <Modal isOpen={isOpen} onClose={onClose} size="lg">
@@ -52,7 +54,7 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                                 {/* BGM Toggle */}
                                 <div className="p-4 rounded-2xl bg-white/5 border border-white/5 flex items-center justify-between group hover:border-purple-500/30 transition-colors">
                                     <div className="flex items-center gap-4">
-                                        <div className={`p-3 rounded-xl transition-colors ${bgmEnabled ? 'bg-purple-500/20 text-purple-400 shadow-[0_0_15px_rgba(168,85,247,0.2)]' : 'bg-gray-500/10 text-gray-500'}`}>
+                                        <div className={`p-3 rounded-xl transition-colors ${!isMuted ? 'bg-purple-500/20 text-purple-400 shadow-[0_0_15px_rgba(168,85,247,0.2)]' : 'bg-gray-500/10 text-gray-500'}`}>
                                             <Music size={20} />
                                         </div>
                                         <div>
@@ -60,13 +62,13 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                                             <p className="text-[10px] text-gray-500 font-bold">Background Music</p>
                                         </div>
                                     </div>
-                                    <Switch isChecked={bgmEnabled} onCheckedChange={toggleBgm} color="secondary" />
+                                    <Switch isChecked={!isMuted} onCheckedChange={toggleMute} color="secondary" />
                                 </div>
 
                                 {/* SFX Toggle */}
                                 <div className="p-4 rounded-2xl bg-white/5 border border-white/5 flex items-center justify-between group hover:border-blue-500/30 transition-colors">
                                     <div className="flex items-center gap-4">
-                                        <div className={`p-3 rounded-xl transition-colors ${sfxEnabled ? 'bg-blue-500/20 text-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.2)]' : 'bg-gray-500/10 text-gray-500'}`}>
+                                        <div className={`p-3 rounded-xl transition-colors ${!isMuted ? 'bg-blue-500/20 text-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.2)]' : 'bg-gray-500/10 text-gray-500'}`}>
                                             <Bell size={20} />
                                         </div>
                                         <div>
@@ -74,27 +76,22 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                                             <p className="text-[10px] text-gray-500 font-bold">Effect Sounds</p>
                                         </div>
                                     </div>
-                                    <Switch isChecked={sfxEnabled} onCheckedChange={toggleSfx} color="primary" />
+                                    <Switch isChecked={!isMuted} onCheckedChange={toggleMute} color="primary" />
                                 </div>
                             </div>
 
-                            {/* Volume Slider */}
-                            <div className="p-6 rounded-2xl bg-white/5 border border-white/5 space-y-4">
+                            {/* Volume Slider - Disabled as it's not implemented in context yet */}
+                            <div className="p-6 rounded-2xl bg-white/5 border border-white/5 space-y-4 opacity-50">
                                 <div className="flex justify-between items-center mb-2">
                                     <div className="flex items-center gap-2">
-                                        {volume > 0 ? <Volume2 size={16} className="text-purple-400" /> : <VolumeX size={16} className="text-red-400" />}
+                                        {!isMuted ? <Volume2 size={16} className="text-purple-400" /> : <VolumeX size={16} className="text-red-400" />}
                                         <span className="text-xs font-black orbitron text-white">MASTER VOLUME</span>
                                     </div>
-                                    <span className="text-xs font-mono text-purple-400 font-bold">{Math.round(volume * 100)}%</span>
+                                    <span className="text-xs font-mono text-purple-400 font-bold">{!isMuted ? '100%' : '0%'}</span>
                                 </div>
-                                <Slider
-                                    value={volume}
-                                    maxValue={1}
-                                    step={0.01}
-                                    onChange={(val) => setVolume(val as number)}
-                                    color="secondary"
-                                    className="w-full"
-                                />
+                                <div className="h-2 bg-white/10 rounded-full w-full overflow-hidden">
+                                    <div className="h-full bg-purple-500 transition-all" style={{ width: !isMuted ? '100%' : '0%' }}></div>
+                                </div>
                             </div>
                         </div>
 
@@ -112,6 +109,32 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                                 <span className="text-[10px] text-gray-600 font-mono tracking-tighter">PROTO_v2.5.4</span>
                             </div>
                         </div>
+
+                        {/* Admin Section */}
+                        {isAdmin && (
+                            <div className="space-y-6 pt-4 border-t border-white/5">
+                                <div className="flex items-center gap-2 mb-2">
+                                    <Zap size={14} className="text-yellow-500" />
+                                    <span className="text-[11px] font-black orbitron text-yellow-400 tracking-widest uppercase">Admin Terminal</span>
+                                </div>
+                                <div className="p-4 rounded-2xl bg-yellow-500/5 border border-yellow-500/10 flex flex-col gap-4">
+                                    <p className="text-[10px] text-yellow-500/70 font-bold orbitron">Unauthorized override of neural credits and rank.</p>
+                                    <Button
+                                        color="warning"
+                                        variant="shadow"
+                                        onPress={async () => {
+                                            if (confirm('모든 자원과 레벨을 최대치로 수정하시겠습니까?')) {
+                                                await applyAdminCheat();
+                                                alert('관리자 수정 완료!');
+                                            }
+                                        }}
+                                        className="w-full font-black orbitron text-[10px] tracking-widest h-10 shadow-[0_0_15px_rgba(234,179,8,0.2)]"
+                                    >
+                                        MAXIMIZE RESOURCES
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
                     </ModalBody>
 
                     <ModalFooter className="border-t border-white/5 pt-4">

@@ -111,8 +111,10 @@ export default function CyberPageLayout({
             {/* Scanlines */}
             <div className="absolute inset-0 pointer-events-none opacity-[0.015] bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%)] bg-[length:100%_2px]" />
 
-            {/* Background Beams - The light falling effect */}
-            <BackgroundBeams className="opacity-30" />
+            {/* Background Beams - Global Effect */}
+            <div className="absolute inset-0 pointer-events-none opacity-40">
+                <BackgroundBeams />
+            </div>
 
             {/* Content */}
             <div className="relative z-10 max-w-7xl mx-auto px-6 py-8">

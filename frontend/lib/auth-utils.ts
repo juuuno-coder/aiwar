@@ -16,19 +16,19 @@ export interface AuthSession {
 /**
  * 회원가입
  */
-export function signup(username: string, password: string, nickname: string): { success: boolean; message: string; user?: User } {
+export function signup(email: string, password: string): { success: boolean; message: string; user?: User } {
     // 기존 사용자 확인
     const users = getAllUsers();
 
-    if (users.find(u => u.username === username)) {
-        return { success: false, message: '이미 존재하는 아이디입니다.' };
+    if (users.find(u => u.username.toLowerCase() === email.toLowerCase())) {
+        return { success: false, message: '이미 등록된 이메일 주소입니다.' };
     }
 
     // 새 사용자 생성
     const newUser: User = {
         id: `user-${Date.now()}`,
-        username,
-        nickname,
+        username: email,
+        nickname: '', // Nickname will be set during first login onboarding
         createdAt: Date.now()
     };
 
@@ -38,7 +38,7 @@ export function signup(username: string, password: string, nickname: string): { 
 
     // 비밀번호 저장 (실제로는 해싱해야 하지만 데모용)
     const passwords = getPasswords();
-    passwords[username] = password;
+    passwords[email] = password;
     localStorage.setItem('passwords', JSON.stringify(passwords));
 
     return { success: true, message: '회원가입이 완료되었습니다.', user: newUser };
@@ -143,30 +143,38 @@ export function startAsGuest(): { success: boolean; session: AuthSession } {
     return { success: true, session };
 }
 
+import { signInWithGoogle as firebaseSignInWithGoogle } from './firebase-auth';
+
 /**
- * 구글 로그인 (Firebase Popup)
+ * 구글 로그인 (Firebase Real)
  */
 export async function signInWithGoogle(): Promise<{ success: boolean; message: string; session?: AuthSession }> {
     try {
-        // 실제 구현에서는 Firebase Auth signInWithPopup 사용
-        // 현재는 Mock 처리
-        const mockUser: User = {
-            id: `google-${Date.now()}`,
-            username: `google_user_${Date.now()}`,
-            nickname: '구글 사용자',
-            createdAt: Date.now()
+        const firebaseUser = await firebaseSignInWithGoogle();
+
+        if (!firebaseUser) {
+            return { success: false, message: 'Google 로그인 취소 또는 실패' };
+        }
+
+        // Firebase User -> Local AuthSession 변환
+        const user: User = {
+            id: firebaseUser.uid,
+            username: firebaseUser.email || `google_${firebaseUser.uid.slice(0, 8)}`,
+            nickname: firebaseUser.displayName || 'Commander',
+            createdAt: parseInt(firebaseUser.metadata.creationTime ? new Date(firebaseUser.metadata.creationTime).getTime().toString() : Date.now().toString())
         };
 
         const session: AuthSession = {
-            user: mockUser,
-            token: `google-token-${Date.now()}`,
+            user,
+            token: await firebaseUser.getIdToken(),
             expiresAt: Date.now() + (7 * 24 * 60 * 60 * 1000)
         };
 
         localStorage.setItem('auth-session', JSON.stringify(session));
-        return { success: true, message: '구글 로그인 성공!', session };
+        return { success: true, message: 'Google 로그인 성공!', session };
     } catch (error) {
-        return { success: false, message: '구글 로그인 실패' };
+        console.error('Sign in error:', error);
+        return { success: false, message: '로그인 중 오류가 발생했습니다.' };
     }
 }
 
@@ -206,7 +214,7 @@ export function loginAsTestCommander(): { success: boolean; session: AuthSession
         tokens: 99999999,      // 9999만 토큰
         coins: 99999999,       // 9999만 코인
         inventory: [],
-        unlockedFactions: ['human', 'machine', 'alien', 'gemini', 'trinity'], // 모든 팩션 해금
+        unlockedFactions: ['human', 'machine', 'alien', 'gemini', 'trinity'], // 모든 팩션 활성화
         storyProgress: {
             currentChapter: 10,
             completedMissions: [],
@@ -230,7 +238,7 @@ export function loginAsTestCommander(): { success: boolean; session: AuthSession
         lastSaved: Date.now(),
 
         // game-storage.ts 호환성 (레거시/백업용)
-        coins: 9999999,
+
         research: {
             tier: 5,
             techPoints: 9999,
@@ -264,23 +272,25 @@ function getPasswords(): Record<string, string> {
 }
 
 /**
- * 사용자 이름 유효성 검사
+ * 이메일 유효성 검사
  */
-export function validateUsername(username: string): { valid: boolean; message: string } {
-    if (username.length < 3) {
-        return { valid: false, message: '아이디는 3자 이상이어야 합니다.' };
+export function validateEmail(email: string): { valid: boolean; message: string } {
+    if (!email) {
+        return { valid: false, message: '이메일을 입력해 주세요.' };
     }
 
-    if (username.length > 20) {
-        return { valid: false, message: '아이디는 20자 이하여야 합니다.' };
-    }
-
-    if (!/^[a-zA-Z0-9_]+$/.test(username)) {
-        return { valid: false, message: '아이디는 영문, 숫자, _만 사용 가능합니다.' };
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+        return { valid: false, message: '유효한 이메일 형식이 아닙니다.' };
     }
 
     return { valid: true, message: '' };
 }
+
+/**
+ * (Alias for reverse compatibility or specific ID usage if needed)
+ */
+export const validateUsername = validateEmail;
 
 /**
  * 비밀번호 유효성 검사

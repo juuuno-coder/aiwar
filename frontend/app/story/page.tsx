@@ -62,8 +62,8 @@ export default function StoryPage() {
             title={selectedSeason ? selectedSeason.title : "스토리 모드"}
             englishTitle={selectedSeason ? `SEASON ${selectedSeason.number}` : "CAMPAIGN SEASONS"}
             description={selectedSeason ? selectedSeason.description : "인류와 AI의 거대한 전쟁, 그 서막을 여는 이야기"}
-            backPath={selectedSeason ? undefined : "/main"} // 시즌 선택 화면에서만 메인으로 이동
-            onBack={selectedSeason ? handleBackToSeasons : undefined} // 시즌 상세에서는 시즌 목록으로 이동
+            backPath={selectedSeason ? "/story" : "/main"}
+            showBack={true}
         >
             <AnimatePresence mode="wait">
                 {/* 1. 시즌 선택 화면 */}
@@ -217,19 +217,24 @@ export default function StoryPage() {
                                             {chapter.description}
                                         </p>
 
-                                        {/* 미션 목록 (간략히) */}
+                                        {/* 스테이지 목록 (간략히) */}
                                         <div className="space-y-2 mb-6">
-                                            {chapter.tasks.slice(0, 3).map(task => (
-                                                <div key={task.id} className="flex items-center gap-2 text-xs text-gray-500">
+                                            {chapter.stages.slice(0, 3).map(stage => (
+                                                <div key={stage.id} className="flex items-center gap-2 text-xs text-gray-500">
                                                     <div className={cn(
                                                         "w-1.5 h-1.5 rounded-full",
-                                                        task.completed ? "bg-green-500" : "bg-gray-700"
+                                                        stage.isCleared ? "bg-green-500" : "bg-gray-700"
                                                     )} />
-                                                    <span className={cn(task.completed && "text-gray-400 line-through")}>
-                                                        {task.title}
+                                                    <span className={cn(stage.isCleared && "text-gray-400 line-through")}>
+                                                        {stage.title}
                                                     </span>
                                                 </div>
                                             ))}
+                                            {chapter.stages.length > 3 && (
+                                                <div className="text-xs text-gray-600">
+                                                    +{chapter.stages.length - 3} more stages
+                                                </div>
+                                            )}
                                         </div>
 
                                         {/* 액션 버튼 */}
@@ -244,7 +249,7 @@ export default function StoryPage() {
                                                     </Button>
                                                 </Link>
                                             ) : (
-                                                <Button disabled variant="outline" className="w-full opacity-50">
+                                                <Button disabled variant="ghost" className="w-full opacity-50">
                                                     LOCKED
                                                 </Button>
                                             )}

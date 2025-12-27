@@ -12,9 +12,14 @@ import {
 import { getGameState } from '@/lib/game-state';
 import CyberPageLayout from '@/components/CyberPageLayout';
 import { useTranslation } from '@/context/LanguageContext';
+import { useUser } from '@/context/UserContext';
+import { useAlert } from '@/context/AlertContext';
+import { Zap } from 'lucide-react';
 
 export default function SettingsPage() {
     const { t, language, setLanguage } = useTranslation();
+    const { isAdmin, applyAdminCheat } = useUser();
+    const { showAlert } = useAlert();
     const [soundEnabled, setSoundEnabled] = useState(true);
     const [musicEnabled, setMusicEnabled] = useState(true);
     const [autoGenerationEnabled, setAutoGenerationEnabled] = useState(false);
@@ -46,7 +51,11 @@ export default function SettingsPage() {
             music: musicEnabled,
             autoGeneration: autoGenerationEnabled,
         });
-        alert('설정이 저장되었습니다!');
+        showAlert({
+            title: '설정 저장',
+            message: '설정이 저장되었습니다!',
+            type: 'success'
+        });
     };
 
     const handleAutoGenerationToggle = (enabled: boolean) => {
@@ -62,11 +71,22 @@ export default function SettingsPage() {
     };
 
     const resetData = () => {
-        if (confirm(t('settings.resetWarning'))) {
-            localStorage.clear();
-            alert('데이터가 초기화되었습니다. 페이지를 새로고침합니다.');
-            window.location.reload();
-        }
+        showAlert({
+            title: '데이터 초기화',
+            message: '모든 자원과 카드를 초기화하시겠습니까?',
+            type: 'warning',
+            confirmText: '확인',
+            cancelText: '취소',
+            onConfirm: () => {
+                localStorage.clear();
+                showAlert({
+                    title: '초기화 완료',
+                    message: '데이터가 초기화되었습니다. 페이지를 새로고침합니다.',
+                    type: 'info'
+                });
+                setTimeout(() => window.location.reload(), 1500);
+            }
+        });
     };
 
     return (
@@ -168,7 +188,7 @@ export default function SettingsPage() {
                     </div>
                     <div className="flex justify-between">
                         <span>{t('settings.developer')}</span>
-                        <span className="font-bold">AI Daejeon Team</span>
+                        <span className="font-bold">AI WAR Team</span>
                     </div>
                     <div className="flex justify-between">
                         <span>{t('settings.lastUpdate')}</span>
@@ -221,6 +241,43 @@ export default function SettingsPage() {
                     </div>
                 </div>
             </div>
+
+            {/* Admin Section */}
+            {isAdmin && (
+                <div className="card p-6 mb-6 border-2 border-yellow-500 bg-yellow-500/5">
+                    <h2 className="text-2xl font-bold mb-6 text-yellow-500 flex items-center gap-2" style={{ fontFamily: 'Orbitron, sans-serif' }}>
+                        <Zap /> ADMIN TERMINAL
+                    </h2>
+                    <p className="text-sm text-yellow-500/70 mb-4 font-bold">
+                        관리자 계정 전용 자원 최대화 기능을 사용할 수 있습니다.
+                    </p>
+                    <button
+                        onClick={async () => {
+                            showAlert({
+                                title: '관리자 권한',
+                                message: '모든 자원과 레벨을 최대치로 수정하시겠습니까?',
+                                type: 'warning',
+                                confirmText: '확인',
+                                cancelText: '취소',
+                                onConfirm: async () => {
+                                    await applyAdminCheat();
+                                    showAlert({
+                                        title: '관리자 권한',
+                                        message: '자원 최대화 완료!',
+                                        type: 'success'
+                                    });
+                                }
+                            });
+                        }}
+                        className="btn bg-yellow-600 hover:bg-yellow-500 text-white w-full font-black orbitron tracking-widest"
+                    >
+                        MAXIMIZE RESOURCES
+                    </button>
+                    <p className="mt-4 text-[10px] text-yellow-500/50 text-center">
+                        Unauthorized override of neural credits and rank.
+                    </p>
+                </div>
+            )}
         </CyberPageLayout>
     );
 }

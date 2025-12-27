@@ -244,7 +244,7 @@ export default function PvPMatchPage() {
                                     </div>
                                     <div className="flex-1">
                                         <div className="flex items-center gap-2">
-                                            <h3 className="text-lg font-black text-white orbitron">AI 대전</h3>
+                                            <h3 className="text-lg font-black text-white orbitron">AI WAR</h3>
                                             <Chip size="sm" color="secondary" variant="flat" className="text-[8px] orbitron font-bold">INSTANT</Chip>
                                         </div>
                                         <p className="text-xs text-gray-500 mt-1">비슷한 레이팅의 AI 봇과 대전</p>

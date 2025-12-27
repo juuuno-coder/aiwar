@@ -3,7 +3,7 @@
 export type Rarity = 'common' | 'rare' | 'epic' | 'legendary' | 'unique' | 'commander';
 export type Specialty = 'text' | 'image' | 'video' | 'music' | 'voice' | 'code';
 export type CardType = 'normal' | 'automated';
-export type AIType = 'EFFICIENCY' | 'CREATIVITY' | 'FUNCTION';
+export type AIType = 'EFFICIENCY' | 'CREATIVITY' | 'FUNCTION' | 'COST';
 export type BattleMode = '1-card' | '3-card' | '5-card';
 
 export interface Stats {

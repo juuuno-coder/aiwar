@@ -1,3 +1,4 @@
+import { generateId } from './utils';
 import { Card, Rarity } from './types';
 import { CARD_DATABASE } from '@/data/card-database';
 
@@ -25,19 +26,36 @@ const TIER_BONUSES: Record<string, { epic: number; legendary: number }> = {
 /**
  * 티어에 따른 등급별 확률 계산
  */
-function calculateRarityWeights(tier: string): Record<Rarity, number> {
+/**
+ * 군단 효과 인터페이스
+ */
+export interface FactionEffects {
+    timeReduction?: number;
+    powerBonus?: number;
+    fragmentBonus?: number;
+    specialAbility?: string;
+}
+
+/**
+ * 티어 및 친밀도에 따른 등급별 확률 계산
+ */
+function calculateRarityWeights(tier: string, affinity: number = 0): Record<Rarity, number> {
     const bonus = TIER_BONUSES[tier] || TIER_BONUSES.free;
 
+    // 친밀도 보너스: 친밀도 100 달성 시 Epic +5%, Legendary +2% 추가 확률
+    const affinityEpicBonus = (affinity / 100) * 5;
+    const affinityLegendaryBonus = (affinity / 100) * 2;
+
     // Common과 Rare에서 확률을 빼서 Epic/Legendary에 추가
-    const totalBonus = bonus.epic + bonus.legendary;
+    const totalBonus = bonus.epic + bonus.legendary + affinityEpicBonus + affinityLegendaryBonus;
     const commonReduction = totalBonus * 0.6; // Common에서 60% 차감
     const rareReduction = totalBonus * 0.4;   // Rare에서 40% 차감
 
     return {
         common: Math.max(0, BASE_RARITY_WEIGHTS.common - commonReduction),
         rare: Math.max(0, BASE_RARITY_WEIGHTS.rare - rareReduction),
-        epic: BASE_RARITY_WEIGHTS.epic + bonus.epic,
-        legendary: BASE_RARITY_WEIGHTS.legendary + bonus.legendary,
+        epic: BASE_RARITY_WEIGHTS.epic + bonus.epic + affinityEpicBonus,
+        legendary: BASE_RARITY_WEIGHTS.legendary + bonus.legendary + affinityLegendaryBonus,
         unique: BASE_RARITY_WEIGHTS.unique,
         commander: BASE_RARITY_WEIGHTS.commander
     };
@@ -63,53 +81,118 @@ function selectRandomRarity(weights: Record<Rarity, number>): Rarity {
 }
 
 /**
- * 특정 등급의 카드 중 랜덤 선택
+ * 특정 등급의 카드 중 랜덤 선택 (군단 효과 적용 가능)
  */
-function selectCardByRarity(rarity: Rarity): Card {
+function selectCardByRarity(rarity: Rarity, factionEffects?: FactionEffects): Card {
     const cardsOfRarity = CARD_DATABASE.filter(card => card.rarity === rarity);
 
     if (cardsOfRarity.length === 0) {
         // 해당 등급 카드가 없으면 common으로 폴백
         const commonCards = CARD_DATABASE.filter(card => card.rarity === 'common');
         const template = commonCards[Math.floor(Math.random() * commonCards.length)];
-        return createCardFromTemplate(template);
+        return createCardFromTemplate(template, factionEffects);
     }
 
     const template = cardsOfRarity[Math.floor(Math.random() * cardsOfRarity.length)];
-    return createCardFromTemplate(template);
+    return createCardFromTemplate(template, factionEffects);
 }
 
 /**
  * 카드 템플릿에서 실제 카드 인스턴스 생성
  */
-function createCardFromTemplate(template: any): Card {
-    // 스탯 랜덤 생성 (min~max 범위 내)
-    const creativity = Math.floor(Math.random() * (template.baseStats.creativity.max - template.baseStats.creativity.min + 1)) + template.baseStats.creativity.min;
-    const accuracy = Math.floor(Math.random() * (template.baseStats.accuracy.max - template.baseStats.accuracy.min + 1)) + template.baseStats.accuracy.min;
-    const speed = Math.floor(Math.random() * (template.baseStats.speed.max - template.baseStats.speed.min + 1)) + template.baseStats.speed.min;
-    const stability = Math.floor(Math.random() * (template.baseStats.stability.max - template.baseStats.stability.min + 1)) + template.baseStats.stability.min;
-    const ethics = Math.floor(Math.random() * (template.baseStats.ethics.max - template.baseStats.ethics.min + 1)) + template.baseStats.ethics.min;
+const RARITY_POWER_RANGES: Record<string, { min: number, max: number }> = {
+    common: { min: 40, max: 60 },
+    rare: { min: 60, max: 70 },
+    epic: { min: 70, max: 80 },
+    legendary: { min: 80, max: 100 },
+    unique: { min: 80, max: 100 },
+    commander: { min: 80, max: 100 }
+};
+
+function createCardFromTemplate(template: any, factionEffects?: FactionEffects): Card {
+    const rarity = template.rarity || 'common';
+    const powerRange = RARITY_POWER_RANGES[rarity.toLowerCase()] || RARITY_POWER_RANGES.common;
+
+    // 1. 총 전투력 결정 (군단 효과 적용)
+    // powerBonus가 0.2면 20% 증가
+    const bonusMultiplier = 1 + (factionEffects?.powerBonus || 0);
+    const minPower = Math.floor(powerRange.min * bonusMultiplier);
+    const maxPower = Math.floor(powerRange.max * bonusMultiplier);
+
+    const totalPower = Math.floor(Math.random() * (maxPower - minPower + 1)) + minPower;
+
+    // 2. 3대 스탯 분배 (주 스탯 몰아주기)
+    // 2. 3대 스탯 분배 (주 스탯 균형 조정: 40% ~ 60%)
+    // 기존 50~80%는 너무 극단적이라는 피드백 반영
+    const mainStatRatio = 0.4 + (Math.random() * 0.2); // 0.4 ~ 0.6
+    let mainStatValue = Math.floor(totalPower * mainStatRatio);
+    let remainingPower = totalPower - mainStatValue;
+
+    // 최소 스탯 보장 (안전장치)
+    // 나머지 두 스탯이 최소 5는 되도록 보장
+    const minStat = 5;
+
+    // 만약 남은 파워가 너무 적으면 강제 조정
+    if (remainingPower < minStat * 2) {
+        remainingPower = minStat * 2;
+        mainStatValue = totalPower - remainingPower;
+    }
+
+    // 나머지 두 스탯 분배
+    // 단순히 랜덤으로 나누면 한쪽이 0이 될 수 있으므로, 최소값을 보장하며 분배
+    const maxSub1 = remainingPower - minStat;
+    const minSub1 = minStat;
+
+    // 범위 내 랜덤
+    const subStat1 = Math.floor(Math.random() * (maxSub1 - minSub1 + 1)) + minSub1;
+    const subStat2 = remainingPower - subStat1;
+
+    // 3. 메인 속성 결정 (가위/바위/보)
+    const types: ('EFFICIENCY' | 'CREATIVITY' | 'FUNCTION')[] = ['EFFICIENCY', 'CREATIVITY', 'FUNCTION'];
+    const mainType = types[Math.floor(Math.random() * types.length)];
+
+    let efficiency = 0;
+    let creativity = 0;
+    let func = 0;
+
+    if (mainType === 'EFFICIENCY') { // 바위
+        efficiency = mainStatValue;
+        creativity = subStat1;
+        func = subStat2;
+    } else if (mainType === 'CREATIVITY') { // 보
+        creativity = mainStatValue;
+        efficiency = subStat1;
+        func = subStat2;
+    } else { // FUNCTION = 가위
+        func = mainStatValue;
+        efficiency = subStat1;
+        creativity = subStat2;
+    }
 
     const stats = {
+        efficiency,
         creativity,
-        accuracy,
-        speed,
-        stability,
-        ethics,
-        totalPower: creativity + accuracy + speed + stability + ethics
+        function: func,
+        totalPower,
+        // Legacy stats (set to 0)
+        accuracy: 0,
+        speed: 0,
+        stability: 0,
+        ethics: 0
     };
 
     const card: Card = {
-        id: `${template.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        id: generateId(),
         templateId: template.id,
         name: template.name,
-        ownerId: 'user-001',
-        rarity: template.rarity,
+        ownerId: 'player', // Default owner
         level: 1,
         experience: 0,
         stats,
+        rarity: rarity as Rarity,
         acquiredAt: new Date(),
-        isLocked: false
+        isLocked: false,
+        type: mainType
     };
 
     // specialSkill이 있을 때만 추가 (undefined 방지)
@@ -127,10 +210,10 @@ function createCardFromTemplate(template: any): Card {
 /**
  * 메인 함수: 티어에 따라 랜덤 카드 생성
  */
-export function generateRandomCard(tier: string = 'free'): Card {
-    const weights = calculateRarityWeights(tier);
+export function generateRandomCard(tier: string = 'free', affinity: number = 0, factionEffects?: FactionEffects): Card {
+    const weights = calculateRarityWeights(tier, affinity);
     const selectedRarity = selectRandomRarity(weights);
-    return selectCardByRarity(selectedRarity);
+    return selectCardByRarity(selectedRarity, factionEffects);
 }
 
 /**
@@ -147,8 +230,8 @@ export function generateCardByRarity(rarity: Rarity, userId?: string): Card {
 /**
  * 등급별 확률 정보 반환 (디버깅/UI용)
  */
-export function getRarityProbabilities(tier: string = 'free'): Record<Rarity, number> {
-    const weights = calculateRarityWeights(tier);
+export function getRarityProbabilities(tier: string = 'free', affinity: number = 0): Record<Rarity, number> {
+    const weights = calculateRarityWeights(tier, affinity);
     const total = Object.values(weights).reduce((sum, w) => sum + w, 0);
 
     return {
@@ -158,5 +241,68 @@ export function getRarityProbabilities(tier: string = 'free'): Record<Rarity, nu
         legendary: (weights.legendary / total) * 100,
         unique: (weights.unique / total) * 100,
         commander: (weights.commander / total) * 100
+    };
+}
+
+export function rerollCardStats(card: Card): Card {
+    const rarity = card.rarity || 'common';
+    const powerRange = RARITY_POWER_RANGES[rarity.toLowerCase()] || RARITY_POWER_RANGES.common;
+
+    // 1. 총 전투력 결정
+    const totalPower = Math.floor(Math.random() * (powerRange.max - powerRange.min + 1)) + powerRange.min;
+
+    // 2. 3대 스탯 분배 (주 스탯 균형 조정: 40% ~ 60%)
+    const mainStatRatio = 0.4 + (Math.random() * 0.2); // 0.4 ~ 0.6
+    let mainStatValue = Math.floor(totalPower * mainStatRatio);
+    let remainingPower = totalPower - mainStatValue;
+
+    // 최소 스탯 보장 (안전장치)
+    const minStat = 5;
+
+    if (remainingPower < minStat * 2) {
+        remainingPower = minStat * 2;
+        mainStatValue = totalPower - remainingPower;
+    }
+
+    const maxSub1 = remainingPower - minStat;
+    const minSub1 = minStat;
+
+    const subStat1 = Math.floor(Math.random() * (maxSub1 - minSub1 + 1)) + minSub1;
+    const subStat2 = remainingPower - subStat1;
+
+    // 3. 메인 속성 결정
+    const types: ('EFFICIENCY' | 'CREATIVITY' | 'FUNCTION')[] = ['EFFICIENCY', 'CREATIVITY', 'FUNCTION'];
+    const mainType = types[Math.floor(Math.random() * types.length)];
+
+    let efficiency = 0, creativity = 0, func = 0;
+
+    if (mainType === 'EFFICIENCY') {
+        efficiency = mainStatValue;
+        creativity = subStat1;
+        func = subStat2;
+    } else if (mainType === 'CREATIVITY') {
+        creativity = mainStatValue;
+        efficiency = subStat1;
+        func = subStat2;
+    } else {
+        func = mainStatValue;
+        efficiency = subStat1;
+        creativity = subStat2;
+    }
+
+    return {
+        ...card,
+        stats: {
+            ...card.stats,
+            efficiency,
+            creativity,
+            function: func,
+            totalPower,
+            accuracy: 0,
+            speed: 0,
+            stability: 0,
+            ethics: 0
+        },
+        type: mainType
     };
 }

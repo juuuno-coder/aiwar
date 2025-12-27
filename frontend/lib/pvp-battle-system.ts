@@ -4,6 +4,7 @@
 import { Card } from './types';
 import { getGameState, updateGameState } from './game-state';
 import { BattleMode as BaseBattleMode } from './battle-modes';
+import { generateRandomCard } from './card-generation-system';
 
 export type BattleMode = 'sudden-death' | 'tactics' | 'ambush';
 export type MatchType = 'realtime' | 'ai-training';
@@ -22,6 +23,8 @@ export interface BattleParticipant {
     level: number;
     deck: Card[];
     cardOrder?: number[]; // 카드 순서 (인덱스)
+    avatar?: string; // Commander Avatar ID or URL
+    style?: string; // Play style description
 }
 
 export interface RoundResult {
@@ -51,7 +54,7 @@ export interface BattleResult {
 
 // 참가 조건
 export const PVP_REQUIREMENTS = {
-    minLevel: 5,
+    minLevel: 1,  // 테스트용으로 1로 낮춤 (원래 5)
     entryFee: 50,
     minCards: 5,
 };
@@ -69,6 +72,55 @@ export const CARD_EXCHANGE = {
     cardsToExchange: 3, // 승자가 가져갈 카드 수
     minRarityToLose: 'common' as const, // 잃을 수 있는 최소 등급
 };
+
+/**
+ * 더미 지휘관 데이터
+ */
+interface DummyCommander {
+    name: string;
+    title: string;
+    preferredType: 'EFFICIENCY' | 'CREATIVITY' | 'FUNCTION' | 'BALANCED';
+    difficulty: 'easy' | 'normal' | 'hard';
+    description: string;
+}
+
+const DUMMY_COMMANDERS: DummyCommander[] = [
+    {
+        name: 'PX-01 프로토타입',
+        title: '훈련용 AI',
+        preferredType: 'BALANCED',
+        difficulty: 'easy',
+        description: '기본적인 전술 훈련을 위해 설계된 초기형 AI입니다.'
+    },
+    {
+        name: '아이언 월(Iron Wall)',
+        title: '효율의 방패',
+        preferredType: 'EFFICIENCY', // Rock preference
+        difficulty: 'normal',
+        description: '단단한 효율성 카드를 선호하여 상대의 공격을 무력화합니다.'
+    },
+    {
+        name: '크리에이티브 카오스',
+        title: '변칙의 예술가',
+        preferredType: 'CREATIVITY', // Paper preference
+        difficulty: 'normal',
+        description: '예측 불가능한 창의성 카드로 허를 찌르는 전략을 구사합니다.'
+    },
+    {
+        name: '샤프 엣지(Sharp Edge)',
+        title: '정밀 타격기',
+        preferredType: 'FUNCTION', // Scissors preference
+        difficulty: 'hard',
+        description: '날카로운 기능성 카드로 상대의 약점을 파고듭니다.'
+    },
+    {
+        name: '그랜드 마스터 알파',
+        title: '전장의 지배자',
+        preferredType: 'BALANCED',
+        difficulty: 'hard',
+        description: '모든 상황에 완벽하게 대응하는 고도화된 전략 AI입니다.'
+    }
+];
 
 /**
  * PVP 통계 가져오기
@@ -92,43 +144,28 @@ export function getPVPStats(): PVPStats {
 /**
  * 참가 조건 확인
  */
-/**
- * 참가 조건 확인
- */
-export async function checkPVPRequirements(currentInventory?: Card[]): Promise<{ canJoin: boolean; reason?: string }> {
-    const state = getGameState();
+export async function checkPVPRequirements(currentInventory?: Card[], currentLevel?: number, currentCoins?: number): Promise<{ canJoin: boolean; reason?: string }> {
+    const state = typeof window !== 'undefined' ? getGameState() : { level: 0, coins: 0, inventory: [] };
 
-    // Use provided inventory or fetch from storage
-    let inventory = currentInventory;
-    if (!inventory) {
-        // Dynamic import to avoid circular dependency if possible, or just import at top if safe.
-        // Assuming we can import gameStorage at the top level, but for safety in this change:
-        // Let's rely on the top-level import if we add it, or use a workaround.
-        // Actually, let's try to assume the caller provides it for best practice in React components,
-        // but fallback to state.inventory if not provided (which might be stale).
-        // BETTER: Let's Fetch it freshly if we can.
+    // Use provided inventory/stats or fetch from state
+    let inventory = currentInventory || state.inventory || [];
+    let level = currentLevel !== undefined ? currentLevel : state.level;
+    let coins = currentCoins !== undefined ? currentCoins : state.coins;
 
-        // However, adding async import might be complex here.
-        // Let's assume the caller MUST provide it or we use state.inventory.
-        // But to be safe, let's stick to using the passed inventory primarily.
-        inventory = state.inventory;
-    }
-
-    if (state.level < PVP_REQUIREMENTS.minLevel) {
+    if (level < PVP_REQUIREMENTS.minLevel) {
         return {
             canJoin: false,
             reason: `레벨 ${PVP_REQUIREMENTS.minLevel} 이상부터 참가 가능합니다.`
         };
     }
 
-    if (state.coins < PVP_REQUIREMENTS.entryFee) {
+    if (coins < PVP_REQUIREMENTS.entryFee) {
         return {
             canJoin: false,
             reason: `참가비 ${PVP_REQUIREMENTS.entryFee} 코인이 필요합니다.`
         };
     }
 
-    // Check count
     if (inventory.length < PVP_REQUIREMENTS.minCards) {
         return {
             canJoin: false,
@@ -143,6 +180,20 @@ export async function checkPVPRequirements(currentInventory?: Card[]): Promise<{
  * 카드 타입 결정 (가위바위보)
  */
 export function getCardType(card: Card): 'efficiency' | 'creativity' | 'function' {
+    // 🛡️ Null check - 카드가 없으면 기본값 반환
+    if (!card) {
+        console.warn('⚠️ getCardType: Received undefined/null card');
+        return 'efficiency'; // 기본값
+    }
+
+    // 1. Explicit Type Check
+    if (card.type) {
+        if (card.type === 'EFFICIENCY') return 'efficiency';
+        if (card.type === 'CREATIVITY') return 'creativity';
+        if (card.type === 'FUNCTION') return 'function';
+    }
+
+    // 2. Stats Fallback
     const { efficiency = 0, creativity = 0, function: func = 0 } = card.stats;
 
     if (efficiency >= creativity && efficiency >= func) return 'efficiency';
@@ -150,56 +201,172 @@ export function getCardType(card: Card): 'efficiency' | 'creativity' | 'function
     return 'function';
 }
 
+// Helper for rarity rank
+function getRarityRank(rarity?: string): number {
+    const ranks: Record<string, number> = {
+        'common': 1, 'rare': 2, 'epic': 3, 'legendary': 4, 'unique': 5, 'commander': 6
+    };
+    return ranks[rarity || 'common'] || 1;
+}
+
 /**
- * 가위바위보 승부 판정
- * 효율성(바위) > 기능성(가위) > 창의성(보) > 효율성(바위)
+ * 가위바위보 승부 판정 (고도화됨)
+ * 순서: 상성 > 주 스탯 > 총 전투력 > 등급 > 레벨
  */
 export function determineRoundWinner(
     playerCard: Card,
     opponentCard: Card
 ): 'player' | 'opponent' | 'draw' {
+    // 🛡️ Null check - 카드가 없으면 draw 반환
+    if (!playerCard && !opponentCard) {
+        console.warn('⚠️ determineRoundWinner: Both cards are undefined');
+        return 'draw';
+    }
+    if (!playerCard) {
+        console.warn('⚠️ determineRoundWinner: Player card is undefined');
+        return 'opponent';
+    }
+    if (!opponentCard) {
+        console.warn('⚠️ determineRoundWinner: Opponent card is undefined');
+        return 'player';
+    }
+
     const playerType = getCardType(playerCard);
     const opponentType = getCardType(opponentCard);
 
-    // 같은 타입이면 전투력 비교
-    if (playerType === opponentType) {
-        const playerPower = playerCard.stats.totalPower;
-        const opponentPower = opponentCard.stats.totalPower;
-
-        if (playerPower > opponentPower) return 'player';
-        if (opponentPower > playerPower) return 'opponent';
-        return 'draw';
+    // 1. 가위바위보 로직 (다르면 상성이 이김 - 절대 판정)
+    if (playerType !== opponentType) {
+        if (playerType === 'efficiency' && opponentType === 'function') return 'player'; // 바위 > 가위
+        if (playerType === 'function' && opponentType === 'creativity') return 'player'; // 가위 > 보
+        if (playerType === 'creativity' && opponentType === 'efficiency') return 'player'; // 보 > 바위
+        return 'opponent'; // 상성 패배
     }
 
-    // 가위바위보 로직
-    if (playerType === 'efficiency' && opponentType === 'function') return 'player';
-    if (playerType === 'function' && opponentType === 'creativity') return 'player';
-    if (playerType === 'creativity' && opponentType === 'efficiency') return 'player';
+    // 2. 같은 타입이면: 주 스탯(세부전투력) 비교
+    let playerMainStat = 0;
+    let opponentMainStat = 0;
 
-    return 'opponent';
+    if (playerType === 'efficiency') {
+        playerMainStat = playerCard.stats?.efficiency || 0;
+        opponentMainStat = opponentCard.stats?.efficiency || 0;
+    } else if (playerType === 'creativity') {
+        playerMainStat = playerCard.stats?.creativity || 0;
+        opponentMainStat = opponentCard.stats?.creativity || 0;
+    } else { // function
+        playerMainStat = playerCard.stats?.function || 0;
+        opponentMainStat = opponentCard.stats?.function || 0;
+    }
+
+    if (playerMainStat > opponentMainStat) return 'player';
+    if (opponentMainStat > playerMainStat) return 'opponent';
+
+    // 3. 총 전투력 비교
+    const playerTotal = playerCard.stats.totalPower;
+    const opponentTotal = opponentCard.stats.totalPower;
+    if (playerTotal > opponentTotal) return 'player';
+    if (opponentTotal > playerTotal) return 'opponent';
+
+    // 4. 등급 비교
+    const playerRank = getRarityRank(playerCard.rarity);
+    const opponentRank = getRarityRank(opponentCard.rarity);
+    if (playerRank > opponentRank) return 'player';
+    if (opponentRank > playerRank) return 'opponent';
+
+    // 5. 강화 레벨 비교
+    const playerLevel = playerCard.level || 1;
+    const opponentLevel = opponentCard.level || 1;
+    if (playerLevel > opponentLevel) return 'player';
+    if (opponentLevel > playerLevel) return 'opponent';
+
+    return 'draw';
 }
 
 /**
- * AI 상대 생성
+ * AI 상대 생성 (더미 지휘관 시스템 적용)
  */
-export function generateAIOpponent(playerLevel: number): BattleParticipant {
-    const state = getGameState();
-    const allCards = state.inventory;
+export function generateAIOpponent(playerLevel: number = 1, cardPool: Card[] = []): BattleParticipant {
+    // 1. 랜덤 지휘관 선택
+    const commander = DUMMY_COMMANDERS[Math.floor(Math.random() * DUMMY_COMMANDERS.length)];
+    const displayName = `${commander.title} ${commander.name}`;
 
-    // 플레이어와 비슷한 레벨의 카드 선택
-    const aiCards = [...allCards]
-        .sort(() => Math.random() - 0.5)
-        .slice(0, 5)
-        .map(card => ({
-            ...card,
-            id: `ai-${card.id}`,
-            name: `AI ${card.name}`,
-        }));
+    let aiCards: Card[] = [];
+
+    // 2. 덱 구성 시도 (기존 풀 활용)
+    // 풀이 충분하다면 지휘관 성향에 맞는 카드 위주로 선택
+    if (cardPool && Array.isArray(cardPool) && cardPool.length >= 10) {
+        // 10장 이상이어야 성향 선택 여지가 있음
+        const validPool = cardPool.filter(c => c && c.stats);
+
+        if (commander.preferredType !== 'BALANCED') {
+            // 선호 타입 우선 필터링
+            const preferredCards = validPool.filter(c => getCardType(c).toUpperCase() === commander.preferredType);
+            // 나머지는 일반
+            const otherCards = validPool.filter(c => getCardType(c).toUpperCase() !== commander.preferredType);
+
+            // 선호 카드에서 3~4장 선택, 나머지에서 채우기
+            const targetPreferredCount = 3 + Math.floor(Math.random() * 2);
+
+            const selectedPreferred = [...preferredCards].sort(() => Math.random() - 0.5).slice(0, targetPreferredCount);
+            const selectedOther = [...otherCards].sort(() => Math.random() - 0.5).slice(0, 5 - selectedPreferred.length);
+
+            aiCards = [...selectedPreferred, ...selectedOther];
+        } else {
+            // 밸런스형: 완전 랜덤
+            aiCards = [...validPool].sort(() => Math.random() - 0.5).slice(0, 5);
+        }
+    }
+
+    // 풀이 5장 미만이거나, 위 로직에서 5장을 못 채웠다면 풀 전체 랜덤 사용 시도
+    if (aiCards.length < 5 && cardPool && cardPool.length >= 5) {
+        aiCards = [...cardPool].sort(() => Math.random() - 0.5).slice(0, 5);
+    }
+
+    // AI 카드 ID 및 속성 정규화
+    if (aiCards.length === 5) {
+        aiCards = aiCards.map((card, index) => {
+            let aiType = card.type;
+            if (!aiType) {
+                const typeStr = getCardType(card);
+                if (typeStr === 'efficiency') aiType = 'EFFICIENCY';
+                else if (typeStr === 'creativity') aiType = 'CREATIVITY';
+                else aiType = 'FUNCTION';
+            }
+            return {
+                ...card,
+                id: `ai-${card.id}-${Date.now()}-${index}`,
+                name: `AI ${card.name || 'Unit'}`,
+                ownerId: 'ai-bot',
+                type: aiType
+            };
+        });
+    } else {
+        // 3. 풀이 아예 없거나 부족하면 순수 랜덤 생성 (Fallback)
+        aiCards = Array.from({ length: 5 }).map((_, i) => {
+            const card = generateRandomCard('pro'); // AI는 항상 Pro 등급 이상의 카드 사용
+            card.id = `ai-gen-${Date.now()}-${i}`;
+            card.ownerId = 'ai-bot';
+            card.level = playerLevel || 1;
+
+            // 지휘관 성향 반영하여 스탯 보정 (가상)
+            if (commander.preferredType === 'EFFICIENCY') card.stats.efficiency = (card.stats.efficiency || 0) + 10;
+            if (commander.preferredType === 'CREATIVITY') card.stats.creativity = (card.stats.creativity || 0) + 10;
+            if (commander.preferredType === 'FUNCTION') card.stats.function = (card.stats.function || 0) + 10;
+
+            // 타입 재설정
+            const maxStat = Math.max(card.stats.efficiency || 0, card.stats.creativity || 0, card.stats.function || 0);
+            if (maxStat === (card.stats.efficiency || 0)) card.type = 'EFFICIENCY';
+            else if (maxStat === (card.stats.creativity || 0)) card.type = 'CREATIVITY';
+            else card.type = 'FUNCTION';
+
+            return card;
+        });
+    }
 
     return {
-        name: `AI 훈련봇 Lv.${playerLevel}`,
+        name: displayName,
         level: playerLevel,
         deck: aiCards,
+        style: commander.description
     };
 }
 
@@ -215,17 +382,40 @@ export function simulateBattle(
     let playerWins = 0;
     let opponentWins = 0;
 
-    // 승리 조건
+    // 승리 조건 설정
     const winsNeeded = mode === 'sudden-death' ? 1 : 3;
 
     // 카드 순서 결정
     const playerOrder = player.cardOrder || [0, 1, 2, 3, 4];
     const opponentOrder = opponent.cardOrder || [0, 1, 2, 3, 4];
 
-    // 최대 5라운드
-    for (let i = 0; i < 5; i++) {
-        const playerCard = player.deck[playerOrder[i]];
-        const opponentCard = opponent.deck[opponentOrder[i]];
+    // 최대 라운드 설정 (단판 승부는 강제 1라운드)
+    const maxRounds = mode === 'sudden-death' ? 1 : 5;
+
+    // 🛠️ 디버그 로그
+    console.log(`⚙️ simulateBattle: mode=${mode}, maxRounds=${maxRounds}, winsNeeded=${winsNeeded}`);
+
+    for (let i = 0; i < maxRounds; i++) {
+        // 🛡️ 안전한 인덱스 접근 - undefined 카드 방지
+        const playerIndex = playerOrder[i];
+        const opponentIndex = opponentOrder[i];
+
+        // 인덱스 범위 확인
+        if (playerIndex === undefined || opponentIndex === undefined ||
+            playerIndex < 0 || playerIndex >= player.deck.length ||
+            opponentIndex < 0 || opponentIndex >= opponent.deck.length) {
+            console.warn(`⚠️ Round ${i + 1}: Invalid card index (player: ${playerIndex}, opponent: ${opponentIndex})`);
+            continue; // 잘못된 인덱스는 건너뛰기
+        }
+
+        const playerCard = player.deck[playerIndex];
+        const opponentCard = opponent.deck[opponentIndex];
+
+        // 🛡️ 카드 존재 확인 (null/undefined 체크)
+        if (!playerCard || !opponentCard) {
+            console.warn(`⚠️ Round ${i + 1}: Missing card data (player: ${!!playerCard}, opponent: ${!!opponentCard})`);
+            continue; // 카드가 없으면 라운드 건너뛰기
+        }
 
         const winner = determineRoundWinner(playerCard, opponentCard);
 
@@ -245,9 +435,26 @@ export function simulateBattle(
         if (playerWins >= winsNeeded || opponentWins >= winsNeeded) {
             break;
         }
+
+        // 단판 승부인데 무승부인 경우? 계속 진행?
+        // 기획상 '1선승'이므로 승자가 나올때까지 해야하나 카드가 5장이므로 5장 소진시 종료.
+        // 여기서는 무승부가 반복되면 5라운드까지 가고, 승수가 많은 쪽이 이김.
     }
 
-    const battleWinner = playerWins > opponentWins ? 'player' : 'opponent';
+    // 최종 승자 판정
+    let battleWinner: 'player' | 'opponent' = 'opponent';
+
+    if (playerWins > opponentWins) {
+        battleWinner = 'player';
+    } else if (opponentWins > playerWins) {
+        battleWinner = 'opponent';
+    } else {
+        // 완전 무승부 시 (보통 방어자 승리 or 랜덤) - 여기선 드로우 없음, AI 승리 처리 또는 랜덤?
+        // 유저 경험상 무승부는 패배 처리하는 것이 깔끔하거나, 재경기.
+        // 일단 패배 처리 (도전자 입장이므로)
+        battleWinner = 'opponent';
+    }
+
     const rewards = calculateRewards(mode, battleWinner);
 
     return {
@@ -294,83 +501,89 @@ function processCardExchange(
     const inventory = [...state.inventory];
 
     if (winner === 'player') {
-        // 승리: 상대 카드 중 랜덤 3장 획득
+        // 승리: 상대 카드 중 랜덤 3장 획득 (AI전은 가상 카드만 획득 가능하므로 실제 인벤토리에 'guest' 카드로 추가되거나 해야함)
+        // 여기서는 단순화를 위해 AI 카드는 획득 불가 처리하거나, 
+        // 등급이 낮은 카드를 보상으로 주는 로직.
+        // AI 카드는 실제 DB에 없으므로, 여기서 복제하여 새 카드로 획득시킴.
         const gainedCards = opponentDeck
             .filter(c => c.rarity === 'common' || c.rarity === 'rare')
             .sort(() => Math.random() - 0.5)
-            .slice(0, CARD_EXCHANGE.cardsToExchange);
+            .slice(0, CARD_EXCHANGE.cardsToExchange)
+            .map((c, i) => ({
+                ...c,
+                id: `loot-${Date.now()}-${i}`,
+                ownerId: 'player',
+                acquiredAt: new Date()
+            }));
 
         return { cardsLost: [], cardsGained: gainedCards };
     } else {
-        // 패배: 내 카드 중 랜덤 3장 상실
+        // 패배: 내 카드 스탯 감소나 코인 손실? 카드 상실은 너무 가혹하므로 잠시 비활성화 할 수도 있음.
+        // 기획상 '카드 상실'이 있다면 실행.
+        // 현재는 'common' 등급만 잃게 설정되어 있음.
         const lostCards = playerDeck
-            .filter(c => c.rarity === 'common' || c.rarity === 'rare')
+            .filter(c => c.rarity === 'common')
             .sort(() => Math.random() - 0.5)
-            .slice(0, CARD_EXCHANGE.cardsToExchange);
+            .slice(0, 1); // 1장만
 
         return { cardsLost: lostCards, cardsGained: [] };
     }
 }
 
 /**
- * 전투 결과 적용
+ * 전투 결과 적용 (각 단계 독립적으로 실행)
  */
 export async function applyBattleResult(
     result: BattleResult,
     playerDeck: Card[],
     opponentDeck: Card[]
 ): Promise<void> {
-    const state = getGameState();
+    console.log("📊 Applying battle result...");
 
-    // 코인 및 경험치 적용
-    const newCoins = Math.max(0, state.coins + result.rewards.coins);
-    const newExperience = state.experience + result.rewards.experience;
+    // 1. 로컬 상태 업데이트 (PVP 통계)
+    let newRating = 1000;
+    let updatedStats = { wins: 0, losses: 0, totalBattles: 0, rating: 1000, rank: 0 };
 
-    // PVP 통계 업데이트
-    const pvpStats = (state as any).pvpStats || {
-        wins: 0,
-        losses: 0,
-        totalBattles: 0,
-        rating: 1000,
-        rank: 0,
-    };
+    try {
+        const state = getGameState();
+        const pvpStats = (state as any).pvpStats || {
+            wins: 0,
+            losses: 0,
+            totalBattles: 0,
+            rating: 1000,
+            rank: 0,
+        };
 
-    const newRating = Math.max(0, pvpStats.rating + result.rewards.ratingChange);
+        newRating = Math.max(0, pvpStats.rating + result.rewards.ratingChange);
 
-    const updatedStats = {
-        wins: pvpStats.wins + (result.winner === 'player' ? 1 : 0),
-        losses: pvpStats.losses + (result.winner === 'opponent' ? 1 : 0),
-        totalBattles: pvpStats.totalBattles + 1,
-        rating: newRating,
-        rank: pvpStats.rank,
-    };
+        updatedStats = {
+            wins: pvpStats.wins + (result.winner === 'player' ? 1 : 0),
+            losses: pvpStats.losses + (result.winner === 'opponent' ? 1 : 0),
+            totalBattles: pvpStats.totalBattles + 1,
+            rating: newRating,
+            rank: pvpStats.rank,
+        };
 
-    // 카드 교환 처리
-    const cardExchange = processCardExchange(playerDeck, opponentDeck, result.winner);
-    result.cardExchange = cardExchange;
+        updateGameState({
+            pvpStats: updatedStats,
+        } as any);
 
-    let newInventory = [...state.inventory];
-
-    // 카드 추가/제거
-    if (cardExchange.cardsGained.length > 0) {
-        newInventory = [...newInventory, ...cardExchange.cardsGained];
-    }
-    if (cardExchange.cardsLost.length > 0) {
-        const lostIds = cardExchange.cardsLost.map(c => c.id);
-        newInventory = newInventory.filter(c => !lostIds.includes(c.id));
+        console.log("✅ Local PVP stats updated");
+    } catch (error) {
+        console.error("❌ Failed to update local PVP stats:", error);
     }
 
-    // 상태 업데이트
-    updateGameState({
-        coins: newCoins,
-        experience: newExperience,
-        inventory: newInventory,
-        pvpStats: updatedStats,
-    } as any);
+    // 2. 글로벌 랭킹 업데이트 (실패해도 계속 진행)
+    try {
+        const state = getGameState();
+        const playerName = `Player_${state.level}`;
+        await updateGlobalRanking(playerName, newRating, updatedStats);
+        console.log("✅ Global ranking updated");
+    } catch (error) {
+        console.error("❌ Failed to update global ranking:", error);
+    }
 
-    // 랭킹 업데이트 (글로벌)
-    const playerName = `Player_${state.level}`;
-    await updateGlobalRanking(playerName, newRating, updatedStats);
+    console.log("🏁 Battle result processing complete");
 }
 
 /**
@@ -381,6 +594,7 @@ export function getTypeEmoji(type: 'efficiency' | 'creativity' | 'function'): st
         case 'efficiency': return '🪨'; // 바위
         case 'creativity': return '📄'; // 보
         case 'function': return '✂️'; // 가위
+        default: return '❓';
     }
 }
 
@@ -392,6 +606,7 @@ export function getTypeName(type: 'efficiency' | 'creativity' | 'function'): str
         case 'efficiency': return '효율성';
         case 'creativity': return '창의성';
         case 'function': return '기능성';
+        default: return '알수없음';
     }
 }
 

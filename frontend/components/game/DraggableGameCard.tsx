@@ -12,16 +12,18 @@ interface DraggableGameCardProps {
     dragConstraints?: any;
 }
 
-const TYPE_ICONS = {
+const TYPE_ICONS: Record<string, string> = {
     EFFICIENCY: '✂️',
     CREATIVITY: '🪨',
     COST: '📄',
+    FUNCTION: '⚙️',
 };
 
-const TYPE_COLORS = {
+const TYPE_COLORS: Record<string, string> = {
     EFFICIENCY: 'border-blue-400/50 bg-blue-500/10',
     CREATIVITY: 'border-purple-400/50 bg-purple-500/10',
     COST: 'border-amber-400/50 bg-amber-500/10',
+    FUNCTION: 'border-green-400/50 bg-green-500/10',
 };
 
 export default function DraggableGameCard({

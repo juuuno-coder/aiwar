@@ -2,31 +2,45 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { Card as CardType } from '@/lib/types';
-import { InventoryCard } from '@/lib/inventory-system';
+import { useUserProfile } from '@/hooks/useUserProfile';
+import { InventoryCard, addCardToInventory, removeCardFromInventory, loadInventory as loadInventorySystem } from '@/lib/inventory-system';
 import CyberPageLayout from '@/components/CyberPageLayout';
 import FusionFooter from '@/components/Footer/FusionFooter';
 import GameCard from '@/components/GameCard';
 import { canFuse, fuseCards, getFusionCost, getFusionPreview, getRarityName } from '@/lib/fusion-utils';
 import { cn } from '@/lib/utils';
+import { useAlert } from '@/context/AlertContext';
+import CardRewardModal from '@/components/CardRewardModal';
+import { gameStorage } from '@/lib/game-storage'; // Keep for tokens
+import { useUser } from '@/context/UserContext';
+import { useNotification } from '@/context/NotificationContext';
 
 export default function FusionPage() {
+    const { addNotification } = useNotification();
+    const { showAlert } = useAlert();
+    const { refreshData } = useUser(); // To refresh global data if needed
+    const { profile, reload } = useUserProfile(); // Firebase profile
+
     const [allCards, setAllCards] = useState<InventoryCard[]>([]);
     const [materialSlots, setMaterialSlots] = useState<(InventoryCard | null)[]>(Array(3).fill(null));
     const [userTokens, setUserTokens] = useState(0);
 
+    // Reward Modal State
+    const [rewardModalOpen, setRewardModalOpen] = useState(false);
+    const [rewardCard, setRewardCard] = useState<CardType | null>(null);
+
     useEffect(() => {
         loadCards();
-    }, []);
+    }, [profile]); // Reload when profile changes
 
     const loadCards = async () => {
-        const { loadInventory } = await import('@/lib/inventory-system');
-        const { getGameState } = await import('@/lib/game-state');
-
-        const cards = await loadInventory();
-        const gameState = getGameState();
+        // Use inventory-system for consistency
+        const cards = await loadInventorySystem();
+        const gameState = await gameStorage.loadGameState();
 
         setAllCards(cards);
-        setUserTokens(gameState.tokens || 0);
+        // Use profile tokens if logged in, otherwise local state
+        setUserTokens(profile ? profile.tokens : (gameState.tokens || 0));
     };
 
     // 카드 드래그 시작
@@ -75,6 +89,8 @@ export default function FusionPage() {
         });
 
         for (const [rarity, group] of Object.entries(rarityGroups)) {
+            // 이미 슬롯에 있는 카드는 제외해야 할 수도 있지만, 
+            // 여기서는 단순하게 인벤토리 기준으로 3개 찾음
             if (group.length >= 3) {
                 const selected = group.slice(0, 3);
                 setMaterialSlots(selected);
@@ -82,7 +98,11 @@ export default function FusionPage() {
             }
         }
 
-        alert('같은 등급의 카드가 3장 이상 필요합니다.');
+        showAlert({
+            title: '자동 선택 불가',
+            message: '같은 등급의 카드가 3장 이상 필요합니다.',
+            type: 'warning'
+        });
     };
 
     // 합성 실행
@@ -90,31 +110,51 @@ export default function FusionPage() {
         const filledMaterials = materialSlots.filter((c): c is InventoryCard => c !== null);
 
         if (filledMaterials.length !== 3) {
-            alert('재료 카드 3장이 필요합니다.');
+            showAlert({ title: '재료 부족', message: '재료 카드 3장이 필요합니다.', type: 'warning' });
             return;
         }
 
         const check = canFuse(filledMaterials as any, userTokens);
         if (!check.canFuse) {
-            alert(check.reason);
+            showAlert({ title: '합성 불가', message: check.reason || '조건을 만족하지 못했습니다.', type: 'error' });
             return;
         }
 
-        const { gameStorage } = await import('@/lib/game-storage');
-        const fusedCard = fuseCards(filledMaterials as any, 'guest');
-        const cost = getFusionCost(filledMaterials[0].rarity!);
+        try {
+            const fusedCard = fuseCards(filledMaterials as any, 'guest');
+            const cost = getFusionCost(filledMaterials[0].rarity!);
 
-        for (const mat of filledMaterials) {
-            await gameStorage.deleteCard(mat.id);
+            // 1. 재료 삭제 (DB & UI)
+            for (const mat of filledMaterials) {
+                await removeCardFromInventory(mat.instanceId);
+            }
+
+            // 2. 결과 저장 (DB)
+            await addCardToInventory(fusedCard);
+
+            // 3. 토큰 차감
+            if (profile) {
+                const { updateTokens } = await import('@/lib/firebase-db');
+                await updateTokens(-cost);
+                await reload(); // Refresh profile
+            } else {
+                await gameStorage.addTokens(-cost);
+            }
+
+            // 4. 모달 표시 및 데이터 갱신
+            setRewardCard(fusedCard);
+            setRewardModalOpen(true);
+
+            handleClear();
+            await loadCards(); // 인벤토리 새로고침
+            refreshData(); // 유저 데이터(토큰 등) 새로고침
+
+            addNotification('fusion', '합성 성공!', `${fusedCard.name} 카드를 획득했습니다!`, '/fusion');
+        } catch (error) {
+            console.error(error);
+            showAlert({ title: '오류', message: '합성 중 문제가 발생했습니다.', type: 'error' });
+            addNotification('error', '합성 오류', '카드 합성 중 오류가 발생했습니다.', '/fusion');
         }
-
-        await gameStorage.addCardToInventory(fusedCard);
-        await gameStorage.addTokens(-cost);
-
-        alert(`합성 성공! ${fusedCard.rarity} 카드 획득!`);
-
-        handleClear();
-        await loadCards();
     };
 
     const filledCount = materialSlots.filter(c => c !== null).length;
@@ -134,7 +174,7 @@ export default function FusionPage() {
                     <p className="text-sm text-white/60">{allCards.length}장</p>
                 </div>
 
-                <div className="grid grid-cols-5 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
                     {allCards.map(card => {
                         const isSelected = materialSlots.some(s => s?.id === card.id);
 
@@ -171,6 +211,14 @@ export default function FusionPage() {
                 onAutoSelect={handleAutoSelect}
                 onFuse={handleFuse}
                 canFuse={canFuseNow}
+            />
+
+            {/* 결과 모달 */}
+            <CardRewardModal
+                isOpen={rewardModalOpen}
+                onClose={() => setRewardModalOpen(false)}
+                cards={rewardCard ? [rewardCard] : []}
+                title="합성 성공!"
             />
         </CyberPageLayout>
     );

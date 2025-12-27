@@ -10,8 +10,11 @@ import { useUser } from '@/context/UserContext';
 import { useAlert } from '@/context/AlertContext';
 import { loadInventory, InventoryCard, filterCards, sortCards, getInventoryStats } from '@/lib/inventory-system';
 import { SortAsc, SortDesc, Grid3X3, LayoutList, Lock } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn, storage } from '@/lib/utils';
 import { useTranslation } from '@/context/LanguageContext';
+import { rerollCardStats } from '@/lib/card-generation-system'; // Import reroll function
+import { useFirebase } from '@/components/FirebaseProvider';
+import { gameStorage } from '@/lib/game-storage';
 
 type SortOption = 'power' | 'rarity' | 'name' | 'acquiredAt';
 type FilterOption = 'all' | 'common' | 'rare' | 'epic' | 'legendary' | 'unique' | 'commander';
@@ -26,13 +29,16 @@ const rarityOrder = {
     commander: 6
 };
 
+
 export default function MyCardsPage() {
+    const { user } = useFirebase();
     const router = useRouter();
-    const { t } = useTranslation();
+    const { t, language } = useTranslation();
     const footer = useFooter();
     const { addCoins, refreshData } = useUser();
     const { showAlert } = useAlert();
 
+    const [mounted, setMounted] = useState(false);
     const [cards, setCards] = useState<InventoryCard[]>([]);
     const [loading, setLoading] = useState(true);
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
@@ -40,15 +46,77 @@ export default function MyCardsPage() {
     const [sortAsc, setSortAsc] = useState(true); // Low to High (Common to Commander)
     const [filterRarity, setFilterRarity] = useState<FilterOption>('all');
     const [selectedCard, setSelectedCard] = useState<InventoryCard | null>(null);
+    const [isRerollConfirmOpen, setIsRerollConfirmOpen] = useState(false);
+
+    // 스탯 재설정 핸들러
+    // 스탯 재설정 핸들러 (모달 열기)
+    const handleRerollAll = () => {
+        setIsRerollConfirmOpen(true);
+    };
+
+    // 실제 실행 로직
+    const executeReroll = async () => {
+        setIsRerollConfirmOpen(false);
+
+        try {
+            const updatedCards = cards.map(c => {
+                const rerolled = rerollCardStats(c as any); // Bypass strict Type check for acquiredAt (Date vs Timestamp)
+
+                // InventoryCard requires instanceId. Preserve it.
+                // Ensure acquiredAt is a valid Date object
+                let acquiredAtDate: Date = new Date();
+                try {
+                    const rawDate = c.acquiredAt as any;
+                    if (rawDate instanceof Date) {
+                        acquiredAtDate = rawDate;
+                    } else if (rawDate && typeof rawDate.seconds === 'number') {
+                        acquiredAtDate = new Date(rawDate.seconds * 1000);
+                    } else if (rawDate) {
+                        acquiredAtDate = new Date(rawDate);
+                    }
+                } catch (e) {
+                    console.warn('Date conversion failed', e);
+                }
+
+                return {
+                    ...rerolled,
+                    instanceId: c.instanceId,
+                    acquiredAt: acquiredAtDate
+                } as InventoryCard;
+            });
+
+            setCards(updatedCards);
+
+            // GameStorage (IndexedDB/LocalStorage) 저장 시도
+            const { gameStorage } = await import('@/lib/game-storage');
+            for (const card of updatedCards) {
+                await gameStorage.updateCard(card.id, card, user?.uid);
+            }
+
+            showAlert({
+                title: language === 'ko' ? '성공' : 'Success',
+                message: language === 'ko' ? '모든 카드의 능력치가 성공적으로 재설정되었습니다.' : 'All card stats have been successfully rerolled.',
+                type: 'success'
+            });
+        } catch (e) {
+            console.error(e);
+            showAlert({
+                title: language === 'ko' ? '오류' : 'Error',
+                message: language === 'ko' ? '재설정 중 오류가 발생했습니다.' : 'An error occurred during reroll.',
+                type: 'error'
+            });
+        }
+    };
 
     useEffect(() => {
-        loadCards();
-    }, []);
+        setMounted(true);
+        loadCards(user?.uid);
+    }, [user]);
 
-    const loadCards = async () => {
+    const loadCards = async (uid?: string) => {
         setLoading(true);
         try {
-            const inventory = await loadInventory();
+            const inventory = await loadInventory(uid);
             setCards(inventory);
         } catch (error) {
             console.error('Failed to load inventory:', error);
@@ -75,6 +143,10 @@ export default function MyCardsPage() {
     const statsOverview = useMemo(() => {
         return getInventoryStats(cards);
     }, [cards]);
+
+    if (!mounted) {
+        return <div className="min-h-screen bg-black" />;
+    }
 
     return (
         <CyberPageLayout
@@ -105,23 +177,45 @@ export default function MyCardsPage() {
                 ))}
             </div>
 
+            {/* Reroll Button (Top Right Actions) */}
+            <div className="flex justify-end mb-4">
+                <button
+                    onClick={handleRerollAll}
+                    className="px-4 py-2 rounded-lg bg-red-900/50 border border-red-500 text-red-200 text-sm hover:bg-red-800/50 transition-colors font-bold flex items-center gap-2"
+                >
+                    <span className="text-lg">⚡️</span>
+                    {language === 'ko' ? '스탯 리롤 (Dev)' : 'Reroll Stats (Dev)'}
+                </button>
+            </div>
+
             {/* Filters */}
             <div className="flex flex-wrap gap-3 mb-6 bg-black/20 p-3 rounded-xl border border-white/5">
                 <div className="flex gap-2 overflow-x-auto pb-2 md:pb-0">
-                    {(['all', 'common', 'rare', 'epic', 'legendary', 'unique', 'commander'] as FilterOption[]).map(rarity => (
-                        <button
-                            key={rarity}
-                            onClick={() => setFilterRarity(rarity)}
-                            className={cn(
-                                "px-3 py-1.5 rounded text-[10px] font-mono uppercase tracking-widest transition-all whitespace-nowrap",
-                                filterRarity === rarity
-                                    ? 'bg-purple-500/20 text-purple-400 border border-purple-500/50'
-                                    : 'bg-white/5 text-white/40 border border-white/10 hover:border-white/20'
-                            )}
-                        >
-                            {rarity === 'all' ? 'ALL' : rarity.toUpperCase()}
-                        </button>
-                    ))}
+                    {(['all', 'common', 'rare', 'epic', 'legendary', 'unique', 'commander'] as FilterOption[]).map(rarity => {
+                        const labelMap: Record<string, string> = {
+                            all: '전체',
+                            common: '일반',
+                            rare: '희귀',
+                            epic: '영웅',
+                            legendary: '전설',
+                            unique: '유니크',
+                            commander: '군단장'
+                        };
+                        return (
+                            <button
+                                key={rarity}
+                                onClick={() => setFilterRarity(rarity)}
+                                className={cn(
+                                    "px-3 py-1.5 rounded text-[10px] font-mono font-bold transition-all whitespace-nowrap",
+                                    filterRarity === rarity
+                                        ? 'bg-purple-500/20 text-purple-400 border border-purple-500/50'
+                                        : 'bg-white/5 text-white/40 border border-white/10 hover:border-white/20'
+                                )}
+                            >
+                                {labelMap[rarity]}
+                            </button>
+                        );
+                    })}
                 </div>
 
                 <div className="flex-1 min-w-[20px]" />
@@ -162,7 +256,7 @@ export default function MyCardsPage() {
                     </button>
                 </div>
             ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 pb-20">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 pb-20">
                     {filteredAndSortedCards.map((card, i) => (
                         <motion.div
                             key={card.id}
@@ -231,6 +325,50 @@ export default function MyCardsPage() {
                             </div>
                         </div>
                     </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* Confirmation Modal for Reroll */}
+            <AnimatePresence>
+                {isRerollConfirmOpen && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.9, opacity: 0 }}
+                            className="bg-gray-900 border border-red-500/30 rounded-2xl w-full max-w-md p-6 shadow-[0_0_50px_rgba(239,68,68,0.2)] relative overflow-hidden"
+                        >
+                            <div className="absolute top-0 right-0 p-4 opacity-50">
+                                <span className="text-4xl text-red-500/10 font-black">WARNING</span>
+                            </div>
+
+                            <h3 className="text-xl font-bold text-red-400 mb-2 font-orbitron flex items-center gap-2">
+                                <span className="text-2xl">⚠️</span> WARNING
+                            </h3>
+
+                            <p className="text-gray-300 mb-6 leading-relaxed">
+                                {language === 'ko'
+                                    ? '모든 카드의 능력치가 새로운 로직(40~100)으로 재설정됩니다. 이 작업은 되돌릴 수 없습니다.'
+                                    : 'All card stats will be rerolled with the new logic (40~100). This action cannot be undone.'}
+                            </p>
+
+                            <div className="flex gap-3 justify-end">
+                                <button
+                                    onClick={() => setIsRerollConfirmOpen(false)}
+                                    className="px-4 py-2 rounded-lg bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-white transition-colors font-bold text-sm"
+                                >
+                                    {language === 'ko' ? '취소' : 'CANCEL'}
+                                </button>
+                                <button
+                                    onClick={executeReroll}
+                                    className="px-6 py-2 rounded-lg bg-red-600 hover:bg-red-500 text-white shadow-lg shadow-red-600/30 transition-all font-bold text-sm flex items-center gap-2"
+                                >
+                                    <span>⚡️</span>
+                                    {language === 'ko' ? '실행' : 'EXECUTE'}
+                                </button>
+                            </div>
+                        </motion.div>
+                    </div>
                 )}
             </AnimatePresence>
         </CyberPageLayout>

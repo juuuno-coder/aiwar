@@ -17,7 +17,7 @@ export function determineCardType(stats: Stats): AIType {
     } else if (creativity >= efficiency && creativity >= func) {
         return 'CREATIVITY';
     } else {
-        return 'COST'; // function이 가장 높음
+        return 'FUNCTION'; // function이 가장 높음
     }
 }
 

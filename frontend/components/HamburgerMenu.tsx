@@ -120,7 +120,7 @@ export default function HamburgerMenu() {
                         </Link>
 
                         <Link
-                            href="/inventory"
+                            href="/my-cards"
                             onClick={() => setIsOpen(false)}
                             className="block px-4 py-3 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-colors"
                         >

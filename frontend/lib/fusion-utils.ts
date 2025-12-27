@@ -61,6 +61,14 @@ export function canFuse(
         return { canFuse: false, reason: '이미 최고 등급입니다.' };
     }
 
+    // 합성 제한: 전설 등급까지만 생성 가능 (결과물이 유니크 이상이면 불가)
+    if (nextRarity === 'unique' || nextRarity === 'commander') {
+        return {
+            canFuse: false,
+            reason: '합성으로는 전설 등급까지만 획득 가능합니다. 유니크 제작은 [유니크 생성] 메뉴를 이용해주세요.'
+        };
+    }
+
     // 토큰 체크
     const cost = getFusionCost(firstRarity!);
     if (userTokens < cost) {
@@ -75,28 +83,45 @@ export function canFuse(
  * 재료 카드 3장의 평균 스탯 + 등급 보너스
  */
 export function calculateFusedStats(materialCards: Card[]): Card['stats'] {
-    // 평균 스탯 계산
+    // 평균 스탯 계산 (New & Legacy)
+    const count = materialCards.length;
     const avgStats = {
-        creativity: Math.floor(materialCards.reduce((sum, c) => sum + (c.stats.creativity || 0), 0) / 3),
-        accuracy: Math.floor(materialCards.reduce((sum, c) => sum + (c.stats.accuracy || 0), 0) / 3),
-        speed: Math.floor(materialCards.reduce((sum, c) => sum + (c.stats.speed || 0), 0) / 3),
-        stability: Math.floor(materialCards.reduce((sum, c) => sum + (c.stats.stability || 0), 0) / 3),
-        ethics: Math.floor(materialCards.reduce((sum, c) => sum + (c.stats.ethics || 0), 0) / 3)
+        efficiency: Math.floor(materialCards.reduce((sum, c) => sum + (c.stats.efficiency || 0), 0) / count),
+        creativity: Math.floor(materialCards.reduce((sum, c) => sum + (c.stats.creativity || 0), 0) / count),
+        function: Math.floor(materialCards.reduce((sum, c) => sum + (c.stats.function || 0), 0) / count),
+
+        // Legacy
+        accuracy: Math.floor(materialCards.reduce((sum, c) => sum + (c.stats.accuracy || 0), 0) / count),
+        speed: Math.floor(materialCards.reduce((sum, c) => sum + (c.stats.speed || 0), 0) / count),
+        stability: Math.floor(materialCards.reduce((sum, c) => sum + (c.stats.stability || 0), 0) / count),
+        ethics: Math.floor(materialCards.reduce((sum, c) => sum + (c.stats.ethics || 0), 0) / count)
     };
 
     // 등급 상승 보너스 (20% 증가)
     const multiplier = 1.2;
 
+    const newEfficiency = Math.floor(avgStats.efficiency * multiplier);
+    const newCreativity = Math.floor(avgStats.creativity * multiplier);
+    const newFunction = Math.floor(avgStats.function * multiplier);
+
+    // Total Power Recalculation
+    const newTotalPower = newEfficiency + newCreativity + newFunction;
+    const legacyTotalPower = Math.floor(
+        (avgStats.creativity + avgStats.accuracy + avgStats.speed +
+            avgStats.stability + avgStats.ethics) * multiplier
+    );
+
     return {
-        creativity: Math.floor(avgStats.creativity * multiplier),
+        efficiency: newEfficiency,
+        creativity: newCreativity,
+        function: newFunction,
+
         accuracy: Math.floor(avgStats.accuracy * multiplier),
         speed: Math.floor(avgStats.speed * multiplier),
         stability: Math.floor(avgStats.stability * multiplier),
         ethics: Math.floor(avgStats.ethics * multiplier),
-        totalPower: Math.floor(
-            (avgStats.creativity + avgStats.accuracy + avgStats.speed +
-                avgStats.stability + avgStats.ethics) * multiplier
-        )
+
+        totalPower: newTotalPower > 0 ? newTotalPower : legacyTotalPower
     };
 }
 
@@ -109,6 +134,22 @@ export function fuseCards(
 ): Card {
     const nextRarity = getNextRarity(materialCards[0].rarity!)!;
     const newStats = calculateFusedStats(materialCards);
+
+    // 타입 결정 (다수결)
+    const typeCounts: Record<string, number> = { EFFICIENCY: 0, CREATIVITY: 0, FUNCTION: 0 };
+    materialCards.forEach(c => {
+        if (c.type) typeCounts[c.type as string] = (typeCounts[c.type as string] || 0) + 1;
+    });
+
+    // 가장 많은 타입 찾기
+    let winnerType: any = Object.keys(typeCounts).reduce((a, b) => typeCounts[a] > typeCounts[b] ? a : b);
+
+    // 타입이 없거나 레거시인 경우 첫번째 카드 기준
+    if (!materialCards.some(c => c.type)) {
+        // Fallback logic if types are undefined
+        // Actually reroll logic sets type. If undefined, we can default to one based on stats or random.
+        winnerType = 'EFFICIENCY';
+    }
 
     // 재료 카드 중 가장 높은 레벨 선택
     const maxLevel = Math.max(...materialCards.map(c => c.level));
@@ -125,6 +166,7 @@ export function fuseCards(
         rarity: nextRarity,
         acquiredAt: new Date(),
         isLocked: false,
+        type: winnerType as 'EFFICIENCY' | 'CREATIVITY' | 'FUNCTION',
         specialSkill: materialCards[0].specialSkill // 스킬 계승
     };
 
@@ -146,15 +188,19 @@ export function getFusionPreview(materialCards: Card[]): {
     const nextRarity = getNextRarity(currentRarity);
 
     const avgStats = {
+        efficiency: Math.floor(materialCards.reduce((sum, c) => sum + (c.stats.efficiency || 0), 0) / 3),
         creativity: Math.floor(materialCards.reduce((sum, c) => sum + (c.stats.creativity || 0), 0) / 3),
-        accuracy: Math.floor(materialCards.reduce((sum, c) => sum + (c.stats.accuracy || 0), 0) / 3),
-        speed: Math.floor(materialCards.reduce((sum, c) => sum + (c.stats.speed || 0), 0) / 3),
-        stability: Math.floor(materialCards.reduce((sum, c) => sum + (c.stats.stability || 0), 0) / 3),
-        ethics: Math.floor(materialCards.reduce((sum, c) => sum + (c.stats.ethics || 0), 0) / 3),
-        totalPower: 0
+        function: Math.floor(materialCards.reduce((sum, c) => sum + (c.stats.function || 0), 0) / 3),
+        accuracy: 0, speed: 0, stability: 0, ethics: 0, totalPower: 0
     };
-    avgStats.totalPower = avgStats.creativity + avgStats.accuracy + avgStats.speed +
-        avgStats.stability + avgStats.ethics;
+
+    avgStats.totalPower = avgStats.efficiency + avgStats.creativity + avgStats.function;
+
+    if (avgStats.totalPower === 0) {
+        // Fallback for legacy display
+        avgStats.creativity = Math.floor(materialCards.reduce((sum, c) => sum + (c.stats.creativity || 0), 0) / 3);
+        avgStats.totalPower = avgStats.creativity; // Approximate
+    }
 
     return {
         currentRarity,

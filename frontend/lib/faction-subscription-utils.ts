@@ -15,6 +15,7 @@ export interface FactionSubscription {
     generationInterval: number; // minutes
     generationsToday: number;
     lastResetDate: string; // YYYY-MM-DD format
+    affinity: number; // 0-100 군단 친밀도 (확률 보정)
 }
 
 /**
@@ -24,14 +25,14 @@ export const TIER_CONFIG = {
     free: {
         cost: 0,
         generationInterval: 30, // 30 minutes
-        dailyLimit: 5,
+        dailyLimit: 3,
         name: 'Free',
         description: '무료 티어 - 체험용'
     },
     pro: {
         cost: 500,
         generationInterval: 20, // 20 minutes
-        dailyLimit: 20,
+        dailyLimit: 10,
         name: 'Pro',
         description: '프로 티어 - 일반 플레이어용'
     },
@@ -59,16 +60,23 @@ export function getSubscribedFactions(): FactionSubscription[] {
             subscribedAt: new Date(sub.subscribedAt)
         };
 
-        // dailyCost가 없거나 NaN인 경우 티어 설정에서 가져오기
-        if (!subscription.dailyCost || isNaN(subscription.dailyCost)) {
-            const config = TIER_CONFIG[subscription.tier];
-            subscription.dailyCost = config?.cost || 0;
+        // 티어 설정에서 최신 값 가져와서 동기화 (설정 변경 시 자동 적용)
+        const config = TIER_CONFIG[subscription.tier];
+        if (config) {
+            subscription.dailyCost = config.cost;
+            subscription.dailyGenerationLimit = config.dailyLimit;
+            subscription.generationInterval = config.generationInterval; // 120분 등 잘못된 값 수정
         }
 
         // 날짜가 바뀌면 카운터 리셋
         if (subscription.lastResetDate !== today) {
             subscription.generationsToday = 0;
             subscription.lastResetDate = today;
+        }
+
+        // 친밀도 초기화 (기존 데이터 호환)
+        if (subscription.affinity === undefined) {
+            subscription.affinity = 0;
         }
 
         return subscription;
@@ -120,7 +128,8 @@ export function subscribeFaction(
         dailyGenerationLimit: config.dailyLimit,
         generationInterval: config.generationInterval,
         generationsToday: 0,
-        lastResetDate: today
+        lastResetDate: today,
+        affinity: 0
     };
 
     subscriptions.push(newSubscription);
@@ -288,6 +297,8 @@ export function incrementGenerationCount(factionId: string): void {
 
     if (subscription) {
         subscription.generationsToday += 1;
+        // 카드 생성 시 친밀도 증가 (최대 100)
+        subscription.affinity = Math.min((subscription.affinity || 0) + 1, 100);
         saveSubscriptions(subscriptions);
     }
 }

@@ -3,16 +3,15 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { signup, login, validateUsername, validatePassword, validateNickname } from '@/lib/auth-utils';
+import { signup, login, validateUsername, validatePassword } from '@/lib/auth-utils';
 import { BackgroundBeams } from '@/components/ui/aceternity/background-beams';
 import { HoverBorderGradient } from '@/components/ui/aceternity/hover-border-gradient';
 
 export default function SignupPage() {
     const router = useRouter();
-    const [username, setUsername] = useState('');
+    const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
-    const [nickname, setNickname] = useState('');
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
 
@@ -22,9 +21,9 @@ export default function SignupPage() {
         setIsLoading(true);
 
         // Validation
-        const usernameValidation = validateUsername(username);
-        if (!usernameValidation.valid) {
-            setError(usernameValidation.message);
+        const emailValidation = validateUsername(email);
+        if (!emailValidation.valid) {
+            setError(emailValidation.message);
             setIsLoading(false);
             return;
         }
@@ -42,22 +41,15 @@ export default function SignupPage() {
             return;
         }
 
-        const nicknameValidation = validateNickname(nickname);
-        if (!nicknameValidation.valid) {
-            setError(nicknameValidation.message);
-            setIsLoading(false);
-            return;
-        }
-
         // Signup Attempt
-        const signupResult = signup(username, password, nickname);
+        const signupResult = signup(email, password);
 
         if (signupResult.success) {
             // Auto Login
-            login(username, password);
+            login(email, password);
 
             setTimeout(() => {
-                router.push('/'); // Redirect to Intro/Main which will handle auth check
+                router.push('/'); // Redirect to Intro/Main which will handle auth check and nickname setup
             }, 500);
         } else {
             setError(signupResult.message);
@@ -73,8 +65,8 @@ export default function SignupPage() {
                 {/* Header */}
                 <div className="text-center mb-8">
                     <div className="text-5xl mb-4 animate-pulse">🧬</div>
-                    <h1 className="text-4xl font-black text-white mb-2 orbitron tracking-tight">NEW RECRUIT_</h1>
-                    <p className="text-cyan-400/60 font-mono text-sm tracking-widest">JOIN THE NEURAL NETWORK</p>
+                    <h1 className="text-4xl font-black text-white mb-2 orbitron tracking-tight text-center">NEW RECRUIT_</h1>
+                    <p className="text-cyan-400/60 font-mono text-sm tracking-widest text-center">JOIN THE NEURAL NETWORK</p>
                 </div>
 
                 {/* Signup Form */}
@@ -84,28 +76,15 @@ export default function SignupPage() {
                     <div className="absolute bottom-0 left-0 w-16 h-16 border-b-2 border-l-2 border-purple-500/30 rounded-bl-2xl -translate-x-1 translate-y-1" />
 
                     <form onSubmit={handleSubmit} className="space-y-4">
-                        {/* ID */}
+                        {/* Email */}
                         <div className="space-y-1">
-                            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Identity (ID)</label>
+                            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Email Address</label>
                             <input
-                                type="text"
-                                value={username}
-                                onChange={(e) => setUsername(e.target.value)}
+                                type="email"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
                                 className="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 text-white placeholder-white/20 focus:outline-none focus:ring-1 focus:ring-cyan-500/50 focus:border-cyan-500/50 transition-all font-mono text-sm"
-                                placeholder="USERNAME"
-                                required
-                            />
-                        </div>
-
-                        {/* Nickname */}
-                        <div className="space-y-1">
-                            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Callsign (Nickname)</label>
-                            <input
-                                type="text"
-                                value={nickname}
-                                onChange={(e) => setNickname(e.target.value)}
-                                className="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 text-white placeholder-white/20 focus:outline-none focus:ring-1 focus:ring-cyan-500/50 focus:border-cyan-500/50 transition-all font-mono text-sm"
-                                placeholder="DISPLAY NAME"
+                                placeholder="NAME@EXAMPLE.COM"
                                 required
                             />
                         </div>
@@ -161,7 +140,7 @@ export default function SignupPage() {
                     <div className="mt-8 flex flex-col items-center gap-4 text-sm font-mono">
                         <p className="text-gray-500 text-xs">
                             ALREADY REGISTERED?{' '}
-                            <Link href="/intro" className="text-purple-400 hover:text-purple-300 font-bold ml-1 hover:underline">
+                            <Link href="/intro" className="text-purple-400 hover:text-purple-300 font-bold ml-1 hover:underline text-center">
                                 LOGIN HERE
                             </Link>
                         </p>

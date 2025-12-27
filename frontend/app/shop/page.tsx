@@ -1,33 +1,36 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import CyberPageLayout from '@/components/CyberPageLayout';
-import { getGameState, updateGameState } from '@/lib/game-state';
+// import { getGameState, updateGameState } from '@/lib/game-state';
 import { useAlert } from '@/context/AlertContext';
-import { ShoppingCart, Coins, Package, Sparkles, X } from 'lucide-react';
+import { ShoppingCart, Coins, Package, Sparkles, X, ShoppingBag, Loader2 } from 'lucide-react';
 import { CARD_PACKS, openCardPack, CardPack } from '@/lib/card-pack-system';
 import { Card } from '@/lib/types';
-import { addCardToInventory } from '@/lib/inventory-system';
+import { addCardsToInventory } from '@/lib/inventory-system';
 import { motion, AnimatePresence } from 'framer-motion';
 import GachaRevealModal from '@/components/GachaRevealModal';
+import { useUser } from '@/context/UserContext';
+// import { useUserProfile } from '@/hooks/useUserProfile';
 
 export default function ShopPage() {
     const router = useRouter();
     const { showAlert, showConfirm } = useAlert();
-    const [state, setState] = useState(getGameState());
+    const { coins, level, addCoins } = useUser(); // Using UserContext
+
+    // Local state for UI only (pack opening animation)
     const [openedCards, setOpenedCards] = useState<Card[]>([]);
     const [showPackOpening, setShowPackOpening] = useState(false);
     const [currentPack, setCurrentPack] = useState<CardPack | null>(null);
+    const [isPurchasing, setIsPurchasing] = useState(false);
 
     const handlePurchase = async (pack: CardPack) => {
-        const currentState = getGameState();
-
-        // 코인 확인
-        if (currentState.coins < pack.price) {
+        // 코인 확인 (UserContext state)
+        if (coins < pack.price) {
             showAlert({
                 title: '코인 부족',
-                message: `코인이 부족합니다!\n필요: ${pack.price} 코인\n보유: ${currentState.coins} 코인`,
+                message: `코인이 부족합니다!\n필요: ${pack.price} 코인\n보유: ${coins} 코인`,
                 type: 'error',
             });
             return;
@@ -37,33 +40,31 @@ export default function ShopPage() {
             title: '카드팩 구매',
             message: `${pack.name}을(를) 구매하시겠습니까?\n\n가격: ${pack.price} 코인\n카드 개수: ${pack.cardCount}장`,
             onConfirm: async () => {
+                setIsPurchasing(true);
                 try {
-                    // 코인 차감
-                    const newCoins = currentState.coins - pack.price;
-                    updateGameState({ coins: newCoins });
+                    // 1. 카드 생성 (Generate Cards first)
+                    const generatedCards = openCardPack(pack, `commander-${level}`);
 
-                    // 카드팩 개봉
-                    const cards = openCardPack(pack, currentState.userId || 'user-001');
+                    // 2. 인벤토리에 추가 (Atomic Batch)
+                    await addCardsToInventory(generatedCards);
 
-                    // 카드들을 인벤토리에 추가
-                    for (const card of cards) {
-                        await addCardToInventory(card);
-                    }
+                    // 3. 코인 차감 (Only after cards are safely registered)
+                    await addCoins(-pack.price);
 
-                    // 개봉 애니메이션 표시
+                    // 4. 개봉 애니메이션 표시
                     setCurrentPack(pack);
-                    setOpenedCards(cards);
+                    setOpenedCards(generatedCards);
                     setShowPackOpening(true);
 
-                    // 상태 업데이트
-                    setState(getGameState());
                 } catch (error) {
                     console.error('카드팩 구매 실패:', error);
                     showAlert({
                         title: '구매 실패',
-                        message: '카드팩 구매 중 오류가 발생했습니다.',
+                        message: '카드팩 구매 중 오류가 발생했습니다. 코인은 차감되지 않았습니다.',
                         type: 'error',
                     });
+                } finally {
+                    setIsPurchasing(false);
                 }
             },
         });
@@ -73,8 +74,7 @@ export default function ShopPage() {
         setShowPackOpening(false);
         setOpenedCards([]);
         setCurrentPack(null);
-        // 상태 새로고침
-        setState(getGameState());
+        // No need to manually reload state, UserContext stays in sync or updates via addCoins
     };
 
     const getRarityColor = (rarity: string) => {
@@ -104,12 +104,12 @@ export default function ShopPage() {
                             <h3 className="text-sm text-white/60 mb-1">보유 코인</h3>
                             <p className="text-4xl font-black text-yellow-400 flex items-center gap-2">
                                 <Coins size={32} />
-                                {state.coins.toLocaleString()}
+                                {coins.toLocaleString()}
                             </p>
                         </div>
                         <div className="text-right">
                             <p className="text-sm text-white/60">레벨</p>
-                            <p className="text-2xl font-bold text-cyan-400">Lv.{state.level}</p>
+                            <p className="text-2xl font-bold text-cyan-400">Lv.{level}</p>
                         </div>
                     </div>
                 </div>
@@ -163,13 +163,13 @@ export default function ShopPage() {
 
                             <button
                                 onClick={() => handlePurchase(pack)}
-                                disabled={state.coins < pack.price}
-                                className={`w-full py-3 font-bold rounded-xl transition-all shadow-lg ${state.coins < pack.price
+                                disabled={coins < pack.price}
+                                className={`w-full py-3 font-bold rounded-xl transition-all shadow-lg ${coins < pack.price
                                     ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
                                     : 'bg-gradient-to-r from-yellow-600 to-orange-600 hover:from-yellow-500 hover:to-orange-500 text-white hover:scale-105'
                                     }`}
                             >
-                                {state.coins < pack.price ? '코인 부족' : '구매하기'}
+                                {coins < pack.price ? '코인 부족' : '구매하기'}
                             </button>
                         </div>
                     ))}
@@ -189,6 +189,34 @@ export default function ShopPage() {
                     </ul>
                 </div>
             </div>
+
+            {/* 구매 중 로딩 레이어 */}
+            <AnimatePresence>
+                {isPurchasing && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 bg-black/80 backdrop-blur-xl z-[100] flex flex-col items-center justify-center text-center"
+                    >
+                        <motion.div
+                            animate={{
+                                scale: [1, 1.1, 1],
+                                rotate: [0, 5, -5, 0]
+                            }}
+                            transition={{ duration: 2, repeat: Infinity }}
+                            className="w-24 h-24 bg-yellow-500/20 rounded-full flex items-center justify-center border-2 border-yellow-500/50 mb-6 shadow-[0_0_30px_rgba(234,179,8,0.3)]"
+                        >
+                            <ShoppingBag className="text-yellow-400" size={48} />
+                        </motion.div>
+                        <h2 className="text-2xl font-black text-white mb-2 tracking-tighter">구매 처리 중...</h2>
+                        <p className="text-gray-400 flex items-center gap-2">
+                            <Loader2 className="animate-spin" size={16} />
+                            네트워크를 통해 카드를 획득하고 있습니다. 잠시만 기다려주세요.
+                        </p>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             {/* 카드팩 개봉 모달 (GachaRevealModal 사용) */}
             <GachaRevealModal

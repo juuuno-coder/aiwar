@@ -1,10 +1,31 @@
 import {
     signInAnonymously,
+    GoogleAuthProvider,
+    signInWithPopup,
     onAuthStateChanged,
     signOut,
     User
 } from 'firebase/auth';
 import { auth, isFirebaseConfigured } from './firebase';
+
+/**
+ * 구글 로그인
+ */
+export async function signInWithGoogle(): Promise<User | null> {
+    if (!isFirebaseConfigured || !auth) {
+        console.warn('Firebase가 설정되지 않았습니다.');
+        return null;
+    }
+
+    try {
+        const provider = new GoogleAuthProvider();
+        const result = await signInWithPopup(auth, provider);
+        return result.user;
+    } catch (error) {
+        console.error('구글 로그인 실패:', error);
+        return null;
+    }
+}
 
 /**
  * 익명 로그인

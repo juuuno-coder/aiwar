@@ -151,10 +151,11 @@ export function applyPassiveEffects(
  * 타입 상성 확인 (type-system.ts에서 가져와야 하지만 여기서 간단히 구현)
  */
 function hasTypeAdvantage(attackerType: AIType, defenderType: AIType): boolean {
-    const advantages: Record<AIType, AIType> = {
-        EFFICIENCY: 'COST',
-        COST: 'CREATIVITY',
-        CREATIVITY: 'EFFICIENCY'
+    const advantages: Record<string, AIType> = {
+        EFFICIENCY: 'FUNCTION',
+        FUNCTION: 'CREATIVITY',
+        CREATIVITY: 'EFFICIENCY',
+        COST: 'FUNCTION'
     };
 
     return advantages[attackerType] === defenderType;

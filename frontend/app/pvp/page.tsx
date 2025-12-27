@@ -8,7 +8,6 @@ import GameCard from '@/components/GameCard';
 import { Card } from '@/lib/types';
 import { getGameState } from '@/lib/game-state';
 import { useAlert } from '@/context/AlertContext';
-import { useFooter } from '@/context/FooterContext';
 import { gameStorage } from '@/lib/game-storage';
 import { loadInventory } from '@/lib/inventory-system';
 import {
@@ -46,7 +45,6 @@ type Phase =
 export default function PVPArenaPage() {
     const router = useRouter();
     const { showAlert } = useAlert();
-    const footer = useFooter();
 
     const [phase, setPhase] = useState<Phase>('stats');
     const [selectedMode, setSelectedMode] = useState<BattleMode>('tactics');
@@ -60,6 +58,9 @@ export default function PVPArenaPage() {
     const [animating, setAnimating] = useState(false);
 
     const [inventory, setInventory] = useState<Card[]>([]);
+
+    // 카드 선택 (푸터 대신 로컬 state)
+    const [selectedCards, setSelectedCards] = useState<Card[]>([]);
 
     const stats = getPVPStats();
     const state = getGameState();
@@ -107,46 +108,7 @@ export default function PVPArenaPage() {
         },
     ];
 
-    // 덱 선택 단계 - 푸터 연동 및 지속
-    useEffect(() => {
-        if (phase === 'stats') {
-            // stats 단계에서 덱이 선택되어 있으면 유지하고 전투 시작 버튼 표시
-            if (playerDeck.length === 5) {
-                footer.setSelectionMode(5, '선택된 덱');
-                // 이미 선택된 덱을 푸터에 표시
-                playerDeck.forEach(card => {
-                    if (!footer.state.selectionSlots.find(c => c?.id === card.id)) {
-                        footer.addToSelection(card);
-                    }
-                });
-                footer.setAction({
-                    label: '⚔️ 전투 시작',
-                    isDisabled: false,
-                    color: 'success',
-                    onClick: () => handleStartPVP(selectedMode),
-                });
-            }
-        } else if (phase === 'deck-select') {
-            footer.setSelectionMode(5, '5장 선택');
-            footer.setAction({
-                label: '덱 확정',
-                isDisabled: footer.state.selectionSlots.length !== 5,
-                color: 'success',
-                onClick: handleDeckConfirm,
-            });
-        } else {
-            footer.exitSelectionMode();
-            footer.setAction(undefined);
-        }
-
-        return () => {
-            // stats 단계가 아닐 때만 정리
-            if (phase !== 'stats') {
-                footer.exitSelectionMode();
-                footer.setAction(undefined);
-            }
-        };
-    }, [phase, footer.state.selectionSlots.length, playerDeck.length]);
+    // 푸터 관련 useEffect 제거됨 - 로컬 state로 관리
 
     // 덱 공개 타이머
     useEffect(() => {
@@ -212,7 +174,7 @@ export default function PVPArenaPage() {
 
     // 덱 확정
     const handleDeckConfirm = () => {
-        const selected = footer.state.selectionSlots;
+        const selected = selectedCards;
         if (selected.length !== 5) {
             showAlert({ title: '덱 미완성', message: '5장의 카드를 선택해주세요.', type: 'warning' });
             return;
@@ -457,6 +419,9 @@ export default function PVPArenaPage() {
                             <div className="text-center mb-8">
                                 <h2 className="text-3xl font-black text-white mb-2">덱 선택</h2>
                                 <p className="text-white/60">전투에 사용할 카드 5장을 선택하세요</p>
+                                <p className="text-cyan-400 font-bold mt-2">
+                                    선택: {selectedCards.length} / 5
+                                </p>
                             </div>
 
                             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
@@ -468,20 +433,57 @@ export default function PVPArenaPage() {
                                             whileTap={{ scale: 0.95 }}
                                             className="cursor-pointer"
                                             onClick={() => {
-                                                const isSelected = footer.state.selectionSlots.find(c => c.id === card.id);
+                                                const isSelected = selectedCards.find(c => c.id === card.id);
                                                 if (isSelected) {
-                                                    footer.removeFromSelection(card.id);
-                                                } else if (footer.state.selectionSlots.length < 5) {
-                                                    footer.addToSelection(card);
+                                                    setSelectedCards(prev => prev.filter(c => c.id !== card.id));
+                                                } else if (selectedCards.length < 5) {
+                                                    setSelectedCards(prev => [...prev, card]);
                                                 }
                                             }}
                                         >
                                             <GameCard
                                                 card={card}
-                                                isSelected={footer.state.selectionSlots.some(c => c.id === card.id)}
+                                                isSelected={selectedCards.some(c => c.id === card.id)}
                                             />
                                         </motion.div>
                                     ))}
+                            </div>
+
+                            {/* 버튼 영역 - 하단 고정 */}
+                            <div className="fixed bottom-0 left-0 right-0 bg-black/90 border-t border-white/10 p-4 z-50">
+                                <div className="max-w-4xl mx-auto flex items-center justify-between gap-4">
+                                    <button
+                                        onClick={() => {
+                                            // 자동 선택 - 전투력 높은 순으로 5장
+                                            const topCards = [...inventory]
+                                                .sort((a, b) => b.stats.totalPower - a.stats.totalPower)
+                                                .slice(0, 5);
+                                            setSelectedCards(topCards);
+                                        }}
+                                        className="px-6 py-3 bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-400 font-bold rounded-xl transition-all flex items-center gap-2"
+                                    >
+                                        <Shuffle size={20} />
+                                        자동 선택
+                                    </button>
+
+                                    <div className="flex-1 text-center text-white/60">
+                                        {selectedCards.length}/5 선택됨
+                                    </div>
+
+                                    <button
+                                        onClick={handleDeckConfirm}
+                                        disabled={selectedCards.length !== 5}
+                                        className={cn(
+                                            "px-8 py-3 font-bold rounded-xl transition-all flex items-center gap-2",
+                                            selectedCards.length === 5
+                                                ? "bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white"
+                                                : "bg-white/10 text-white/40 cursor-not-allowed"
+                                        )}
+                                    >
+                                        <CheckCircle size={20} />
+                                        선택 완료
+                                    </button>
+                                </div>
                             </div>
                         </motion.div>
                     )}
@@ -535,39 +537,73 @@ export default function PVPArenaPage() {
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
+                            className="py-4"
                         >
-                            <div className="text-center mb-8">
-                                <div className="text-6xl font-black text-cyan-400 mb-2 font-mono">
-                                    {revealTimer}
+                            {/* 상대 덱 (위) */}
+                            <motion.div
+                                initial={{ y: -50, opacity: 0 }}
+                                animate={{ y: 0, opacity: 1 }}
+                                className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 mb-4"
+                            >
+                                <h3 className="text-lg font-bold text-red-400 mb-3 text-center">👹 상대 덱</h3>
+                                <div className="flex justify-center gap-4 flex-wrap">
+                                    {opponentDeck.map((card, i) => (
+                                        <motion.div
+                                            key={i}
+                                            initial={{ rotateY: 180, opacity: 0 }}
+                                            animate={{ rotateY: 0, opacity: 1 }}
+                                            transition={{ delay: i * 0.1 }}
+                                            className="w-32"
+                                        >
+                                            <GameCard card={card} />
+                                        </motion.div>
+                                    ))}
                                 </div>
-                                <p className="text-white/60">덱 공개 중...</p>
+                            </motion.div>
+
+                            {/* 전투준비 VS 타이머 (중간) */}
+                            <div className="flex items-center justify-center gap-6 my-4 py-4 bg-gradient-to-r from-transparent via-white/5 to-transparent">
+                                <span className="text-2xl font-bold text-white/60">전투준비</span>
+                                <motion.div
+                                    animate={{ scale: [1, 1.2, 1] }}
+                                    transition={{ duration: 1, repeat: Infinity }}
+                                    className="text-5xl font-black text-yellow-400 orbitron"
+                                >
+                                    VS
+                                </motion.div>
+                                <div className="flex items-center gap-2">
+                                    <motion.div
+                                        animate={{ scale: [1, 1.1, 1] }}
+                                        transition={{ duration: 0.5, repeat: Infinity }}
+                                        className="text-4xl font-black text-cyan-400 orbitron"
+                                    >
+                                        {revealTimer}
+                                    </motion.div>
+                                    <span className="text-lg text-white/40">초</span>
+                                </div>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-8">
-                                {/* 플레이어 덱 */}
-                                <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-6">
-                                    <h3 className="text-lg font-bold text-blue-400 mb-4">내 덱</h3>
-                                    <div className="grid grid-cols-5 gap-2">
-                                        {playerDeck.map((card, i) => (
-                                            <div key={i} className="w-full">
-                                                <GameCard card={card} />
-                                            </div>
-                                        ))}
-                                    </div>
+                            {/* 내 덱 (아래) */}
+                            <motion.div
+                                initial={{ y: 50, opacity: 0 }}
+                                animate={{ y: 0, opacity: 1 }}
+                                className="bg-cyan-500/10 border border-cyan-500/30 rounded-xl p-4"
+                            >
+                                <h3 className="text-lg font-bold text-cyan-400 mb-3 text-center">🤖 내 덱</h3>
+                                <div className="flex justify-center gap-4 flex-wrap">
+                                    {playerDeck.map((card, i) => (
+                                        <motion.div
+                                            key={i}
+                                            initial={{ rotateY: 180, opacity: 0 }}
+                                            animate={{ rotateY: 0, opacity: 1 }}
+                                            transition={{ delay: 0.5 + i * 0.1 }}
+                                            className="w-32"
+                                        >
+                                            <GameCard card={card} />
+                                        </motion.div>
+                                    ))}
                                 </div>
-
-                                {/* 상대 덱 */}
-                                <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-6">
-                                    <h3 className="text-lg font-bold text-red-400 mb-4">상대 덱</h3>
-                                    <div className="grid grid-cols-5 gap-2">
-                                        {opponentDeck.map((card, i) => (
-                                            <div key={i} className="w-full">
-                                                <GameCard card={card} />
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            </div>
+                            </motion.div>
                         </motion.div>
                     )}
 
@@ -615,89 +651,173 @@ export default function PVPArenaPage() {
                     )}
 
                     {/* 6단계: 전투 */}
-                    {phase === 'battle' && battleResult && (
-                        <motion.div
-                            key="battle"
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                        >
-                            {currentRound < battleResult.rounds.length && (
-                                <div>
-                                    <div className="text-center mb-8">
-                                        <h2 className="text-4xl font-black text-white mb-2">
-                                            라운드 {battleResult.rounds[currentRound].round}
-                                        </h2>
-                                        <div className="flex items-center justify-center gap-4 text-2xl font-bold">
-                                            <span className="text-blue-400">{battleResult.playerWins}</span>
-                                            <span className="text-white/40">:</span>
-                                            <span className="text-red-400">{battleResult.opponentWins}</span>
-                                        </div>
-                                    </div>
+                    {phase === 'battle' && battleResult && battleResult.rounds.length > 0 && (() => {
+                        // 안전한 라운드 인덱스
+                        const roundIndex = Math.min(currentRound, battleResult.rounds.length - 1);
+                        const round = battleResult.rounds[roundIndex];
 
-                                    <div className="grid grid-cols-3 gap-8 items-center mb-8">
-                                        {/* 플레이어 카드 */}
-                                        <motion.div
-                                            initial={{ x: -100, opacity: 0 }}
-                                            animate={{ x: 0, opacity: 1 }}
-                                            className="text-center"
-                                        >
-                                            <GameCard card={battleResult.rounds[currentRound].playerCard} />
-                                            <div className="mt-4 text-4xl">
-                                                {getTypeEmoji(battleResult.rounds[currentRound].playerType)}
-                                            </div>
-                                            <div className="text-sm text-white/60 mt-2">
-                                                {getTypeName(battleResult.rounds[currentRound].playerType)}
-                                            </div>
-                                        </motion.div>
-
-                                        {/* VS */}
-                                        <div className="text-center">
-                                            <motion.div
-                                                animate={{ scale: [1, 1.2, 1], rotate: [0, 360] }}
-                                                transition={{ duration: 1, repeat: Infinity }}
-                                                className="text-6xl font-black text-white/20"
-                                            >
-                                                VS
-                                            </motion.div>
-                                            {animating && (
-                                                <motion.div
-                                                    initial={{ scale: 0 }}
-                                                    animate={{ scale: 1 }}
-                                                    className="mt-4"
-                                                >
-                                                    {battleResult.rounds[currentRound].winner === 'player' && (
-                                                        <div className="text-2xl text-green-400 font-bold">승리!</div>
-                                                    )}
-                                                    {battleResult.rounds[currentRound].winner === 'opponent' && (
-                                                        <div className="text-2xl text-red-400 font-bold">패배!</div>
-                                                    )}
-                                                    {battleResult.rounds[currentRound].winner === 'draw' && (
-                                                        <div className="text-2xl text-yellow-400 font-bold">무승부!</div>
-                                                    )}
-                                                </motion.div>
-                                            )}
-                                        </div>
-
-                                        {/* 상대 카드 */}
-                                        <motion.div
-                                            initial={{ x: 100, opacity: 0 }}
-                                            animate={{ x: 0, opacity: 1 }}
-                                            className="text-center"
-                                        >
-                                            <GameCard card={battleResult.rounds[currentRound].opponentCard} />
-                                            <div className="mt-4 text-4xl">
-                                                {getTypeEmoji(battleResult.rounds[currentRound].opponentType)}
-                                            </div>
-                                            <div className="text-sm text-white/60 mt-2">
-                                                {getTypeName(battleResult.rounds[currentRound].opponentType)}
-                                            </div>
-                                        </motion.div>
+                        return (
+                            <motion.div
+                                key="battle"
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                className="py-8"
+                            >
+                                {/* 라운드 정보 */}
+                                <div className="text-center mb-8">
+                                    <h2 className="text-4xl font-black text-white mb-2 orbitron">
+                                        ROUND {round.round}
+                                    </h2>
+                                    <div className="flex items-center justify-center gap-4 text-2xl font-bold">
+                                        <span className="text-cyan-400">{battleResult.playerWins}</span>
+                                        <span className="text-white/40">vs</span>
+                                        <span className="text-red-400">{battleResult.opponentWins}</span>
                                     </div>
                                 </div>
-                            )}
-                        </motion.div>
-                    )}
+
+                                {/* 카드 대결 영역 */}
+                                <div className="flex items-center justify-center gap-8 mb-8">
+                                    {/* 내 카드 */}
+                                    <motion.div
+                                        initial={{ x: -100, opacity: 0 }}
+                                        animate={{
+                                            x: 0,
+                                            opacity: 1,
+                                            scale: animating && round.winner === 'player' ? 1.1 :
+                                                animating && round.winner === 'opponent' ? 0.9 : 1
+                                        }}
+                                        className="text-center relative"
+                                    >
+                                        {/* 카드 뒷면 (애니메이션 전) or 앞면 (애니메이션 중/후) */}
+                                        {!animating ? (
+                                            <div className="w-[180px] h-[270px] bg-gradient-to-br from-cyan-900 to-slate-800 rounded-xl border-4 border-cyan-500/50 shadow-2xl flex flex-col items-center justify-center">
+                                                <div className="text-6xl mb-2">🎴</div>
+                                                <div className="text-cyan-400 font-bold">내 카드</div>
+                                            </div>
+                                        ) : (
+                                            <div className={cn(
+                                                "transition-all duration-500",
+                                                round.winner === 'opponent' && "grayscale opacity-60"
+                                            )}>
+                                                <GameCard card={round.playerCard} />
+                                            </div>
+                                        )}
+
+                                        {/* 타입 표시 (애니메이션 중에만) */}
+                                        {animating && (
+                                            <div className="mt-4 text-4xl">
+                                                {getTypeEmoji(round.playerType)}
+                                            </div>
+                                        )}
+
+                                        {/* 승리 표시 */}
+                                        {animating && round.winner === 'player' && (
+                                            <motion.div
+                                                initial={{ scale: 0 }}
+                                                animate={{ scale: 1 }}
+                                                className="absolute -top-4 -right-4 w-12 h-12 bg-yellow-500 rounded-full flex items-center justify-center text-2xl shadow-lg"
+                                            >
+                                                👑
+                                            </motion.div>
+                                        )}
+                                        {animating && round.winner === 'opponent' && (
+                                            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                                <span className="text-8xl text-red-500 font-black drop-shadow-lg">✕</span>
+                                            </div>
+                                        )}
+                                    </motion.div>
+
+                                    {/* VS */}
+                                    <div className="text-center">
+                                        <motion.div
+                                            animate={animating ? { scale: [1, 1.3, 1] } : {}}
+                                            transition={{ duration: 0.5, repeat: animating ? Infinity : 0 }}
+                                            className="text-6xl font-black text-white/30 orbitron"
+                                        >
+                                            VS
+                                        </motion.div>
+
+                                        {/* 승패 결과 */}
+                                        {animating && (
+                                            <motion.div
+                                                initial={{ scale: 0, opacity: 0 }}
+                                                animate={{ scale: 1, opacity: 1 }}
+                                                className="mt-4"
+                                            >
+                                                {round.winner === 'player' && (
+                                                    <div className="text-3xl text-green-400 font-bold">🎉 WIN!</div>
+                                                )}
+                                                {round.winner === 'opponent' && (
+                                                    <div className="text-3xl text-red-400 font-bold">😢 LOSE</div>
+                                                )}
+                                                {round.winner === 'draw' && (
+                                                    <div className="text-3xl text-yellow-400 font-bold">🤝 DRAW</div>
+                                                )}
+                                            </motion.div>
+                                        )}
+                                    </div>
+
+                                    {/* 상대 카드 */}
+                                    <motion.div
+                                        initial={{ x: 100, opacity: 0 }}
+                                        animate={{
+                                            x: 0,
+                                            opacity: 1,
+                                            scale: animating && round.winner === 'opponent' ? 1.1 :
+                                                animating && round.winner === 'player' ? 0.9 : 1
+                                        }}
+                                        className="text-center relative"
+                                    >
+                                        {/* 카드 뒷면 (애니메이션 전) or 앞면 (애니메이션 중/후) */}
+                                        {!animating ? (
+                                            <div className="w-[180px] h-[270px] bg-gradient-to-br from-red-900 to-slate-800 rounded-xl border-4 border-red-500/50 shadow-2xl flex flex-col items-center justify-center">
+                                                <div className="text-6xl mb-2">🎴</div>
+                                                <div className="text-red-400 font-bold">상대 카드</div>
+                                            </div>
+                                        ) : (
+                                            <div className={cn(
+                                                "transition-all duration-500",
+                                                round.winner === 'player' && "grayscale opacity-60"
+                                            )}>
+                                                <GameCard card={round.opponentCard} />
+                                            </div>
+                                        )}
+
+                                        {/* 타입 표시 (애니메이션 중에만) */}
+                                        {animating && (
+                                            <div className="mt-4 text-4xl">
+                                                {getTypeEmoji(round.opponentType)}
+                                            </div>
+                                        )}
+
+                                        {/* 승리 표시 */}
+                                        {animating && round.winner === 'opponent' && (
+                                            <motion.div
+                                                initial={{ scale: 0 }}
+                                                animate={{ scale: 1 }}
+                                                className="absolute -top-4 -right-4 w-12 h-12 bg-red-500 rounded-full flex items-center justify-center text-2xl shadow-lg"
+                                            >
+                                                👑
+                                            </motion.div>
+                                        )}
+                                        {animating && round.winner === 'player' && (
+                                            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                                <span className="text-8xl text-red-500 font-black drop-shadow-lg">✕</span>
+                                            </div>
+                                        )}
+                                    </motion.div>
+                                </div>
+
+                                {/* 대기 중 텍스트 */}
+                                {!animating && (
+                                    <div className="text-center text-white/50 animate-pulse">
+                                        카드 공개 중...
+                                    </div>
+                                )}
+                            </motion.div>
+                        );
+                    })()}
 
                     {/* 7단계: 결과 */}
                     {phase === 'result' && battleResult && (

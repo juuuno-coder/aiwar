@@ -1,165 +1,149 @@
 import { useFooter } from '@/context/FooterContext';
-import { Card } from '@/lib/types';
 import { cn } from '@/lib/utils';
-import { X, Filter, Search } from 'lucide-react';
-import { useState, useCallback, useMemo } from 'react';
-import GameCard from '@/components/GameCard';
+import FooterSlot from '../Footer/FooterSlot'; // Modified import path
+import { Sparkles, ChevronDown, ChevronUp } from 'lucide-react'; // Added icons
+import { useState } from 'react';
 
 interface DynamicFooterProps {
-    onCardClick?: (card: Card) => void;
-    onCardDragStart?: (card: Card) => void;
+    // Legacy props kept for compatibility, but state drives behavior now
+    onCardClick?: (card: any) => void;
+    onCardDragStart?: (card: any) => void;
 }
 
-export default function DynamicFooter({ onCardClick, onCardDragStart }: DynamicFooterProps) {
-    const { state, isCardSelected, setSearchFilter, setRarityFilter, clearFilters } = useFooter();
-    const [searchQuery, setSearchQuery] = useState('');
-    const [selectedRarities, setSelectedRarities] = useState<string[]>([]);
+export default function DynamicFooter({ }: DynamicFooterProps) {
+    const {
+        state,
+        removeFromSelection,
+        clearSelection,
+        setMinimized, // Context method
+        // We'll add drop handlers later if needed via context
+    } = useFooter();
 
-    const { inventory, visible } = state;
-    const { filteredCards, selectedCardIds } = inventory;
-
-    // 검색어 변경 핸들러 (디바운스 적용)
-    const handleSearchChange = useCallback((query: string) => {
-        setSearchQuery(query);
-        // 실제 필터 적용은 300ms 후
-        const timer = setTimeout(() => {
-            setSearchFilter(query);
-        }, 300);
-        return () => clearTimeout(timer);
-    }, [setSearchFilter]);
-
-    // 등급 필터 토글
-    const toggleRarityFilter = useCallback((rarity: string) => {
-        setSelectedRarities(prev => {
-            const newRarities = prev.includes(rarity)
-                ? prev.filter(r => r !== rarity)
-                : [...prev, rarity];
-            setRarityFilter(newRarities);
-            return newRarities;
-        });
-    }, [setRarityFilter]);
-
-    // 필터 초기화
-    const handleClearFilters = useCallback(() => {
-        setSearchQuery('');
-        setSelectedRarities([]);
-        clearFilters();
-    }, [clearFilters]);
-
-    // 카드 클릭 핸들러
-    const handleCardClick = useCallback((card: Card) => {
-        onCardClick?.(card);
-    }, [onCardClick]);
-
-    // 드래그 시작 핸들러
-    const handleDragStart = useCallback((e: React.DragEvent, card: Card) => {
-        e.dataTransfer.effectAllowed = 'move';
-        e.dataTransfer.setData('application/json', JSON.stringify(card));
-        onCardDragStart?.(card);
-    }, [onCardDragStart]);
-
-    const rarities = ['Common', 'Rare', 'Epic', 'Legendary', 'Unique', 'Commander'];
+    const {
+        selectionSlots,
+        maxSelectionSlots,
+        action,
+        secondaryAction,
+        visible,
+        selectionLabel,
+        mode,
+        isMinimized // Context state
+    } = state;
 
     if (!visible) return null;
 
+    // Only render the Slot Bar in 'selection' mode (or default if we decide)
+    // For PVP (selection mode), we definitely want this.
+    if (mode === 'default' && state.deck.length === 0) {
+        // If default mode and no deck, maybe don't show specific slots or show empty?
+        // Let's stick to showing if visible.
+    }
+
+    const filledCount = selectionSlots.length;
+
     return (
         <div className={cn(
-            "fixed bottom-0 left-0 right-0 z-100",
-            "h-[280px] max-h-[45vh]",
-            "bg-gradient-to-t from-black to-zinc-900",
-            "border-t-2 border-cyan-500",
-            "shadow-[0_-10px_50px_rgba(6,182,212,0.3)]",
-            "transition-transform duration-300 ease-out",
-            visible ? "translate-y-0" : "translate-y-full"
+            "fixed bottom-0 left-0 right-0 h-[180px] z-50 transition-transform duration-300 ease-out",
+            isMinimized ? "translate-y-[100%]" : "translate-y-0"
         )}>
-            {/* Filter Bar */}
-            <div className="h-[60px] border-b border-white/10 px-4 flex items-center gap-4 bg-black/50 backdrop-blur-sm">
-                {/* 카드 개수 */}
-                <div className="flex items-center gap-2">
-                    <span className="text-sm font-bold text-white">
-                        내 카드 ({filteredCards.length})
-                    </span>
-                    {selectedCardIds.size > 0 && (
-                        <span className="text-xs text-cyan-400">
-                            {selectedCardIds.size}개 선택됨
-                        </span>
-                    )}
-                </div>
-
-                {/* 검색 */}
-                <div className="flex-1 max-w-xs relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40" size={16} />
-                    <input
-                        type="text"
-                        value={searchQuery}
-                        onChange={(e) => handleSearchChange(e.target.value)}
-                        placeholder="카드 검색..."
-                        className="w-full pl-10 pr-3 py-1.5 bg-white/5 border border-white/10 rounded text-sm text-white placeholder:text-white/40 focus:outline-none focus:border-cyan-500/50"
-                    />
-                </div>
-
-                {/* 등급 필터 */}
-                <div className="flex items-center gap-2">
-                    <Filter size={16} className="text-white/40" />
-                    {rarities.map(rarity => (
-                        <button
-                            key={rarity}
-                            onClick={() => toggleRarityFilter(rarity)}
-                            className={cn(
-                                "px-2 py-1 text-xs rounded transition-colors",
-                                selectedRarities.includes(rarity)
-                                    ? "bg-cyan-500 text-black font-bold"
-                                    : "bg-white/5 text-white/60 hover:bg-white/10"
-                            )}
-                        >
-                            {rarity}
-                        </button>
-                    ))}
-                </div>
-
-                {/* 필터 초기화 */}
-                {(searchQuery || selectedRarities.length > 0) && (
-                    <button
-                        onClick={handleClearFilters}
-                        className="p-1.5 hover:bg-white/10 rounded transition-colors"
-                        title="필터 초기화"
-                    >
-                        <X size={16} className="text-white/60" />
-                    </button>
-                )}
+            {/* Toggle Handle */}
+            <div className="absolute left-1/2 -translate-x-1/2 -top-8 z-50">
+                <button
+                    onClick={() => setMinimized(!isMinimized)}
+                    className="flex items-center justify-center w-12 h-8 bg-black/80 border-t border-x border-white/20 rounded-t-lg text-white/60 hover:text-white hover:bg-black transition-colors"
+                >
+                    {isMinimized ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                </button>
             </div>
 
-            {/* Inventory Grid */}
-            <div className="h-[220px] overflow-y-auto custom-scrollbar">
-                <div className="grid grid-cols-[repeat(auto-fill,minmax(100px,1fr))] gap-3 p-4">
-                    {filteredCards.map(card => {
-                        const selected = isCardSelected(card.id);
-                        return (
-                            <div
-                                key={card.id}
-                                draggable
-                                onDragStart={(e) => handleDragStart(e, card)}
-                                onClick={() => handleCardClick(card)}
+            {/* Top Gradient Blur */}
+            <div className="absolute inset-x-0 top-0 h-8 bg-gradient-to-b from-transparent to-black/50 backdrop-blur-sm" />
+
+            {/* Main Footer Body */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black via-zinc-900/95 to-transparent backdrop-blur-md border-t border-white/10">
+                <div className="h-full max-w-[95%] xl:max-w-7xl mx-auto px-6 py-4 flex items-center justify-between gap-8">
+
+                    {/* Left: Slots Area */}
+                    <div className="flex-1 flex items-center gap-6 overflow-x-auto custom-scrollbar pb-2">
+                        {selectionLabel && (
+                            <div className="flex flex-col justify-center min-w-max">
+                                <p className="text-[10px] font-mono text-cyan-400 uppercase tracking-wider mb-1">
+                                    {selectionLabel}
+                                </p>
+                                <p className="text-xl font-black text-white/90 font-orbitron">
+                                    {filledCount}<span className="text-white/30 text-base">/{maxSelectionSlots}</span>
+                                </p>
+                            </div>
+                        )}
+
+                        <div className="flex gap-3">
+                            {Array.from({ length: maxSelectionSlots }).map((_, index) => {
+                                const card = selectionSlots[index] || null;
+                                return (
+                                    <FooterSlot
+                                        key={index}
+                                        card={card}
+                                        index={index}
+                                        size="large"
+                                        onRemove={card ? () => removeFromSelection(card.id) : undefined}
+                                    // Drag & Drop logic can be connected here if needed
+                                    />
+                                );
+                            })}
+                        </div>
+                    </div>
+
+                    {/* Divider */}
+                    <div className="h-16 w-px bg-gradient-to-b from-transparent via-white/20 to-transparent flex-shrink-0" />
+
+                    {/* Right: Actions Area */}
+                    <div className="flex items-center gap-4 flex-shrink-0">
+                        {/* Clear Button */}
+                        <button
+                            onClick={clearSelection}
+                            className="px-4 py-2.5 bg-white/5 hover:bg-white/10 text-white/50 hover:text-white rounded-lg transition-colors text-xs font-mono tracking-wider"
+                        >
+                            RESET
+                        </button>
+
+                        {/* Secondary Action (e.g., Auto Select) */}
+                        {secondaryAction && (
+                            <button
+                                onClick={secondaryAction.onClick}
+                                disabled={secondaryAction.isDisabled}
                                 className={cn(
-                                    "cursor-grab active:cursor-grabbing transition-all",
-                                    "hover:scale-105 hover:z-10",
-                                    selected && "opacity-50 ring-2 ring-purple-500"
+                                    "px-5 py-3 rounded-xl transition-all text-xs font-bold font-mono uppercase tracking-wider border",
+                                    secondaryAction.isDisabled
+                                        ? "bg-white/5 border-white/5 text-white/20 cursor-not-allowed"
+                                        : "bg-cyan-500/10 border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/20 hover:border-cyan-500/50"
                                 )}
                             >
-                                <GameCard card={card} />
-                            </div>
-                        );
-                    })}
-                </div>
+                                {secondaryAction.label}
+                            </button>
+                        )}
 
-                {/* 빈 상태 */}
-                {filteredCards.length === 0 && (
-                    <div className="h-full flex items-center justify-center text-white/40 text-sm">
-                        {searchQuery || selectedRarities.length > 0
-                            ? "검색 결과가 없습니다"
-                            : "카드가 없습니다"}
+                        {/* Primary Action (e.g., Deploy, Fuse) */}
+                        {action && (
+                            <button
+                                onClick={action.onClick}
+                                disabled={action.isDisabled}
+                                className={cn(
+                                    "px-8 py-3.5 font-black rounded-xl transition-all text-base flex items-center gap-2 shadow-lg uppercase tracking-wider min-w-[140px] justify-center",
+                                    action.isDisabled
+                                        ? "bg-gray-800 text-gray-500 cursor-not-allowed shadow-none border border-white/5"
+                                        : action.color === 'success'
+                                            ? "bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-400 hover:to-emerald-500 text-white shadow-green-500/30 hover:shadow-green-500/50 hover:-translate-y-0.5"
+                                            : action.color === 'primary' // Default to primary/purple style
+                                                ? "bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white shadow-purple-500/30 hover:shadow-purple-500/50"
+                                                : "bg-white/10 hover:bg-white/20 text-white"
+                                )}
+                            >
+                                {action.label === '출전' && <Sparkles size={18} className="animate-pulse" />}
+                                {action.label}
+                            </button>
+                        )}
                     </div>
-                )}
+                </div>
             </div>
         </div>
     );

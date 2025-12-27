@@ -346,7 +346,7 @@ export default function GenerationPage() {
                 {/* Faction Assignment Modal */}
                 {selectedSlotForAssignment !== null && (
                     <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
-                        <div className="bg-zinc-900 border border-white/20 w-full max-w-4xl rounded-2xl overflow-hidden">
+                        <div className="bg-zinc-900 border border-white/20 w-full max-w-5xl rounded-2xl overflow-hidden">
                             <div className="p-6 border-b border-white/10 flex items-center justify-between">
                                 <div>
                                     <h2 className="text-xl font-bold text-white">군단 선택</h2>
@@ -376,7 +376,7 @@ export default function GenerationPage() {
                                         </button>
                                     </div>
                                 ) : (
-                                    <div className="flex gap-4 overflow-x-auto pb-2">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 max-h-[60vh] overflow-y-auto pr-2">
                                         {availableFactions.map(subscription => {
                                             const faction = factions.find(f => f.id === subscription.factionId);
                                             const remaining = getRemainingGenerations(subscription.factionId);
@@ -385,14 +385,14 @@ export default function GenerationPage() {
                                                 <button
                                                     key={subscription.factionId}
                                                     onClick={() => handleAssignFaction(selectedSlotForAssignment, subscription.factionId)}
-                                                    className="flex-shrink-0 w-64 bg-zinc-800 border border-white/10 rounded-lg p-5 hover:border-green-500/50 hover:scale-105 transition-all text-left"
+                                                    className="w-full bg-zinc-800 border border-white/10 rounded-lg p-5 hover:border-green-500/50 hover:bg-zinc-800/80 hover:scale-[1.02] transition-all text-left"
                                                 >
                                                     <div className="flex items-center gap-3 mb-3">
                                                         <div className="w-12 h-12 bg-black rounded flex items-center justify-center text-2xl">
                                                             🤖
                                                         </div>
-                                                        <div className="flex-1">
-                                                            <div className="font-bold text-white">{faction?.displayName || subscription.factionId}</div>
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className="font-bold text-white truncate">{faction?.displayName || subscription.factionId}</div>
                                                             <div className={cn("text-xs font-bold", getTierColor(subscription.tier))}>
                                                                 {TIER_CONFIG[subscription.tier].name}
                                                             </div>
