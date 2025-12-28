@@ -481,19 +481,22 @@ export default function StageBattlePage() {
                 {phase === 'hand-selection' && (
                     <div className="pb-24">
                         {/* 배틀 모드 표시 */}
-                        <div className="text-center mb-8">
-                            <div className="inline-block px-6 py-3 bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/40 rounded-xl mb-4">
+                        {/* 배틀 모드 + 설명 (2줄로 압축) */}
+                        <div className="mb-4">
+                            <div className="flex items-center gap-3 mb-1">
                                 <span className="text-2xl font-black text-amber-400">
                                     {getBattleModeName(storyStage?.battleMode || 'STANDARD_5')}
                                 </span>
+                                <span className="text-sm text-gray-400">
+                                    {getBattleModeDescription(storyStage?.battleMode || 'STANDARD_5')}
+                                </span>
                             </div>
-                            <p className="text-gray-400 text-sm mb-2">
-                                {getBattleModeDescription(storyStage?.battleMode || 'STANDARD_5')}
-                            </p>
-                            <h2 className="text-xl font-bold text-white mb-2">카드를 선택하세요</h2>
-                            <p className="text-gray-500">
-                                {stageConfig.playerHandSize}장의 카드를 선택하여 전투에 참가합니다
-                            </p>
+                            <div className="flex items-center gap-2">
+                                <span className="text-lg font-bold text-white">카드를 선택하세요.</span>
+                                <span className="text-sm text-gray-500">
+                                    {stageConfig.playerHandSize}장의 카드를 선택하여 전투에 참가합니다
+                                </span>
+                            </div>
                         </div>
 
                         {/* 카드가 없을 때 안내 */}
@@ -635,7 +638,7 @@ export default function StageBattlePage() {
                                                         )}
 
                                                         {/* 레벨 표시 (하단 오른쪽) */}
-                                                        <div className="absolute bottom-8 right-1.5 z-10">
+                                                        <div className="absolute bottom-10 right-1.5 z-10">
                                                             <div className="px-2 py-0.5 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-full text-[10px] font-black text-white shadow-lg border border-yellow-300/50">
                                                                 LV.{card.level || 1}
                                                             </div>
