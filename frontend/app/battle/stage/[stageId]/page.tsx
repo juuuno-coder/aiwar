@@ -837,21 +837,105 @@ export default function StageBattlePage() {
                         {/* Battle View (Viewing / Battle phase) */}
                         {(phase === 'viewing' || phase === 'battle') && (
                             <div className="w-full max-w-5xl h-96 bg-white/5 rounded-3xl border border-white/10 flex items-center justify-center relative overflow-hidden">
+                                {/* Background Effects */}
+                                <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 via-transparent to-purple-500/5" />
+
                                 <AnimatePresence mode="wait">
                                     {roundAnimState === 'clash' ? (
+                                        /* Card Collision Animation */
                                         <motion.div
-                                            key="clash"
-                                            initial={{ scale: 2, opacity: 0 }}
-                                            animate={{ scale: 1, opacity: 1 }}
-                                            exit={{ scale: 0, opacity: 0 }}
-                                            className="text-6xl"
+                                            key="clash-scene"
+                                            initial={{ opacity: 0 }}
+                                            animate={{ opacity: 1 }}
+                                            exit={{ opacity: 0 }}
+                                            className="absolute inset-0 flex items-center justify-center"
                                         >
-                                            ⚔️
+                                            {/* Player Card (from left) */}
+                                            <motion.div
+                                                initial={{ x: -400, scale: 0.5, rotate: -20 }}
+                                                animate={{
+                                                    x: -50,
+                                                    scale: 1,
+                                                    rotate: 0,
+                                                    transition: { duration: 0.5, ease: "easeOut" }
+                                                }}
+                                                className="absolute w-32 h-44 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-xl shadow-2xl flex items-center justify-center"
+                                            >
+                                                <div className="text-6xl">🤖</div>
+                                            </motion.div>
+
+                                            {/* Enemy Card (from right) */}
+                                            <motion.div
+                                                initial={{ x: 400, scale: 0.5, rotate: 20 }}
+                                                animate={{
+                                                    x: 50,
+                                                    scale: 1,
+                                                    rotate: 0,
+                                                    transition: { duration: 0.5, ease: "easeOut" }
+                                                }}
+                                                className="absolute w-32 h-44 bg-gradient-to-br from-red-500 to-orange-600 rounded-xl shadow-2xl flex items-center justify-center"
+                                            >
+                                                <div className="text-6xl">👾</div>
+                                            </motion.div>
+
+                                            {/* Impact Effect */}
+                                            <motion.div
+                                                initial={{ scale: 0, opacity: 0 }}
+                                                animate={{
+                                                    scale: [0, 2, 1.5],
+                                                    opacity: [0, 1, 0],
+                                                    transition: { duration: 0.6, delay: 0.5 }
+                                                }}
+                                                className="absolute text-8xl"
+                                            >
+                                                ⚔️
+                                            </motion.div>
+
+                                            {/* Explosion Particles */}
+                                            {[...Array(8)].map((_, i) => (
+                                                <motion.div
+                                                    key={i}
+                                                    initial={{ scale: 0, x: 0, y: 0, opacity: 1 }}
+                                                    animate={{
+                                                        scale: [0, 1, 0],
+                                                        x: Math.cos(i * Math.PI / 4) * 100,
+                                                        y: Math.sin(i * Math.PI / 4) * 100,
+                                                        opacity: [1, 1, 0],
+                                                        transition: { duration: 0.8, delay: 0.5 }
+                                                    }}
+                                                    className="absolute w-4 h-4 bg-yellow-400 rounded-full"
+                                                />
+                                            ))}
                                         </motion.div>
                                     ) : (
-                                        <div className="text-white/30 font-mono">
-                                            {phase === 'battle' ? `ROUND ${currentBattleRound + 1} ENGAGED` : 'ANALYZING STRATEGY...'}
-                                        </div>
+                                        /* Idle State */
+                                        <motion.div
+                                            key="idle"
+                                            initial={{ opacity: 0 }}
+                                            animate={{ opacity: 1 }}
+                                            className="text-center"
+                                        >
+                                            <motion.div
+                                                animate={{
+                                                    scale: [1, 1.05, 1],
+                                                    opacity: [0.3, 0.5, 0.3]
+                                                }}
+                                                transition={{
+                                                    repeat: Infinity,
+                                                    duration: 2
+                                                }}
+                                                className="text-white/30 font-mono text-lg mb-4"
+                                            >
+                                                {phase === 'battle' ? `ROUND ${currentBattleRound + 1} ENGAGED` : 'ANALYZING STRATEGY...'}
+                                            </motion.div>
+
+                                            {/* Loading Spinner */}
+                                            <motion.div
+                                                animate={{ rotate: 360 }}
+                                                transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
+                                                className="w-12 h-12 border-4 border-cyan-500/20 border-t-cyan-500 rounded-full mx-auto"
+                                            />
+                                        </motion.div>
                                     )}
                                 </AnimatePresence>
                             </div>
