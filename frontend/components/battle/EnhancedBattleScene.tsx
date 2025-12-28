@@ -10,6 +10,8 @@ interface EnhancedBattleSceneProps {
     playerCards: any[];
     enemyCards: any[];
     battleType?: BattleType;
+    playerHiddenCards?: { round2?: any; round4?: any };
+    enemyHiddenCards?: { round2?: any; round4?: any };
     onBattleEnd: (victory: boolean) => void;
 }
 
@@ -17,9 +19,18 @@ export default function EnhancedBattleScene({
     playerCards,
     enemyCards,
     battleType = 'tactical',
+    playerHiddenCards,
+    enemyHiddenCards,
     onBattleEnd,
 }: EnhancedBattleSceneProps) {
-    const { state } = useBattleAnimation(playerCards, enemyCards, battleType, onBattleEnd);
+    const { state } = useBattleAnimation(
+        playerCards,
+        enemyCards,
+        battleType,
+        playerHiddenCards,
+        enemyHiddenCards,
+        onBattleEnd
+    );
 
     const getCardImage = (card: any) => {
         const { getCardCharacterImage } = require('@/lib/card-images');

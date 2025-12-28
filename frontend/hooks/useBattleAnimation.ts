@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
-import { RoundResult, VictoryState, calculateVictoryPoints, createRoundResult, BattleType } from '@/lib/battle-victory-system';
+import { RoundResult, VictoryState, calculateVictoryPoints, BattleType } from '@/lib/battle-victory-system';
 
-export type AnimationPhase = 'idle' | 'draw' | 'clash' | 'result' | 'victory';
+export type AnimationPhase = 'idle' | 'draw' | 'clash' | 'result' | 'hidden-draw' | 'hidden-clash' | 'hidden-result' | 'victory';
 
 export interface BattleAnimationState {
     currentRound: number;
@@ -10,13 +10,17 @@ export interface BattleAnimationState {
     victoryState: VictoryState;
     activePlayerCard: any | null;
     activeEnemyCard: any | null;
+    activePlayerHiddenCard: any | null;
+    activeEnemyHiddenCard: any | null;
 }
 
 export function useBattleAnimation(
     playerCards: any[],
     enemyCards: any[],
     battleType: BattleType = 'tactical',
-    onBattleEnd: (victory: boolean) => void
+    playerHiddenCards?: { round2?: any; round4?: any },
+    enemyHiddenCards?: { round2?: any; round4?: any },
+    onBattleEnd?: (victory: boolean) => void
 ) {
     const [state, setState] = useState<BattleAnimationState>({
         currentRound: 0,
@@ -32,6 +36,8 @@ export function useBattleAnimation(
         },
         activePlayerCard: null,
         activeEnemyCard: null,
+        activePlayerHiddenCard: null,
+        activeEnemyHiddenCard: null,
     });
 
     /**
@@ -63,8 +69,17 @@ export function useBattleAnimation(
 
         const playerCard = playerCards[roundNumber - 1];
         const enemyCard = enemyCards[roundNumber - 1];
+        const isHiddenRound = battleType === 'strategic' && (roundNumber === 2 || roundNumber === 4);
 
-        // Phase 1: 카드 뽑기
+        // 히든 카드 가져오기
+        const playerHiddenCard = isHiddenRound
+            ? (roundNumber === 2 ? playerHiddenCards?.round2 : playerHiddenCards?.round4)
+            : null;
+        const enemyHiddenCard = isHiddenRound
+            ? (roundNumber === 2 ? enemyHiddenCards?.round2 : enemyHiddenCards?.round4)
+            : null;
+
+        // Phase 1: 메인 카드 뽑기
         setState(prev => ({
             ...prev,
             animationPhase: 'draw',
@@ -74,31 +89,70 @@ export function useBattleAnimation(
 
         await new Promise(resolve => setTimeout(resolve, 500));
 
-        // Phase 2: 충돌
+        // Phase 2: 메인 카드 충돌
         setState(prev => ({ ...prev, animationPhase: 'clash' }));
         await new Promise(resolve => setTimeout(resolve, 1000));
 
-        // Phase 3: 결과 판정
-        const winner = determineWinner(playerCard, enemyCard);
-        const roundResult = createRoundResult(roundNumber, playerCard, enemyCard, winner);
+        // Phase 3: 메인 카드 결과
+        const mainWinner = determineWinner(playerCard, enemyCard);
+
+        setState(prev => ({ ...prev, animationPhase: 'result' }));
+        await new Promise(resolve => setTimeout(resolve, 800));
+
+        let hiddenWinner: 'player' | 'enemy' | 'draw' | undefined;
+
+        // 히든 라운드 처리
+        if (isHiddenRound && playerHiddenCard && enemyHiddenCard) {
+            // Phase 4: 히든 카드 뽑기
+            setState(prev => ({
+                ...prev,
+                animationPhase: 'hidden-draw',
+                activePlayerHiddenCard: playerHiddenCard,
+                activeEnemyHiddenCard: enemyHiddenCard,
+            }));
+
+            await new Promise(resolve => setTimeout(resolve, 500));
+
+            // Phase 5: 히든 카드 충돌
+            setState(prev => ({ ...prev, animationPhase: 'hidden-clash' }));
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
+            // Phase 6: 히든 카드 결과
+            hiddenWinner = determineWinner(playerHiddenCard, enemyHiddenCard);
+
+            setState(prev => ({ ...prev, animationPhase: 'hidden-result' }));
+            await new Promise(resolve => setTimeout(resolve, 800));
+        }
+
+        // 최종 라운드 결과 생성
+        const roundResult: RoundResult = {
+            roundNumber,
+            winner: mainWinner,
+            isHiddenRound,
+            playerCard,
+            enemyCard,
+            hiddenCardWinner: hiddenWinner,
+            playerHiddenCard,
+            enemyHiddenCard,
+        };
+
         const newResults = [...state.results, roundResult];
         const newVictoryState = calculateVictoryPoints(newResults, battleType);
 
         setState(prev => ({
             ...prev,
-            animationPhase: 'result',
             results: newResults,
             victoryState: newVictoryState,
             currentRound: roundNumber,
         }));
 
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await new Promise(resolve => setTimeout(resolve, 500));
 
-        // Phase 4: 승리 체크
+        // Phase 7: 승리 체크
         if (newVictoryState.isGameOver) {
             setState(prev => ({ ...prev, animationPhase: 'victory' }));
             setTimeout(() => {
-                onBattleEnd(newVictoryState.finalWinner === 'player');
+                onBattleEnd?.(newVictoryState.finalWinner === 'player');
             }, 2000);
         } else {
             // 다음 라운드 준비
@@ -107,9 +161,11 @@ export function useBattleAnimation(
                 animationPhase: 'idle',
                 activePlayerCard: null,
                 activeEnemyCard: null,
+                activePlayerHiddenCard: null,
+                activeEnemyHiddenCard: null,
             }));
         }
-    }, [state, playerCards, enemyCards, determineWinner, onBattleEnd]);
+    }, [state, playerCards, enemyCards, battleType, playerHiddenCards, enemyHiddenCards, determineWinner, onBattleEnd]);
 
     /**
      * 자동 진행

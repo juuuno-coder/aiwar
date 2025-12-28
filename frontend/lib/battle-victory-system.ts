@@ -1,7 +1,9 @@
 /**
  * 전투 승점 시스템
  * - 일반 라운드 승리: +1점
- * - 전략 전투 한정: 히든 라운드(2, 4) 연속 승리 시 +2점
+ * - 전략 전투 히든 라운드 (2, 4): 2장 대결 (메인 + 히든)
+ *   * 2승: +2점
+ *   * 1승 1패: 히든 카드 승부로 결정, +1점
  * - 3점 먼저 획득 시 즉시 승리
  */
 
@@ -13,6 +15,10 @@ export interface RoundResult {
     isHiddenRound: boolean;
     playerCard: any;
     enemyCard: any;
+    // 히든 라운드용 추가 정보
+    hiddenCardWinner?: 'player' | 'enemy' | 'draw';
+    playerHiddenCard?: any;
+    enemyHiddenCard?: any;
 }
 
 export interface VictoryState {
@@ -37,42 +43,44 @@ export function calculateVictoryPoints(
     const playerWonCards: any[] = [];
     const enemyWonCards: any[] = [];
 
-    // 히든 라운드 연속 승리 체크용 (전략 전투에만 적용)
-    let hiddenRound2Winner: 'player' | 'enemy' | 'draw' | null = null;
-    let hiddenRound4Winner: 'player' | 'enemy' | 'draw' | null = null;
-
     for (const result of results) {
-        if (result.winner === 'draw') continue;
+        // 히든 라운드 (2, 4) - 전략 전투에만 적용
+        if (battleType === 'strategic' && result.isHiddenRound && result.hiddenCardWinner) {
+            const mainWinner = result.winner;
+            const hiddenWinner = result.hiddenCardWinner;
 
-        // 히든 라운드 승자 기록 (전략 전투에만)
-        if (battleType === 'strategic') {
-            if (result.roundNumber === 2) {
-                hiddenRound2Winner = result.winner;
-            } else if (result.roundNumber === 4) {
-                hiddenRound4Winner = result.winner;
+            // 2승 (메인 + 히든 모두 승리): +2점
+            if (mainWinner === 'player' && hiddenWinner === 'player') {
+                playerScore += 2;
+                playerWonCards.push(result.playerCard);
+                if (result.playerHiddenCard) playerWonCards.push(result.playerHiddenCard);
+            } else if (mainWinner === 'enemy' && hiddenWinner === 'enemy') {
+                enemyScore += 2;
+                enemyWonCards.push(result.enemyCard);
+                if (result.enemyHiddenCard) enemyWonCards.push(result.enemyHiddenCard);
+            }
+            // 1승 1패: 히든 카드 승부로 결정, +1점
+            else if (hiddenWinner === 'player') {
+                playerScore += 1;
+                if (result.playerHiddenCard) playerWonCards.push(result.playerHiddenCard);
+            } else if (hiddenWinner === 'enemy') {
+                enemyScore += 1;
+                if (result.enemyHiddenCard) enemyWonCards.push(result.enemyHiddenCard);
             }
         }
+        // 일반 라운드
+        else {
+            if (result.winner === 'draw') continue;
 
-        // 승리 카드 추가
-        if (result.winner === 'player') {
-            playerWonCards.push(result.playerCard);
-        } else {
-            enemyWonCards.push(result.enemyCard);
+            // 승리 카드 추가
+            if (result.winner === 'player') {
+                playerWonCards.push(result.playerCard);
+                playerScore += 1;
+            } else {
+                enemyWonCards.push(result.enemyCard);
+                enemyScore += 1;
+            }
         }
-
-        // 일반 승점 계산
-        if (result.winner === 'player') {
-            playerScore += 1;
-        } else {
-            enemyScore += 1;
-        }
-    }
-
-    // 히든 라운드 보너스 (2, 4 라운드 모두 이긴 경우 +1점 추가)
-    if (hiddenRound2Winner === 'player' && hiddenRound4Winner === 'player') {
-        playerScore += 1;
-    } else if (hiddenRound2Winner === 'enemy' && hiddenRound4Winner === 'enemy') {
-        enemyScore += 1;
     }
 
     // 승리 조건 체크
