@@ -372,6 +372,8 @@ export function generateAIOpponent(playerLevel: number = 1, cardPool: Card[] = [
 
 /**
  * 전투 시뮬레이션
+ * - 단판승부: R1 → R2 → R4 → R5 순차 진행, 비기면 다음 카드
+ * - 전술승부: 5라운드 진행, 비기면 전투력 비교
  */
 export function simulateBattle(
     player: BattleParticipant,
@@ -382,76 +384,126 @@ export function simulateBattle(
     let playerWins = 0;
     let opponentWins = 0;
 
-    // 승리 조건 설정
-    const winsNeeded = mode === 'sudden-death' ? 1 : 3;
-
     // 카드 순서 결정
     const playerOrder = player.cardOrder || [0, 1, 2, 3, 4];
     const opponentOrder = opponent.cardOrder || [0, 1, 2, 3, 4];
 
-    // 최대 라운드 설정 (단판 승부는 강제 1라운드)
-    const maxRounds = mode === 'sudden-death' ? 1 : 5;
+    if (mode === 'sudden-death') {
+        // 단판승부: 순차 라운드 (R1, R2, R4, R5)
+        const roundSequence = [0, 1, 3, 4];
 
-    // 🛠️ 디버그 로그
-    console.log(`⚙️ simulateBattle: mode=${mode}, maxRounds=${maxRounds}, winsNeeded=${winsNeeded}`);
+        console.log(`⚙️ Sudden Death: Sequential rounds [1,2,4,5]`);
 
-    for (let i = 0; i < maxRounds; i++) {
-        // 🛡️ 안전한 인덱스 접근 - undefined 카드 방지
-        const playerIndex = playerOrder[i];
-        const opponentIndex = opponentOrder[i];
+        for (const roundIndex of roundSequence) {
+            const playerIndex = playerOrder[roundIndex];
+            const opponentIndex = opponentOrder[roundIndex];
 
-        // 인덱스 범위 확인
-        if (playerIndex === undefined || opponentIndex === undefined ||
-            playerIndex < 0 || playerIndex >= player.deck.length ||
-            opponentIndex < 0 || opponentIndex >= opponent.deck.length) {
-            console.warn(`⚠️ Round ${i + 1}: Invalid card index (player: ${playerIndex}, opponent: ${opponentIndex})`);
-            continue; // 잘못된 인덱스는 건너뛰기
+            if (playerIndex === undefined || opponentIndex === undefined ||
+                playerIndex < 0 || playerIndex >= player.deck.length ||
+                opponentIndex < 0 || opponentIndex >= opponent.deck.length) {
+                console.warn(`⚠️ Round ${roundIndex + 1}: Invalid card index`);
+                continue;
+            }
+
+            const playerCard = player.deck[playerIndex];
+            const opponentCard = opponent.deck[opponentIndex];
+
+            if (!playerCard || !opponentCard) {
+                console.warn(`⚠️ Round ${roundIndex + 1}: Missing card data`);
+                continue;
+            }
+
+            // 타입만 비교 (전투력 비교 없음)
+            const playerType = getCardType(playerCard);
+            const opponentType = getCardType(opponentCard);
+
+            let winner: 'player' | 'opponent' | 'draw' = 'draw';
+
+            // 순수 가위바위보 판정
+            if (playerType !== opponentType) {
+                if (playerType === 'efficiency' && opponentType === 'function') winner = 'player';
+                else if (playerType === 'function' && opponentType === 'creativity') winner = 'player';
+                else if (playerType === 'creativity' && opponentType === 'efficiency') winner = 'player';
+                else winner = 'opponent';
+            }
+
+            if (winner === 'player') playerWins++;
+            if (winner === 'opponent') opponentWins++;
+
+            rounds.push({
+                round: roundIndex + 1,
+                playerCard,
+                opponentCard,
+                winner,
+                playerType,
+                opponentType,
+            });
+
+            // 승자가 결정되면 즉시 종료
+            if (winner !== 'draw') {
+                console.log(`✅ Winner in Round ${roundIndex + 1}: ${winner}`);
+                break;
+            }
+
+            console.log(`⚖️ Round ${roundIndex + 1}: Draw, next card...`);
         }
+    } else {
+        // 전술승부: 5라운드 진행, 비기면 전투력 비교
+        const winsNeeded = 3;
+        console.log(`⚙️ Tactics: 5 rounds, 3 wins needed`);
 
-        const playerCard = player.deck[playerIndex];
-        const opponentCard = opponent.deck[opponentIndex];
+        for (let i = 0; i < 5; i++) {
+            const playerIndex = playerOrder[i];
+            const opponentIndex = opponentOrder[i];
 
-        // 🛡️ 카드 존재 확인 (null/undefined 체크)
-        if (!playerCard || !opponentCard) {
-            console.warn(`⚠️ Round ${i + 1}: Missing card data (player: ${!!playerCard}, opponent: ${!!opponentCard})`);
-            continue; // 카드가 없으면 라운드 건너뛰기
+            if (playerIndex === undefined || opponentIndex === undefined ||
+                playerIndex < 0 || playerIndex >= player.deck.length ||
+                opponentIndex < 0 || opponentIndex >= opponent.deck.length) {
+                console.warn(`⚠️ Round ${i + 1}: Invalid card index`);
+                continue;
+            }
+
+            const playerCard = player.deck[playerIndex];
+            const opponentCard = opponent.deck[opponentIndex];
+
+            if (!playerCard || !opponentCard) {
+                console.warn(`⚠️ Round ${i + 1}: Missing card data`);
+                continue;
+            }
+
+            // 전투력 비교 포함한 전체 판정
+            const winner = determineRoundWinner(playerCard, opponentCard);
+
+            if (winner === 'player') playerWins++;
+            if (winner === 'opponent') opponentWins++;
+
+            rounds.push({
+                round: i + 1,
+                playerCard,
+                opponentCard,
+                winner,
+                playerType: getCardType(playerCard),
+                opponentType: getCardType(opponentCard),
+            });
+
+            // 승리 조건 달성 시 종료
+            if (playerWins >= winsNeeded || opponentWins >= winsNeeded) {
+                console.log(`✅ ${playerWins >= winsNeeded ? 'Player' : 'Opponent'} wins!`);
+                break;
+            }
         }
-
-        const winner = determineRoundWinner(playerCard, opponentCard);
-
-        if (winner === 'player') playerWins++;
-        if (winner === 'opponent') opponentWins++;
-
-        rounds.push({
-            round: i + 1,
-            playerCard,
-            opponentCard,
-            winner,
-            playerType: getCardType(playerCard),
-            opponentType: getCardType(opponentCard),
-        });
-
-        // 승리 조건 달성 시 종료
-        if (playerWins >= winsNeeded || opponentWins >= winsNeeded) {
-            break;
-        }
-
-        // 단판 승부인데 무승부인 경우? 계속 진행?
-        // 기획상 '1선승'이므로 승자가 나올때까지 해야하나 카드가 5장이므로 5장 소진시 종료.
-        // 여기서는 무승부가 반복되면 5라운드까지 가고, 승수가 많은 쪽이 이김.
     }
 
     // 최종 승자 판정
-    let battleWinner: 'player' | 'opponent' = 'opponent';
+    let battleWinner: 'player' | 'opponent';
 
     if (playerWins > opponentWins) {
         battleWinner = 'player';
     } else if (opponentWins > playerWins) {
         battleWinner = 'opponent';
     } else {
-        // 완전 무승부 시 (보통 방어자 승리 or 랜덤) - 여기선 드로우 없음, AI 승리 처리 또는 랜덤?
-        // 유저 경험상 무승부는 패배 처리하는 것이 깔끔하거나, 재경기.
-        // 일단 패배 처리 (도전자 입장이므로)
+        // 무승부는 패배 처리
+        console.log('⚠️ Tie - treating as opponent win');
         battleWinner = 'opponent';
     }
 

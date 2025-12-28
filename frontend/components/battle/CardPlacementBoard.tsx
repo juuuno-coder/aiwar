@@ -249,10 +249,46 @@ export default function CardPlacementBoard({ selectedCards, onPlacementComplete 
                                 }}
                             />
                             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-                            <div className="absolute bottom-1 left-0 right-0 text-center">
-                                <div className="text-[10px] font-bold text-white truncate px-1">
+
+                            {/* Rarity Badge */}
+                            {(() => {
+                                const rarityInfo: Record<string, { text: string; bg: string }> = {
+                                    legendary: { text: '전설', bg: 'bg-gradient-to-r from-yellow-500 to-orange-500' },
+                                    commander: { text: '사령관', bg: 'bg-gradient-to-r from-purple-600 to-pink-600' },
+                                    epic: { text: '영웅', bg: 'bg-gradient-to-r from-purple-500 to-indigo-500' },
+                                    rare: { text: '희귀', bg: 'bg-gradient-to-r from-blue-500 to-cyan-500' },
+                                    unique: { text: '유니크', bg: 'bg-gradient-to-r from-green-500 to-emerald-500' },
+                                    common: { text: '일반', bg: 'bg-gradient-to-r from-gray-500 to-slate-500' }
+                                };
+                                const info = rarityInfo[card.rarity || 'common'] || rarityInfo.common;
+                                return (
+                                    <div className={`absolute top-0.5 left-0.5 px-1 py-0.5 rounded text-[7px] font-black text-white shadow-lg z-10 ${info.bg}`}>
+                                        {info.text}
+                                    </div>
+                                );
+                            })()}
+
+                            {/* Type Icon */}
+                            {(() => {
+                                const type = card.type;
+                                if (type === 'rock') return <div className="absolute top-0.5 right-0.5 px-0.5 py-0.5 rounded bg-red-500/80 text-xs shadow-lg z-10">✊</div>;
+                                if (type === 'paper') return <div className="absolute top-0.5 right-0.5 px-0.5 py-0.5 rounded bg-blue-500/80 text-xs shadow-lg z-10">✋</div>;
+                                if (type === 'scissors') return <div className="absolute top-0.5 right-0.5 px-0.5 py-0.5 rounded bg-green-500/80 text-xs shadow-lg z-10">✌️</div>;
+                                return null;
+                            })()}
+
+                            {/* Level Badge */}
+                            <div className="absolute bottom-6 right-0.5 z-10">
+                                <div className="px-1 py-0.5 bg-gradient-to-r from-yellow-500 to-orange-500 rounded text-[7px] font-black text-white shadow-lg">
+                                    LV.{card.level || 1}
+                                </div>
+                            </div>
+
+                            <div className="absolute bottom-0 left-0 right-0 text-center bg-black/70 py-0.5">
+                                <div className="text-[9px] font-bold text-white truncate px-1">
                                     {card.name}
                                 </div>
+                                <div className="text-[8px] text-cyan-400">⚡{Math.floor(card.stats?.totalPower || 0)}</div>
                             </div>
                         </motion.div>
                     ))}
