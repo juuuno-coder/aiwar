@@ -76,11 +76,11 @@ export default function UniqueCreatePage() {
         e.dataTransfer.setData('application/json', JSON.stringify(card));
     };
 
-    const handleMaterialDrop = (card: InventoryCard, index: number) => {
+    const handleMaterialDrop = (card: InventoryCard | any, index: number) => {
         if (card.level > 1 || card.rarity !== 'legendary') return;
 
         const newSlots = [...materialSlots];
-        newSlots[index] = card;
+        newSlots[index] = card as InventoryCard;
         setMaterialSlots(newSlots);
     };
 
@@ -122,11 +122,19 @@ export default function UniqueCreatePage() {
         }
 
         if (confirm('신청서를 제출하시겠습니까? (10,000 코인 / 2,000 토큰 소모)')) {
+            // InventoryCard[] -> Card[] 변환 (acquiredAt 타입 호환성 해결)
+            const materialCards = filledMaterials.map(card => ({
+                ...card,
+                acquiredAt: card.acquiredAt && typeof (card.acquiredAt as any).toDate === 'function'
+                    ? (card.acquiredAt as any).toDate()
+                    : new Date(card.acquiredAt as any)
+            })) as any;
+
             const result = await submitUniqueApplication(
                 appName,
                 appDesc,
                 appImage || '/card_placeholder_1765931222851.png',
-                filledMaterials
+                materialCards
             );
 
             if (result.success) {
@@ -144,7 +152,7 @@ export default function UniqueCreatePage() {
     };
 
     const filledCount = materialSlots.filter(c => c !== null).length;
-    const canSubmit = filledCount === 5 && appName.trim() && appDesc.trim();
+    const canSubmit = filledCount === 5 && !!appName.trim() && !!appDesc.trim();
 
     return (
         <CyberPageLayout

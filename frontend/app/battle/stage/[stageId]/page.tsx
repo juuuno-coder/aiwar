@@ -22,7 +22,8 @@ import {
     Enemy,
     StageBattleResult
 } from '@/lib/stage-system';
-import { Zap, Swords } from 'lucide-react';
+import { Zap, Swords, Shuffle, CheckCircle } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 /**
  * 5장 전투 2단계 시스템:
@@ -524,6 +525,137 @@ export default function StageBattlePage() {
                                 ))}
                             </div>
                         )}
+
+                        {/* 버튼 영역 - 하단 고정 (덱 슬롯 포함) */}
+                        <div className="fixed bottom-0 left-0 right-0 bg-gradient-to-t from-black via-black/95 to-transparent pt-8 pb-4 z-50">
+                            <div className="max-w-5xl mx-auto px-4">
+                                {/* 덱 슬롯 5개 (크게) */}
+                                <div className="flex justify-center gap-4 mb-4">
+                                    {Array.from({ length: 5 }).map((_, i) => {
+                                        const card = footer.state.selectionSlots[i];
+                                        // 가위바위보 타입 결정
+                                        const getTypeInfo = (c: GameCardType) => {
+                                            const type = c.type || 'EFFICIENCY';
+                                            if (type === 'EFFICIENCY') return { emoji: '✊', name: '바위', color: 'text-amber-400', bg: 'bg-amber-500/20' };
+                                            if (type === 'CREATIVITY') return { emoji: '✌️', name: '가위', color: 'text-red-400', bg: 'bg-red-500/20' };
+                                            return { emoji: '🖐️', name: '보', color: 'text-blue-400', bg: 'bg-blue-500/20' };
+                                        };
+                                        const typeInfo = card ? getTypeInfo(card) : null;
+
+                                        return (
+                                            <motion.div
+                                                key={i}
+                                                initial={{ scale: 0.9, opacity: 0 }}
+                                                animate={{ scale: 1, opacity: 1 }}
+                                                transition={{ delay: i * 0.05 }}
+                                                className={cn(
+                                                    "relative w-24 h-36 rounded-xl border-2 transition-all overflow-hidden cursor-pointer",
+                                                    card
+                                                        ? "border-cyan-500 bg-cyan-500/10 shadow-xl shadow-cyan-500/30"
+                                                        : "border-white/20 bg-white/5 border-dashed"
+                                                )}
+                                                onClick={() => {
+                                                    if (card) {
+                                                        footer.removeFromSelection(card.id);
+                                                    }
+                                                }}
+                                            >
+                                                {card ? (
+                                                    <>
+                                                        {/* 카드 이미지 */}
+                                                        <div
+                                                            className="absolute inset-0 bg-cover bg-center"
+                                                            style={{ backgroundImage: `url(${(card as any).imageUrl || '/assets/cards/default-card.png'})` }}
+                                                        />
+                                                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
+
+                                                        {/* 슬롯 번호 */}
+                                                        <div className="absolute top-1.5 left-1.5 w-6 h-6 bg-cyan-500 rounded-full flex items-center justify-center text-xs font-bold text-white shadow-lg">
+                                                            {i + 1}
+                                                        </div>
+
+                                                        {/* 가위바위보 타입 */}
+                                                        {typeInfo && (
+                                                            <div className={cn(
+                                                                "absolute top-1.5 right-1.5 px-2 py-1 rounded-full text-lg shadow-lg",
+                                                                typeInfo.bg
+                                                            )}>
+                                                                {typeInfo.emoji}
+                                                            </div>
+                                                        )}
+
+                                                        {/* 하단 정보 */}
+                                                        <div className="absolute bottom-0 left-0 right-0 p-2 text-center">
+                                                            <div className={cn("text-sm font-bold mb-0.5", typeInfo?.color)}>
+                                                                {typeInfo?.name}
+                                                            </div>
+                                                            <div className="text-[11px] font-bold text-white/80">
+                                                                ⚡{Math.floor(card.stats.totalPower)}
+                                                            </div>
+                                                        </div>
+
+                                                        {/* 제거 버튼 (호버 시) */}
+                                                        <div className="absolute inset-0 bg-red-500/0 hover:bg-red-500/60 transition-colors flex items-center justify-center opacity-0 hover:opacity-100">
+                                                            <span className="text-white font-bold text-2xl drop-shadow-lg">✕</span>
+                                                        </div>
+                                                    </>
+                                                ) : (
+                                                    <div className="flex flex-col items-center justify-center h-full text-white/30">
+                                                        <span className="text-2xl font-bold mb-1">{i + 1}</span>
+                                                        <span className="text-[10px]">빈 슬롯</span>
+                                                    </div>
+                                                )}
+                                            </motion.div>
+                                        );
+                                    })}
+                                </div>
+
+                                {/* 액션 버튼 */}
+                                <div className="flex items-center justify-between gap-4">
+                                    <button
+                                        onClick={() => {
+                                            // 자동 선택 - 전투력 높은 순으로 5장
+                                            const topCards = [...allCards]
+                                                .sort((a, b) => b.stats.totalPower - a.stats.totalPower)
+                                                .slice(0, 5);
+                                            // 기존 선택 초기화 후 추가 (수동 리셋)
+                                            footer.state.selectionSlots.forEach(c => footer.removeFromSelection(c.id));
+                                            setTimeout(() => {
+                                                topCards.forEach(c => footer.addToSelection(c));
+                                            }, 0);
+                                        }}
+                                        className="px-6 py-3 bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-400 font-bold rounded-xl transition-all flex items-center gap-2"
+                                    >
+                                        <Shuffle size={20} />
+                                        자동 선택
+                                    </button>
+
+                                    <div className="flex-1 text-center">
+                                        <span className="text-2xl font-black orbitron">
+                                            <span className={cn(
+                                                footer.state.selectionSlots.length === 5 ? "text-green-400" : "text-white/60"
+                                            )}>{footer.state.selectionSlots.length}</span>
+                                            <span className="text-white/40">/5</span>
+                                        </span>
+                                        <span className="text-white/40 ml-2">선택됨</span>
+                                    </div>
+
+                                    <button
+                                        onClick={confirmHand}
+                                        disabled={footer.state.selectionSlots.length !== 5}
+                                        className={cn(
+                                            "px-8 py-3 font-bold rounded-xl transition-all flex items-center gap-2",
+                                            footer.state.selectionSlots.length === 5
+                                                ? "bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white shadow-lg shadow-green-500/30"
+                                                : "bg-white/10 text-white/40 cursor-not-allowed"
+                                        )}
+                                    >
+                                        <CheckCircle size={20} />
+                                        전투 시작
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 )}
 
