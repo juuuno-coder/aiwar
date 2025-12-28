@@ -732,19 +732,8 @@ export default function StageBattlePage() {
                 )}
 
                 {/* --- 3. Battle Execution (5-Card Assignment or Battle View) --- */}
-                {(phase === 'viewing' || phase === 'battle' || phase === 'card-placement' || phase === 'card-placement') && (
+                {(phase === 'viewing' || phase === 'battle' || phase === 'card-placement') && (
                     <div className="flex flex-col items-center">
-                        <div className="flex justify-between w-full max-w-4xl mb-8">
-                            <div className="text-center">
-                                <div className="text-cyan-400 font-bold mb-2">YOU</div>
-                                <div className="text-4xl text-white font-black">{animatedPlayerWins}</div>
-                            </div>
-                            <div className="text-white/50 text-xl pt-4">VS</div>
-                            <div className="text-center">
-                                <div className="text-red-400 font-bold mb-2">ENEMY</div>
-                                <div className="text-4xl text-white font-black">{animatedEnemyWins}</div>
-                            </div>
-                        </div>
 
                         {/* 5장 전투: 라운드별 카드 배치 UI */}
                         {phase === 'card-placement' && (
