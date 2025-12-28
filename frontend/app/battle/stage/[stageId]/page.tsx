@@ -634,9 +634,9 @@ export default function StageBattlePage() {
                                                             </div>
                                                         )}
 
-                                                        {/* 레벨 표시 (하단) */}
-                                                        <div className="absolute bottom-8 left-0 right-0 text-center z-10">
-                                                            <div className="inline-block px-2 py-0.5 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-full text-[10px] font-black text-white shadow-lg border border-yellow-300/50">
+                                                        {/* 레벨 표시 (상단 오른쪽) */}
+                                                        <div className="absolute top-10 right-1.5 z-10">
+                                                            <div className="px-2 py-0.5 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-full text-[10px] font-black text-white shadow-lg border border-yellow-300/50">
                                                                 LV.{card.level || 1}
                                                             </div>
                                                         </div>
@@ -934,28 +934,91 @@ export default function StageBattlePage() {
 
                 {/* --- 4. Result --- */}
                 {phase === 'result' && battleResult && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-xl">
-                        <div className="text-center">
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-xl">
+                        <div className="relative text-center max-w-2xl">
+                            {/* Background Glow Effect */}
                             <motion.div
-                                initial={{ scale: 0 }}
-                                animate={{ scale: 1 }}
-                                className="text-8xl mb-8"
-                            >
-                                {battleResult.result === 'victory' ? '🏆' : '💀'}
-                            </motion.div>
-                            <h2 className="text-5xl font-black text-white orbitron mb-4">
-                                {battleResult.result === 'victory' ? 'VICTORY' : 'DEFEAT'}
-                            </h2>
-                            <p className="text-gray-400 mb-8 max-w-md mx-auto">
-                                {battleResult.result === 'victory'
-                                    ? storyStage?.enemy.dialogue.win
-                                    : storyStage?.enemy.dialogue.lose}
-                            </p>
+                                initial={{ scale: 0, opacity: 0 }}
+                                animate={{ scale: 1.5, opacity: 0.3 }}
+                                transition={{ duration: 1 }}
+                                className={`absolute inset-0 blur-3xl ${battleResult.result === 'victory'
+                                    ? 'bg-gradient-to-r from-yellow-500 via-orange-500 to-yellow-500'
+                                    : 'bg-gradient-to-r from-red-600 via-purple-600 to-red-600'
+                                    }`}
+                            />
 
-                            <div className="flex gap-4 justify-center">
-                                <Button size="lg" color="primary" onPress={handleResultConfirm}>
-                                    CONTINUE
-                                </Button>
+                            {/* Main Content */}
+                            <div className="relative">
+                                {/* Icon */}
+                                <motion.div
+                                    initial={{ scale: 0, rotate: -180 }}
+                                    animate={{ scale: 1, rotate: 0 }}
+                                    transition={{ type: "spring", duration: 0.8 }}
+                                    className="text-9xl mb-6"
+                                >
+                                    {battleResult.result === 'victory' ? '🏆' : '💀'}
+                                </motion.div>
+
+                                {/* Title */}
+                                <motion.h2
+                                    initial={{ y: 50, opacity: 0 }}
+                                    animate={{ y: 0, opacity: 1 }}
+                                    transition={{ delay: 0.3 }}
+                                    className={`text-7xl font-black orbitron mb-6 ${battleResult.result === 'victory'
+                                        ? 'text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-orange-500 to-yellow-400'
+                                        : 'text-transparent bg-clip-text bg-gradient-to-r from-red-500 via-purple-500 to-red-500'
+                                        }`}
+                                >
+                                    {battleResult.result === 'victory' ? 'VICTORY' : 'DEFEAT'}
+                                </motion.h2>
+
+                                {/* Dialogue */}
+                                <motion.p
+                                    initial={{ y: 30, opacity: 0 }}
+                                    animate={{ y: 0, opacity: 1 }}
+                                    transition={{ delay: 0.5 }}
+                                    className="text-lg text-gray-300 mb-8 px-8 leading-relaxed"
+                                >
+                                    {battleResult.result === 'victory'
+                                        ? storyStage?.enemy.dialogue.win
+                                        : storyStage?.enemy.dialogue.lose}
+                                </motion.p>
+
+                                {/* Stats */}
+                                {battleResult.result === 'victory' && (
+                                    <motion.div
+                                        initial={{ y: 30, opacity: 0 }}
+                                        animate={{ y: 0, opacity: 1 }}
+                                        transition={{ delay: 0.7 }}
+                                        className="flex gap-6 justify-center mb-8"
+                                    >
+                                        <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl px-6 py-3">
+                                            <div className="text-yellow-400 text-sm font-bold mb-1">코인</div>
+                                            <div className="text-2xl font-black text-white">+{battleResult.rewards.coins}</div>
+                                        </div>
+                                        <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl px-6 py-3">
+                                            <div className="text-cyan-400 text-sm font-bold mb-1">경험치</div>
+                                            <div className="text-2xl font-black text-white">+{battleResult.rewards.exp}</div>
+                                        </div>
+                                    </motion.div>
+                                )}
+
+                                {/* Button */}
+                                <motion.div
+                                    initial={{ y: 30, opacity: 0 }}
+                                    animate={{ y: 0, opacity: 1 }}
+                                    transition={{ delay: 0.9 }}
+                                >
+                                    <button
+                                        onClick={handleResultConfirm}
+                                        className={`px-12 py-4 rounded-xl font-bold text-xl transition-all ${battleResult.result === 'victory'
+                                            ? 'bg-gradient-to-r from-yellow-500 to-orange-600 hover:from-yellow-400 hover:to-orange-500 text-white shadow-lg shadow-yellow-500/50 hover:shadow-yellow-500/70'
+                                            : 'bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-500 hover:to-gray-600 text-white shadow-lg shadow-gray-500/50 hover:shadow-gray-500/70'
+                                            }`}
+                                    >
+                                        {battleResult.result === 'victory' ? '계속하기' : '다시 도전'}
+                                    </button>
+                                </motion.div>
                             </div>
                         </div>
                     </div>
