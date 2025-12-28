@@ -575,8 +575,8 @@ export default function PVPArenaPage() {
                                                                 </div>
                                                             )}
 
-                                                            {/* 레벨 표시 (상단 오른쪽) */}
-                                                            <div className="absolute top-10 right-1.5 z-10">
+                                                            {/* 레벨 표시 (하단 오른쪽) */}
+                                                            <div className="absolute bottom-8 right-1.5 z-10">
                                                                 <div className="px-2 py-0.5 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-full text-[10px] font-black text-white shadow-lg border border-yellow-300/50">
                                                                     LV.{card.level || 1}
                                                                 </div>
