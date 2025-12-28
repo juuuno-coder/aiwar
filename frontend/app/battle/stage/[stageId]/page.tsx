@@ -567,14 +567,14 @@ export default function StageBattlePage() {
                                                             className="absolute inset-0 bg-cover bg-center"
                                                             style={{ backgroundImage: `url(${card.imageUrl || '/assets/cards/default-card.png'})` }}
                                                         />
-                                                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
+                                                        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
 
                                                         {/* 슬롯 번호 */}
                                                         <div className="absolute top-1.5 left-1.5 w-6 h-6 bg-cyan-500 rounded-full flex items-center justify-center text-xs font-bold text-white shadow-lg">
                                                             {i + 1}
                                                         </div>
 
-                                                        {/* 가위바위보 타입 */}
+                                                        {/* 가위바위보 타입 아이콘 */}
                                                         {typeInfo && (
                                                             <div className={cn(
                                                                 "absolute top-1.5 right-1.5 px-2 py-1 rounded-full text-lg shadow-lg",
@@ -584,12 +584,9 @@ export default function StageBattlePage() {
                                                             </div>
                                                         )}
 
-                                                        {/* 하단 정보 */}
-                                                        <div className="absolute bottom-0 left-0 right-0 p-2 text-center">
-                                                            <div className={cn("text-sm font-bold mb-0.5", typeInfo?.color)}>
-                                                                {typeInfo?.name}
-                                                            </div>
-                                                            <div className="text-[11px] font-bold text-white/80">
+                                                        {/* 하단 전투력 표시 */}
+                                                        <div className="absolute bottom-0 left-0 right-0 p-2 text-center bg-black/50">
+                                                            <div className="text-sm font-bold text-white">
                                                                 ⚡{Math.floor(card.stats.totalPower)}
                                                             </div>
                                                         </div>

@@ -282,6 +282,26 @@ export default function GameCard({
                         />
                     </div>
                 )}
+
+                {/* 선택 체크 표시 */}
+                {isSelected && (
+                    <motion.div
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        className="absolute inset-0 bg-cyan-500/20 z-40 flex items-center justify-center"
+                    >
+                        <motion.div
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            transition={{ type: "spring", stiffness: 200, damping: 15 }}
+                            className="w-16 h-16 rounded-full bg-cyan-500 flex items-center justify-center shadow-2xl"
+                        >
+                            <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                            </svg>
+                        </motion.div>
+                    </motion.div>
+                )}
             </div>
 
             {/* 카드 정보 영역 */}
