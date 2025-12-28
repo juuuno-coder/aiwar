@@ -614,14 +614,13 @@ export default function StageBattlePage() {
                                 <div className="flex items-center justify-between gap-4">
                                     <button
                                         onClick={() => {
-                                            // 자동 선택 - 전투력 높은 순으로 5장
-                                            const topCards = [...allCards]
-                                                .sort((a, b) => b.stats.totalPower - a.stats.totalPower)
-                                                .slice(0, 5);
+                                            // 자동 선택 - 등급별로 균형 잡힌 덱 구성
+                                            const { selectBalancedDeck } = require('@/lib/balanced-deck-selector');
+                                            const balancedDeck = selectBalancedDeck(allCards, 5);
                                             // 기존 선택 초기화 후 추가 (수동 리셋)
                                             footer.state.selectionSlots.forEach(c => footer.removeFromSelection(c.id));
                                             setTimeout(() => {
-                                                topCards.forEach(c => footer.addToSelection(c));
+                                                balancedDeck.forEach((c: any) => footer.addToSelection(c));
                                             }, 0);
                                         }}
                                         className="px-6 py-3 bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-400 font-bold rounded-xl transition-all flex items-center gap-2"

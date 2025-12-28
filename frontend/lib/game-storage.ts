@@ -31,6 +31,7 @@ export interface GameState {
     stageProgress?: any;
     lastBackup?: string;
     username?: string; // Player username for PVP
+    hasReceivedStarterPack?: boolean; // Track if player received starter pack
 
     // 신규 시스템 데이터
     subscriptions: { factionId: string; nextPaymentAt: number; isActive: boolean }[];

@@ -559,11 +559,10 @@ export default function PVPArenaPage() {
                                     <div className="flex items-center justify-between gap-4">
                                         <button
                                             onClick={() => {
-                                                // 자동 선택 - 전투력 높은 순으로 5장
-                                                const topCards = [...inventory]
-                                                    .sort((a, b) => b.stats.totalPower - a.stats.totalPower)
-                                                    .slice(0, 5);
-                                                setSelectedCards(topCards);
+                                                // 자동 선택 - 등급별로 균형 잡힌 덱 구성
+                                                const { selectBalancedDeck } = require('@/lib/balanced-deck-selector');
+                                                const balancedDeck = selectBalancedDeck(inventory, 5);
+                                                setSelectedCards(balancedDeck);
                                             }}
                                             className="px-6 py-3 bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-400 font-bold rounded-xl transition-all flex items-center gap-2"
                                         >
