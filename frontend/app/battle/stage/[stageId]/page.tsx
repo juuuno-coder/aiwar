@@ -748,16 +748,16 @@ export default function StageBattlePage() {
 
                         {/* 5장 전투: 라운드별 카드 배치 UI */}
                         {phase === 'card-placement' && (
-                            <div className="w-full max-w-5xl bg-zinc-900/80 rounded-2xl border border-white/10 p-8">
-                                <h3 className="text-2xl font-black text-white text-center mb-6">
+                            <div className="w-full max-w-5xl bg-zinc-900/80 rounded-2xl border border-white/10 p-6 max-h-[80vh] overflow-y-auto">
+                                <h3 className="text-xl font-black text-white text-center mb-3">
                                     🎯 라운드별 카드 배치
                                 </h3>
-                                <p className="text-gray-400 text-center mb-8">
+                                <p className="text-gray-400 text-center text-sm mb-6">
                                     각 라운드에 출전할 카드를 배치하세요. 순서가 승패를 결정합니다!
                                 </p>
 
                                 {/* 5개 라운드 슬롯 */}
-                                <div className="grid grid-cols-5 gap-4 mb-8">
+                                <div className="grid grid-cols-5 gap-3 mb-6">
                                     {[1, 2, 3, 4, 5].map(round => {
                                         const assignedCard = mainAssignments[round - 1];
                                         const isHiddenRound = round === 2 || round === 4;
@@ -765,8 +765,8 @@ export default function StageBattlePage() {
 
                                         return (
                                             <div key={round} className="flex flex-col items-center">
-                                                <div className={`text-xs font-bold mb-2 ${isHiddenRound ? 'text-purple-400' : 'text-gray-400'}`}>
-                                                    R{round} {isHiddenRound && '(히든)'}
+                                                <div className={`text-xs font-bold mb-1.5 ${isHiddenRound ? 'text-purple-400' : 'text-gray-400'}`}>
+                                                    R{round} {isHiddenRound && '🎭'}
                                                 </div>
                                                 <div
                                                     className={`w-full aspect-[3/4] rounded-xl border-2 overflow-hidden transition-all relative ${assignedCard
@@ -786,9 +786,9 @@ export default function StageBattlePage() {
                                                             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
 
                                                             {/* 카드 정보 */}
-                                                            <div className="absolute bottom-0 left-0 right-0 p-2 text-center">
-                                                                <div className="text-xs font-bold text-white truncate">{assignedCard.name}</div>
-                                                                <div className="text-xs text-cyan-400">⚡{Math.floor(assignedCard.stats?.totalPower || 0)}</div>
+                                                            <div className="absolute bottom-0 left-0 right-0 p-1.5 text-center">
+                                                                <div className="text-[10px] font-bold text-white truncate">{assignedCard.name}</div>
+                                                                <div className="text-[10px] text-cyan-400">⚡{Math.floor(assignedCard.stats?.totalPower || 0)}</div>
                                                             </div>
                                                         </>
                                                     ) : (
@@ -802,8 +802,8 @@ export default function StageBattlePage() {
 
                                 {/* 선택한 5장 카드 목록 */}
                                 <div className="mb-6">
-                                    <h4 className="text-sm font-bold text-gray-400 mb-3">선택한 카드 (클릭하여 라운드에 배치)</h4>
-                                    <div className="flex gap-3 justify-center flex-wrap">
+                                    <h4 className="text-xs font-bold text-gray-400 mb-2 text-center">선택한 카드 (클릭하여 라운드에 배치)</h4>
+                                    <div className="flex gap-2 justify-center flex-wrap">
                                         {selectedHand.map((card, idx) => {
                                             const isAssigned = mainAssignments.some(a => a?.id === card.id);
                                             const assignedRound = mainAssignments.findIndex(a => a?.id === card.id) + 1;
@@ -825,7 +825,7 @@ export default function StageBattlePage() {
                                                             setMainAssignments(newAssignments);
                                                         }
                                                     }}
-                                                    className={`relative w-20 h-28 rounded-lg border-2 overflow-hidden cursor-pointer transition-all ${isAssigned
+                                                    className={`relative w-16 h-24 rounded-lg border-2 overflow-hidden cursor-pointer transition-all ${isAssigned
                                                         ? 'border-green-500 bg-green-500/20 opacity-50'
                                                         : 'border-white/20 bg-white/5 hover:border-cyan-500'
                                                         }`}
@@ -840,14 +840,14 @@ export default function StageBattlePage() {
                                                     <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
 
                                                     {/* 카드 정보 */}
-                                                    <div className="absolute bottom-0 left-0 right-0 p-1 text-center">
-                                                        <div className="text-[10px] text-white truncate px-1">{card.name}</div>
-                                                        <div className="text-[10px] text-cyan-400">⚡{Math.floor(card.stats?.totalPower || 0)}</div>
+                                                    <div className="absolute bottom-0 left-0 right-0 p-0.5 text-center">
+                                                        <div className="text-[9px] text-white truncate px-0.5">{card.name}</div>
+                                                        <div className="text-[9px] text-cyan-400">⚡{Math.floor(card.stats?.totalPower || 0)}</div>
                                                     </div>
 
                                                     {/* 배치 상태 표시 */}
                                                     {isAssigned && (
-                                                        <div className="absolute top-1 right-1 bg-green-500 rounded-full px-1.5 py-0.5 text-[9px] text-white font-bold">
+                                                        <div className="absolute top-0.5 right-0.5 bg-green-500 rounded-full px-1 py-0.5 text-[8px] text-white font-bold">
                                                             R{assignedRound}
                                                         </div>
                                                     )}
