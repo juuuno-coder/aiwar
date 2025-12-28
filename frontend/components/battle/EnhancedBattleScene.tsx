@@ -127,71 +127,129 @@ export default function EnhancedBattleScene({
 
                     {/* 활성 카드 전투 */}
                     <AnimatePresence mode="wait">
-                        {state.animationPhase !== 'idle' && state.activePlayerCard && state.activeEnemyCard && (
-                            <motion.div
-                                key="battle-cards"
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                exit={{ opacity: 0 }}
-                                className="flex items-center gap-8"
-                            >
-                                {/* 적 카드 */}
+                        {/* 메인 카드 전투 */}
+                        {(state.animationPhase === 'draw' || state.animationPhase === 'clash' || state.animationPhase === 'result') &&
+                            state.activePlayerCard && state.activeEnemyCard && (
                                 <motion.div
-                                    initial={{ x: 0, y: -200, rotate: -20 }}
-                                    animate={{
-                                        x: state.animationPhase === 'clash' ? -20 : 0,
-                                        y: 0,
-                                        rotate: 0,
-                                    }}
-                                    exit={{
-                                        x: state.results[state.currentRound - 1]?.winner === 'enemy' ? -150 : 0,
-                                        opacity: state.results[state.currentRound - 1]?.winner === 'enemy' ? 1 : 0,
-                                    }}
-                                    transition={{ duration: 0.5 }}
-                                    className="w-32 h-44 rounded-xl border-2 border-red-500 bg-cover bg-center relative overflow-hidden shadow-2xl"
-                                    style={{ backgroundImage: `url(${getCardImage(state.activeEnemyCard)})` }}
+                                    key="main-battle-cards"
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    exit={{ opacity: 0 }}
+                                    className="flex items-center gap-8"
                                 >
-                                    <div className="absolute inset-0 bg-gradient-to-t from-red-900/80 to-transparent" />
-                                    <div className="absolute bottom-2 left-0 right-0 text-center">
-                                        <div className="text-sm font-bold text-white">⚡{state.activeEnemyCard.stats?.totalPower || 0}</div>
-                                    </div>
-                                </motion.div>
-
-                                {/* 충돌 이펙트 */}
-                                {state.animationPhase === 'clash' && (
+                                    {/* 적 메인 카드 */}
                                     <motion.div
-                                        initial={{ scale: 0, opacity: 0 }}
-                                        animate={{ scale: [0, 2, 1.5], opacity: [0, 1, 0] }}
-                                        transition={{ duration: 0.6 }}
-                                        className="absolute text-8xl"
+                                        initial={{ x: 0, y: -200, rotate: -20 }}
+                                        animate={{
+                                            x: state.animationPhase === 'clash' ? -20 : 0,
+                                            y: 0,
+                                            rotate: 0,
+                                        }}
+                                        transition={{ duration: 0.5 }}
+                                        className="w-32 h-44 rounded-xl border-2 border-red-500 bg-cover bg-center relative overflow-hidden shadow-2xl"
+                                        style={{ backgroundImage: `url(${getCardImage(state.activeEnemyCard)})` }}
                                     >
-                                        ⚔️
+                                        <div className="absolute inset-0 bg-gradient-to-t from-red-900/80 to-transparent" />
+                                        <div className="absolute top-2 left-2 bg-red-600 text-white text-xs px-2 py-1 rounded font-bold">MAIN</div>
+                                        <div className="absolute bottom-2 left-0 right-0 text-center">
+                                            <div className="text-sm font-bold text-white">⚡{state.activeEnemyCard.stats?.totalPower || 0}</div>
+                                        </div>
                                     </motion.div>
-                                )}
 
-                                {/* 플레이어 카드 */}
-                                <motion.div
-                                    initial={{ x: 0, y: 200, rotate: 20 }}
-                                    animate={{
-                                        x: state.animationPhase === 'clash' ? 20 : 0,
-                                        y: 0,
-                                        rotate: 0,
-                                    }}
-                                    exit={{
-                                        x: state.results[state.currentRound - 1]?.winner === 'player' ? 150 : 0,
-                                        opacity: state.results[state.currentRound - 1]?.winner === 'player' ? 1 : 0,
-                                    }}
-                                    transition={{ duration: 0.5 }}
-                                    className="w-32 h-44 rounded-xl border-2 border-cyan-500 bg-cover bg-center relative overflow-hidden shadow-2xl"
-                                    style={{ backgroundImage: `url(${getCardImage(state.activePlayerCard)})` }}
-                                >
-                                    <div className="absolute inset-0 bg-gradient-to-t from-cyan-900/80 to-transparent" />
-                                    <div className="absolute bottom-2 left-0 right-0 text-center">
-                                        <div className="text-sm font-bold text-white">⚡{state.activePlayerCard.stats?.totalPower || 0}</div>
-                                    </div>
+                                    {/* 충돌 이펙트 */}
+                                    {state.animationPhase === 'clash' && (
+                                        <motion.div
+                                            initial={{ scale: 0, opacity: 0 }}
+                                            animate={{ scale: [0, 2, 1.5], opacity: [0, 1, 0] }}
+                                            transition={{ duration: 0.6 }}
+                                            className="absolute text-8xl"
+                                        >
+                                            ⚔️
+                                        </motion.div>
+                                    )}
+
+                                    {/* 플레이어 메인 카드 */}
+                                    <motion.div
+                                        initial={{ x: 0, y: 200, rotate: 20 }}
+                                        animate={{
+                                            x: state.animationPhase === 'clash' ? 20 : 0,
+                                            y: 0,
+                                            rotate: 0,
+                                        }}
+                                        transition={{ duration: 0.5 }}
+                                        className="w-32 h-44 rounded-xl border-2 border-cyan-500 bg-cover bg-center relative overflow-hidden shadow-2xl"
+                                        style={{ backgroundImage: `url(${getCardImage(state.activePlayerCard)})` }}
+                                    >
+                                        <div className="absolute inset-0 bg-gradient-to-t from-cyan-900/80 to-transparent" />
+                                        <div className="absolute top-2 left-2 bg-cyan-600 text-white text-xs px-2 py-1 rounded font-bold">MAIN</div>
+                                        <div className="absolute bottom-2 left-0 right-0 text-center">
+                                            <div className="text-sm font-bold text-white">⚡{state.activePlayerCard.stats?.totalPower || 0}</div>
+                                        </div>
+                                    </motion.div>
                                 </motion.div>
-                            </motion.div>
-                        )}
+                            )}
+
+                        {/* 히든 카드 전투 */}
+                        {(state.animationPhase === 'hidden-draw' || state.animationPhase === 'hidden-clash' || state.animationPhase === 'hidden-result') &&
+                            state.activePlayerHiddenCard && state.activeEnemyHiddenCard && (
+                                <motion.div
+                                    key="hidden-battle-cards"
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    exit={{ opacity: 0 }}
+                                    className="flex items-center gap-8"
+                                >
+                                    {/* 적 히든 카드 */}
+                                    <motion.div
+                                        initial={{ x: 0, y: -200, rotate: -20 }}
+                                        animate={{
+                                            x: state.animationPhase === 'hidden-clash' ? -20 : 0,
+                                            y: 0,
+                                            rotate: 0,
+                                        }}
+                                        transition={{ duration: 0.5 }}
+                                        className="w-32 h-44 rounded-xl border-2 border-purple-500 bg-cover bg-center relative overflow-hidden shadow-2xl"
+                                        style={{ backgroundImage: `url(${getCardImage(state.activeEnemyHiddenCard)})` }}
+                                    >
+                                        <div className="absolute inset-0 bg-gradient-to-t from-purple-900/80 to-transparent" />
+                                        <div className="absolute top-2 left-2 bg-purple-600 text-white text-xs px-2 py-1 rounded font-bold">🎭 HIDDEN</div>
+                                        <div className="absolute bottom-2 left-0 right-0 text-center">
+                                            <div className="text-sm font-bold text-white">⚡{state.activeEnemyHiddenCard.stats?.totalPower || 0}</div>
+                                        </div>
+                                    </motion.div>
+
+                                    {/* 히든 충돌 이펙트 */}
+                                    {state.animationPhase === 'hidden-clash' && (
+                                        <motion.div
+                                            initial={{ scale: 0, opacity: 0 }}
+                                            animate={{ scale: [0, 2, 1.5], opacity: [0, 1, 0] }}
+                                            transition={{ duration: 0.6 }}
+                                            className="absolute text-8xl"
+                                        >
+                                            💥
+                                        </motion.div>
+                                    )}
+
+                                    {/* 플레이어 히든 카드 */}
+                                    <motion.div
+                                        initial={{ x: 0, y: 200, rotate: 20 }}
+                                        animate={{
+                                            x: state.animationPhase === 'hidden-clash' ? 20 : 0,
+                                            y: 0,
+                                            rotate: 0,
+                                        }}
+                                        transition={{ duration: 0.5 }}
+                                        className="w-32 h-44 rounded-xl border-2 border-purple-500 bg-cover bg-center relative overflow-hidden shadow-2xl"
+                                        style={{ backgroundImage: `url(${getCardImage(state.activePlayerHiddenCard)})` }}
+                                    >
+                                        <div className="absolute inset-0 bg-gradient-to-t from-purple-900/80 to-transparent" />
+                                        <div className="absolute top-2 left-2 bg-purple-600 text-white text-xs px-2 py-1 rounded font-bold">🎭 HIDDEN</div>
+                                        <div className="absolute bottom-2 left-0 right-0 text-center">
+                                            <div className="text-sm font-bold text-white">⚡{state.activePlayerHiddenCard.stats?.totalPower || 0}</div>
+                                        </div>
+                                    </motion.div>
+                                </motion.div>
+                            )}
                     </AnimatePresence>
                 </div>
 

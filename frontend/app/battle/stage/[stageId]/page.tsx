@@ -568,7 +568,7 @@ export default function StageBattlePage() {
                                                 animate={{ scale: 1, opacity: 1 }}
                                                 transition={{ delay: i * 0.05 }}
                                                 className={cn(
-                                                    "relative w-24 h-36 rounded-xl border-2 transition-all overflow-hidden cursor-pointer",
+                                                    "relative w-28 h-40 rounded-xl border-2 transition-all overflow-hidden cursor-pointer",
                                                     card
                                                         ? "border-cyan-500 bg-cyan-500/10 shadow-xl shadow-cyan-500/30"
                                                         : "border-white/20 bg-white/5 border-dashed"
@@ -598,10 +598,27 @@ export default function StageBattlePage() {
                                                         })()}
                                                         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
 
-                                                        {/* 슬롯 번호 */}
-                                                        <div className="absolute top-1.5 left-1.5 w-6 h-6 bg-cyan-500 rounded-full flex items-center justify-center text-xs font-bold text-white shadow-lg z-10">
-                                                            {i + 1}
-                                                        </div>
+                                                        {/* 등급 표시 (한글) */}
+                                                        {(() => {
+                                                            const rarityInfo: Record<string, { text: string; bg: string; border: string }> = {
+                                                                legendary: { text: '전설', bg: 'bg-gradient-to-r from-yellow-500 to-orange-500', border: 'border-yellow-300/50' },
+                                                                commander: { text: '사령관', bg: 'bg-gradient-to-r from-purple-600 to-pink-600', border: 'border-purple-300/50' },
+                                                                epic: { text: '영웅', bg: 'bg-gradient-to-r from-purple-500 to-indigo-500', border: 'border-purple-300/50' },
+                                                                rare: { text: '희귀', bg: 'bg-gradient-to-r from-blue-500 to-cyan-500', border: 'border-blue-300/50' },
+                                                                unique: { text: '유니크', bg: 'bg-gradient-to-r from-green-500 to-emerald-500', border: 'border-green-300/50' },
+                                                                common: { text: '일반', bg: 'bg-gradient-to-r from-gray-500 to-slate-500', border: 'border-gray-300/50' }
+                                                            };
+                                                            const info = rarityInfo[card.rarity || 'common'] || rarityInfo.common;
+                                                            return (
+                                                                <div className={cn(
+                                                                    "absolute top-1.5 left-1.5 px-2 py-0.5 rounded-full text-[10px] font-black text-white shadow-lg z-10 border",
+                                                                    info.bg,
+                                                                    info.border
+                                                                )}>
+                                                                    {info.text}
+                                                                </div>
+                                                            );
+                                                        })()}
 
                                                         {/* 가위바위보 타입 아이콘 */}
                                                         {typeInfo && (
@@ -613,6 +630,13 @@ export default function StageBattlePage() {
                                                                 {typeInfo.emoji}
                                                             </div>
                                                         )}
+
+                                                        {/* 레벨 표시 (하단) */}
+                                                        <div className="absolute bottom-8 left-0 right-0 text-center z-10">
+                                                            <div className="inline-block px-2 py-0.5 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-full text-[10px] font-black text-white shadow-lg border border-yellow-300/50">
+                                                                LV.{card.level || 1}
+                                                            </div>
+                                                        </div>
 
                                                         {/* 하단 전투력 표시 */}
                                                         <div className="absolute bottom-0 left-0 right-0 p-2 text-center bg-black/70 z-10">
@@ -879,6 +903,33 @@ export default function StageBattlePage() {
                                         rarity: 'common' as const,
                                     }))}
                                     battleType={storyStage?.battleMode === 'TRIPLE_THREAT' ? 'strategic' : 'tactical'}
+                                    playerHiddenCards={
+                                        storyStage?.battleMode === 'TRIPLE_THREAT'
+                                            ? { round2: hiddenR2 || undefined, round4: hiddenR4 || undefined }
+                                            : undefined
+                                    }
+                                    enemyHiddenCards={
+                                        storyStage?.battleMode === 'TRIPLE_THREAT' && enemies.length >= 5
+                                            ? {
+                                                round2: {
+                                                    id: `enemy-hidden-2`,
+                                                    templateId: enemies[1].id,
+                                                    name: enemies[1].name,
+                                                    type: enemies[1].attribute === 'rock' ? 'EFFICIENCY' : enemies[1].attribute === 'scissors' ? 'CREATIVITY' : 'FUNCTION',
+                                                    stats: { totalPower: enemies[1].power },
+                                                    rarity: 'common' as const,
+                                                },
+                                                round4: {
+                                                    id: `enemy-hidden-4`,
+                                                    templateId: enemies[3].id,
+                                                    name: enemies[3].name,
+                                                    type: enemies[3].attribute === 'rock' ? 'EFFICIENCY' : enemies[3].attribute === 'scissors' ? 'CREATIVITY' : 'FUNCTION',
+                                                    stats: { totalPower: enemies[3].power },
+                                                    rarity: 'common' as const,
+                                                },
+                                            }
+                                            : undefined
+                                    }
                                     onBattleEnd={(victory: boolean) => {
                                         // 전투 종료 처리
                                         const result: StageBattleResult = {
