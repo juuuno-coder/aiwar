@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { motion, AnimatePresence, Reorder } from 'framer-motion';
 import CyberPageLayout from '@/components/CyberPageLayout';
 import GameCard from '@/components/GameCard';
@@ -10,6 +11,7 @@ import { getGameState } from '@/lib/game-state';
 import { useAlert } from '@/context/AlertContext';
 import { gameStorage } from '@/lib/game-storage';
 import { loadInventory } from '@/lib/inventory-system';
+import { groupCardsByRarity, selectBalancedDeck, getMainCards } from '@/lib/balanced-deck-selector';
 import {
     BattleMode,
     MatchType,
@@ -58,6 +60,7 @@ export default function PVPArenaPage() {
     const [battleResult, setBattleResult] = useState<BattleResult | null>(null);
     const [currentRound, setCurrentRound] = useState(0);
     const [animating, setAnimating] = useState(false);
+    const [animationPhase, setAnimationPhase] = useState<'idle' | 'ready' | 'clash' | 'reveal'>('idle');
 
     const [inventory, setInventory] = useState<Card[]>([]);
 
@@ -121,13 +124,8 @@ export default function PVPArenaPage() {
             const timer = setInterval(() => {
                 setRevealTimer(prev => {
                     if (prev <= 1) {
-                        // 타이머 종료 - 다음 단계로
-                        if (selectedMode === 'sudden-death') {
-                            // 단판승부는 순서 배치 없이 바로 전투
-                            handleStartBattle();
-                        } else {
-                            setPhase('card-placement');
-                        }
+                        // 타이머 종료 - 모든 모드에서 카드 배치 단계로 이동 (단판 승부 포함)
+                        setPhase('card-placement');
                         return 0;
                     }
                     return prev - 1;
@@ -201,7 +199,7 @@ export default function PVPArenaPage() {
 
         if (type === 'ai-training') {
             // AI 상대 생성
-            const aiOpponent = generateAIOpponent(state.level);
+            const aiOpponent = generateAIOpponent(state.level, [], stats.rating);
             setOpponentDeck(aiOpponent.deck);
         }
 
@@ -254,8 +252,21 @@ export default function PVPArenaPage() {
     const runBattleAnimation = async (result: BattleResult) => {
         for (let i = 0; i < result.rounds.length; i++) {
             setCurrentRound(i);
+
+            // 1. 대기 (뒷면)
+            setAnimationPhase('ready');
             setAnimating(true);
+            await new Promise(resolve => setTimeout(resolve, 500));
+
+            // 2. 충돌 (뒷면끼리 2번 부딪힘)
+            setAnimationPhase('clash');
+            await new Promise(resolve => setTimeout(resolve, 1500));
+
+            // 3. 공개 (카드 뒤집힘 + 결과)
+            setAnimationPhase('reveal');
             await new Promise(resolve => setTimeout(resolve, 3000));
+
+            setAnimationPhase('idle');
             setAnimating(false);
             await new Promise(resolve => setTimeout(resolve, 1000));
         }
@@ -439,12 +450,42 @@ export default function PVPArenaPage() {
                             exit={{ opacity: 0, y: -20 }}
                             className="pb-32"
                         >
-                            <div className="text-center mb-8">
-                                <h2 className="text-3xl font-black text-white mb-2">덱 선택</h2>
-                                <p className="text-white/60">전투에 사용할 카드 5장을 선택하세요</p>
-                                <p className="text-cyan-400 font-bold mt-2">
-                                    선택: {selectedCards.length} / 5
-                                </p>
+                            {/* 주력 카드 섹션 (등급별 최고 카드) */}
+                            {inventory.length > 0 && (
+                                <div className="mb-8">
+                                    <h4 className="text-sm font-bold text-amber-400 mb-3 flex items-center gap-2">
+                                        <span>⭐</span>
+                                        주력 카드 (전투 투입 권장)
+                                    </h4>
+                                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 p-4 bg-amber-500/5 rounded-xl border border-amber-500/20">
+                                        {getMainCards(inventory).map(card => (
+                                            <motion.div
+                                                key={`main-${card.id}`}
+                                                whileHover={{ scale: 1.05 }}
+                                                whileTap={{ scale: 0.95 }}
+                                                className="cursor-pointer relative"
+                                                onClick={() => {
+                                                    const isSelected = selectedCards.find(c => c.id === card.id);
+                                                    if (isSelected) {
+                                                        setSelectedCards(prev => prev.filter(c => c.id !== card.id));
+                                                    } else if (selectedCards.length < 5) {
+                                                        setSelectedCards(prev => [...prev, card as Card]);
+                                                    }
+                                                }}
+                                            >
+                                                <GameCard
+                                                    card={card as Card}
+                                                    isSelected={selectedCards.some(c => c.id === card.id)}
+                                                />
+                                                <div className="absolute top-1 right-1 bg-amber-500 text-black text-[9px] font-black px-1 rounded shadow-lg z-20">MAIN</div>
+                                            </motion.div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            <div className="mb-4 flex items-center justify-between">
+                                <h4 className="text-sm font-bold text-white/60">전체 카드 목록</h4>
                             </div>
 
                             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
@@ -610,10 +651,9 @@ export default function PVPArenaPage() {
                                     <div className="flex items-center justify-between gap-4">
                                         <button
                                             onClick={() => {
-                                                // 자동 선택 - 등급별로 균형 잡힌 덱 구성
-                                                const { selectBalancedDeck } = require('@/lib/balanced-deck-selector');
+                                                // 자동 선택 - 등급별로 균형 잡힌 덱 구성 (주력카드 우선)
                                                 const balancedDeck = selectBalancedDeck(inventory, 5);
-                                                setSelectedCards(balancedDeck);
+                                                setSelectedCards(balancedDeck as Card[]);
                                             }}
                                             className="px-6 py-3 bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-400 font-bold rounded-xl transition-all flex items-center gap-2"
                                         >
@@ -779,6 +819,8 @@ export default function PVPArenaPage() {
                         >
                             <CardPlacementBoard
                                 selectedCards={playerDeck}
+                                battleMode={selectedMode}
+                                opponentDeck={opponentDeck}
                                 onPlacementComplete={(placement: RoundPlacement) => {
                                     // Convert placement to cardOrder array
                                     const order = [
@@ -815,9 +857,13 @@ export default function PVPArenaPage() {
                                         ROUND {round.round}
                                     </h2>
                                     <div className="flex items-center justify-center gap-4 text-2xl font-bold">
-                                        <span className="text-cyan-400">{battleResult.playerWins}</span>
+                                        <span className="text-cyan-400">
+                                            {battleResult.rounds.slice(0, currentRound + (animationPhase === 'reveal' ? 1 : 0)).filter(r => r.winner === 'player').length}
+                                        </span>
                                         <span className="text-white/40">vs</span>
-                                        <span className="text-red-400">{battleResult.opponentWins}</span>
+                                        <span className="text-red-400">
+                                            {battleResult.rounds.slice(0, currentRound + (animationPhase === 'reveal' ? 1 : 0)).filter(r => r.winner === 'opponent').length}
+                                        </span>
                                     </div>
                                 </div>
 
@@ -827,18 +873,31 @@ export default function PVPArenaPage() {
                                     <motion.div
                                         initial={{ x: -100, opacity: 0 }}
                                         animate={{
-                                            x: 0,
-                                            opacity: 1,
-                                            scale: animating && round.winner === 'player' ? 1.1 :
-                                                animating && round.winner === 'opponent' ? 0.9 : 1
+                                            x: animationPhase === 'clash' ? [0, 50, 0, 50, 0] : 0, // 2번 충돌
+                                            scale: animationPhase === 'reveal' && round.winner === 'player' ? 1.1 :
+                                                animationPhase === 'reveal' && round.winner === 'opponent' ? 0.9 : 1,
+                                            opacity: 1
+                                        }}
+                                        transition={{
+                                            x: { duration: 1, times: [0, 0.2, 0.5, 0.7, 1] }, // 충돌 타이밍
+                                            duration: 0.3
                                         }}
                                         className="text-center relative"
                                     >
-                                        {/* 카드 뒷면 (애니메이션 전) or 앞면 (애니메이션 중/후) */}
-                                        {!animating ? (
-                                            <div className="w-[180px] h-[270px] bg-gradient-to-br from-cyan-900 to-slate-800 rounded-xl border-4 border-cyan-500/50 shadow-2xl flex flex-col items-center justify-center">
-                                                <div className="text-6xl mb-2">🎴</div>
-                                                <div className="text-cyan-400 font-bold">내 카드</div>
+                                        {/* 카드 뒷면 (ready, clash 단계) or 앞면 (reveal 단계) */}
+                                        {animationPhase !== 'reveal' ? (
+                                            <div className="w-[180px] h-[270px] relative rounded-xl overflow-hidden border-4 border-cyan-500/50 shadow-2xl">
+                                                <div className="absolute inset-0">
+                                                    <Image
+                                                        src="/assets/cards/card-back-sci-fi.png"
+                                                        alt="Card Back"
+                                                        fill
+                                                        className="object-cover"
+                                                    />
+                                                </div>
+                                                <div className="absolute bottom-4 left-0 right-0 text-center z-10">
+                                                    <div className="text-cyan-400 font-bold bg-black/60 mx-auto inline-block px-3 py-1 rounded-full text-sm backdrop-blur-sm">내 카드</div>
+                                                </div>
                                             </div>
                                         ) : (
                                             <div className={cn(
@@ -849,15 +908,12 @@ export default function PVPArenaPage() {
                                             </div>
                                         )}
 
-                                        {/* 타입 표시 (애니메이션 중에만) */}
-                                        {animating && (
-                                            <div className="mt-4 text-4xl">
-                                                {getTypeEmoji(round.playerType)}
-                                            </div>
-                                        )}
+                                        {/* 타입 표시 - 카드 뒷면 중앙 오버레이 (Ready/Clash 단계) */}
+                                        {/* 타입 표시 - 카드 뒷면 중앙 오버레이 제거됨 */}
+
 
                                         {/* 승리 표시 */}
-                                        {animating && round.winner === 'player' && (
+                                        {animationPhase === 'reveal' && round.winner === 'player' && (
                                             <motion.div
                                                 initial={{ scale: 0 }}
                                                 animate={{ scale: 1 }}
@@ -866,7 +922,7 @@ export default function PVPArenaPage() {
                                                 👑
                                             </motion.div>
                                         )}
-                                        {animating && round.winner === 'opponent' && (
+                                        {animationPhase === 'reveal' && round.winner === 'opponent' && (
                                             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                                                 <span className="text-8xl text-red-500 font-black drop-shadow-lg">✕</span>
                                             </div>
@@ -876,15 +932,15 @@ export default function PVPArenaPage() {
                                     {/* VS */}
                                     <div className="text-center">
                                         <motion.div
-                                            animate={animating ? { scale: [1, 1.3, 1] } : {}}
-                                            transition={{ duration: 0.5, repeat: animating ? Infinity : 0 }}
+                                            animate={animationPhase === 'clash' ? { scale: [1, 1.5, 1, 1.5, 1], color: '#ff0000' } : {}}
+                                            transition={{ duration: 1 }}
                                             className="text-6xl font-black text-white/30 orbitron"
                                         >
                                             VS
                                         </motion.div>
 
-                                        {/* 승패 결과 */}
-                                        {animating && (
+                                        {/* 승패 결과 (공개 단계에서만) */}
+                                        {animationPhase === 'reveal' && (
                                             <motion.div
                                                 initial={{ scale: 0, opacity: 0 }}
                                                 animate={{ scale: 1, opacity: 1 }}
@@ -907,18 +963,31 @@ export default function PVPArenaPage() {
                                     <motion.div
                                         initial={{ x: 100, opacity: 0 }}
                                         animate={{
-                                            x: 0,
-                                            opacity: 1,
-                                            scale: animating && round.winner === 'opponent' ? 1.1 :
-                                                animating && round.winner === 'player' ? 0.9 : 1
+                                            x: animationPhase === 'clash' ? [0, -50, 0, -50, 0] : 0, // 2번 충돌 (반대 방향)
+                                            scale: animationPhase === 'reveal' && round.winner === 'opponent' ? 1.1 :
+                                                animationPhase === 'reveal' && round.winner === 'player' ? 0.9 : 1,
+                                            opacity: 1
+                                        }}
+                                        transition={{
+                                            x: { duration: 1, times: [0, 0.2, 0.5, 0.7, 1] }, // 충돌 타이밍
+                                            duration: 0.3
                                         }}
                                         className="text-center relative"
                                     >
-                                        {/* 카드 뒷면 (애니메이션 전) or 앞면 (애니메이션 중/후) */}
-                                        {!animating ? (
-                                            <div className="w-[180px] h-[270px] bg-gradient-to-br from-red-900 to-slate-800 rounded-xl border-4 border-red-500/50 shadow-2xl flex flex-col items-center justify-center">
-                                                <div className="text-6xl mb-2">🎴</div>
-                                                <div className="text-red-400 font-bold">상대 카드</div>
+                                        {/* 카드 뒷면 (ready, clash 단계) or 앞면 (reveal 단계) */}
+                                        {animationPhase !== 'reveal' ? (
+                                            <div className="w-[180px] h-[270px] relative rounded-xl overflow-hidden border-4 border-red-500/50 shadow-2xl">
+                                                <div className="absolute inset-0">
+                                                    <Image
+                                                        src="/assets/cards/card-back-sci-fi.png"
+                                                        alt="Card Back"
+                                                        fill
+                                                        className="object-cover"
+                                                    />
+                                                </div>
+                                                <div className="absolute bottom-4 left-0 right-0 text-center z-10">
+                                                    <div className="text-red-400 font-bold bg-black/60 mx-auto inline-block px-3 py-1 rounded-full text-sm backdrop-blur-sm">상대 카드</div>
+                                                </div>
                                             </div>
                                         ) : (
                                             <div className={cn(
@@ -930,14 +999,13 @@ export default function PVPArenaPage() {
                                         )}
 
                                         {/* 타입 표시 (애니메이션 중에만) */}
-                                        {animating && (
-                                            <div className="mt-4 text-4xl">
-                                                {getTypeEmoji(round.opponentType)}
-                                            </div>
-                                        )}
+                                        {/* 타입 표시 - 항상 표시 (카드 뒷면 위에도) */}
+                                        {/* 타입 표시 - 카드 뒷면 중앙 오버레이 (Ready/Clash 단계) */}
+                                        {/* 타입 표시 - 카드 뒷면 중앙 오버레이 제거됨 */}
+
 
                                         {/* 승리 표시 */}
-                                        {animating && round.winner === 'opponent' && (
+                                        {animationPhase === 'reveal' && round.winner === 'opponent' && (
                                             <motion.div
                                                 initial={{ scale: 0 }}
                                                 animate={{ scale: 1 }}
@@ -946,7 +1014,7 @@ export default function PVPArenaPage() {
                                                 👑
                                             </motion.div>
                                         )}
-                                        {animating && round.winner === 'player' && (
+                                        {animationPhase === 'reveal' && round.winner === 'player' && (
                                             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                                                 <span className="text-8xl text-red-500 font-black drop-shadow-lg">✕</span>
                                             </div>

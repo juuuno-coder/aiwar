@@ -15,7 +15,7 @@ export const ko: Translations = {
     'menu.pvp': 'PVP',
     'menu.ranking': '랭킹',
     'menu.generation': '생성',
-    'menu.uniqueGeneration': '유니크',
+    'menu.uniqueGeneration': '유니크 생성',
     'menu.fusion': '합성',
     'menu.enhance': '강화',
     'menu.settings': '설정',

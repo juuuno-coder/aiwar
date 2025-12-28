@@ -18,6 +18,7 @@ interface GameCardProps {
     isDisabled?: boolean;
     isHolographic?: boolean;
     showDetails?: boolean;
+    isFlipped?: boolean; // New prop for showing card back
 }
 
 // 등급별 색상 설정
@@ -90,7 +91,7 @@ const RARITY_STARS: Record<Rarity, number> = {
     epic: 3,
     legendary: 4,
     unique: 5,
-    commander: 6
+    commander: 5
 };
 
 export default function GameCard({
@@ -99,7 +100,8 @@ export default function GameCard({
     isSelected = false,
     isDisabled = false,
     isHolographic = false,
-    showDetails = true
+    showDetails = true,
+    isFlipped = false
 }: GameCardProps) {
     const { language } = useTranslation();
     const lang = (language as 'ko' | 'en') || 'ko';
@@ -164,8 +166,20 @@ export default function GameCard({
             whileHover={!isDisabled ? { scale: 1.08 } : undefined}
             transition={{ duration: 0.2 }}
         >
+            {/* 카드 뒷면 (isFlipped 상태일 때 표시) */}
+            {isFlipped && (
+                <div className="absolute inset-0 z-50 bg-black rounded-xl overflow-hidden border-2 border-gray-700">
+                    <Image
+                        src="/assets/cards/card-back-sci-fi.png"
+                        alt="Card Back"
+                        fill
+                        className="object-cover"
+                    />
+                </div>
+            )}
+
             {/* 고급 등급 글로우 이펙트 */}
-            {isHighRarity && (
+            {!isFlipped && isHighRarity && (
                 <motion.div
                     className="absolute inset-0 z-0 pointer-events-none rounded-xl"
                     animate={{

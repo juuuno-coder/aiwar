@@ -73,6 +73,8 @@ export interface Card {
     isUnique?: boolean; // 유니크 유닛 여부
     type?: AIType; // Rock-Paper-Scissors type
     imageUrl?: string; // Card image URL
+    videoUrl?: string; // Card video URL
+    description?: string; // Card description
     specialSkill?: {
         name: string;
         description: string;

@@ -37,6 +37,7 @@ import {
 import { useFooter } from '@/context/FooterContext';
 import { Tooltip } from '@/components/ui/custom/Tooltip';
 import { gameStorage } from '@/lib/game-storage';
+import { applyResearchStatBonus } from '@/lib/commander-system';
 
 
 
@@ -185,9 +186,13 @@ export default function LabPage() {
         await saveResearch(newResearch);
         await refreshData();
 
+        // Apply Commander Stat Bonus
+        const bonusResult = await applyResearchStatBonus(categoryId, newLevel);
+        const bonusMsg = bonusResult.count > 0 ? `\n\n[Commander Upgrade]\n${bonusResult.message}` : '';
+
         showAlert({
             title: '연구 완료!',
-            message: `${stat?.name} Lv.${newLevel} 달성!\n${stat?.effects[newLevel - 1]?.description}`,
+            message: `${stat?.name} Lv.${newLevel} 달성!\n${stat?.effects[newLevel - 1]?.description}${bonusMsg}`,
             type: 'success'
         });
     };

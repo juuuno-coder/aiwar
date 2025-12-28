@@ -4,10 +4,14 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import RoundPlacementSlot from './RoundPlacementSlot';
+import { BattleMode } from '@/lib/pvp-battle-system';
+import { getTypeIcon, getTypeColor } from '@/lib/type-system';
 
 interface CardPlacementBoardProps {
     selectedCards: any[];
     onPlacementComplete: (placement: RoundPlacement) => void;
+    battleMode?: BattleMode; // 'sudden-death' 모드 확인용
+    opponentDeck?: any[]; // 상대방 덱 정보
 }
 
 export interface RoundPlacement {
@@ -18,7 +22,9 @@ export interface RoundPlacement {
     round5: any;
 }
 
-export default function CardPlacementBoard({ selectedCards, onPlacementComplete }: CardPlacementBoardProps) {
+export default function CardPlacementBoard({ selectedCards, onPlacementComplete, battleMode = 'tactics', opponentDeck = [] }: CardPlacementBoardProps) {
+    const hasHiddenSlots = battleMode === 'ambush';
+
     const [placement, setPlacement] = useState<{
         round1: any | null;
         round2Main: any | null;
@@ -82,6 +88,8 @@ export default function CardPlacementBoard({ selectedCards, onPlacementComplete 
     };
 
     const handleDropHidden = (round: string, cardId: string) => {
+        if (!hasHiddenSlots) return; // 히든 슬롯이 없는 모드에서는 불가
+
         const card = selectedCards.find(c => c.id === cardId);
         if (!card) return;
 
@@ -119,12 +127,30 @@ export default function CardPlacementBoard({ selectedCards, onPlacementComplete 
         }));
     };
 
+    // 클릭으로 자동 배치 (첫 번째 빈 슬롯에 배치)
+    const handleAutoPlace = (card: any) => {
+        if (!placement.round1) handleDropMain('round1', card.id);
+        else if (!placement.round2Main) handleDropMain('round2Main', card.id);
+        else if (!placement.round3) handleDropMain('round3', card.id);
+        else if (!placement.round4Main) handleDropMain('round4Main', card.id);
+        else if (!placement.round5) handleDropMain('round5', card.id);
+    };
+
     const isPlacementComplete = () => {
-        return placement.round1 &&
+        const basicCheck = placement.round1 &&
             placement.round2Main &&
             placement.round3 &&
             placement.round4Main &&
             placement.round5;
+
+        if (!basicCheck) return false;
+
+        // 히든 슬롯이 있는 경우 (Ambush 모드), 히든 카드도 모두 배치되었는지 확인
+        if (hasHiddenSlots) {
+            return placement.round2Hidden && placement.round4Hidden;
+        }
+
+        return true;
     };
 
     const handleConfirm = () => {
@@ -163,9 +189,56 @@ export default function CardPlacementBoard({ selectedCards, onPlacementComplete 
             <div className="text-center">
                 <h2 className="text-2xl font-bold text-white mb-2">라운드별 카드 배치</h2>
                 <p className="text-sm text-white/60">
-                    카드를 드래그하여 각 라운드에 배치하세요. 2, 4라운드는 히든 카드를 추가할 수 있습니다.
+                    카드를 드래그하거나 클릭하여 순서대로 배치하세요.
+                    {hasHiddenSlots && " 2, 4라운드는 히든 카드를 추가할 수 있습니다."}
                 </p>
             </div>
+
+            {/* Opponent Deck Preview (if available) */}
+            {
+                opponentDeck && opponentDeck.length > 0 && (
+                    <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4">
+                        <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center gap-2">
+                                <span className="text-xl">😈</span>
+                                <h3 className="font-bold text-red-400">상대방 덱 정보</h3>
+                            </div>
+                            <div className="text-xs text-red-300 bg-red-500/20 px-2 py-1 rounded">
+                                ⚠️ 상대방의 카드 배치 순서는 변경될 수 있습니다
+                            </div>
+                        </div>
+                        <div className="flex justify-center gap-3">
+                            {opponentDeck.map((card, idx) => (
+                                <div key={idx} className="relative w-20 h-28 rounded-lg border-2 border-red-500/30 overflow-hidden shadow-lg">
+                                    <div
+                                        className="absolute inset-0 bg-cover bg-center"
+                                        style={{
+                                            backgroundImage: `url(${getCardImage(card)})`,
+                                        }}
+                                    />
+                                    <div className="absolute inset-0 bg-gradient-to-t from-red-900/80 via-transparent to-transparent" />
+
+                                    {/* Type Icon - Top Right Corner inside image */}
+                                    {card.type && (
+                                        <div
+                                            className="absolute top-1 right-1 w-8 h-8 rounded-full border-2 border-white flex items-center justify-center text-lg shadow-xl z-20"
+                                            style={{ backgroundColor: getTypeColor(card.type) }}
+                                        >
+                                            {getTypeIcon(card.type)}
+                                        </div>
+                                    )}
+
+                                    {/* Power */}
+                                    <div className="absolute bottom-0 left-0 right-0 text-center bg-black/70 py-0.5">
+                                        <div className="text-[8px] font-bold text-white truncate px-1">{card.name}</div>
+                                        <div className="text-[8px] text-red-400">⚡{Math.floor(card.stats?.totalPower || 0)}</div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )
+            }
 
             {/* Round Slots */}
             <div className="flex justify-center gap-4">
@@ -181,7 +254,7 @@ export default function CardPlacementBoard({ selectedCards, onPlacementComplete 
                 />
                 <RoundPlacementSlot
                     roundNumber={2}
-                    hasHidden={true}
+                    hasHidden={hasHiddenSlots} // 전략 승부(ambush)에서만 히든 슬롯 표시
                     mainCard={placement.round2Main}
                     hiddenCard={placement.round2Hidden}
                     onDropMain={(cardId) => handleDropMain('round2Main', cardId)}
@@ -201,7 +274,7 @@ export default function CardPlacementBoard({ selectedCards, onPlacementComplete 
                 />
                 <RoundPlacementSlot
                     roundNumber={4}
-                    hasHidden={true}
+                    hasHidden={hasHiddenSlots} // 전략 승부(ambush)에서만 히든 슬롯 표시
                     mainCard={placement.round4Main}
                     hiddenCard={placement.round4Hidden}
                     onDropMain={(cardId) => handleDropMain('round4Main', cardId)}
@@ -236,10 +309,13 @@ export default function CardPlacementBoard({ selectedCards, onPlacementComplete 
                                 handleDragStart(card);
                             }}
                             onDragEnd={handleDragEnd}
+                            onClick={() => handleAutoPlace(card)} // 클릭 시 자동 배치
                             whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
                             className={cn(
-                                "relative w-24 h-32 rounded-xl border-2 border-white/30 overflow-hidden cursor-grab active:cursor-grabbing",
-                                "hover:border-cyan-400 hover:shadow-lg hover:shadow-cyan-500/30 transition-all"
+                                "relative w-24 h-32 rounded-xl border-2 border-white/30 overflow-hidden cursor-pointer", // cursor-pointer로 변경
+                                "hover:border-cyan-400 hover:shadow-lg hover:shadow-cyan-500/30 transition-all",
+                                "active:scale-95"
                             )}
                         >
                             <div
@@ -268,14 +344,15 @@ export default function CardPlacementBoard({ selectedCards, onPlacementComplete 
                                 );
                             })()}
 
-                            {/* Type Icon */}
-                            {(() => {
-                                const type = card.type;
-                                if (type === 'rock') return <div className="absolute top-0.5 right-0.5 px-0.5 py-0.5 rounded bg-red-500/80 text-xs shadow-lg z-10">✊</div>;
-                                if (type === 'paper') return <div className="absolute top-0.5 right-0.5 px-0.5 py-0.5 rounded bg-blue-500/80 text-xs shadow-lg z-10">✋</div>;
-                                if (type === 'scissors') return <div className="absolute top-0.5 right-0.5 px-0.5 py-0.5 rounded bg-green-500/80 text-xs shadow-lg z-10">✌️</div>;
-                                return null;
-                            })()}
+                            {/* Type Icon - Top Right Corner inside image (Consistent with opponent deck) */}
+                            {card.type && (
+                                <div
+                                    className="absolute top-1 right-1 w-8 h-8 rounded-full border-2 border-white flex items-center justify-center text-lg shadow-xl z-20"
+                                    style={{ backgroundColor: getTypeColor(card.type) }}
+                                >
+                                    {getTypeIcon(card.type)}
+                                </div>
+                            )}
 
                             {/* Level Badge */}
                             <div className="absolute bottom-6 right-0.5 z-10">
@@ -293,10 +370,15 @@ export default function CardPlacementBoard({ selectedCards, onPlacementComplete 
                         </motion.div>
                     ))}
                     {availableCards.length === 0 && (
-                        <div className="text-white/40 text-sm py-8">
+                        <div className="text-white/40 text-sm py-2">
                             모든 카드가 배치되었습니다
                         </div>
                     )}
+                </div>
+
+                {/* 힌트 메시지 */}
+                <div className="text-center text-xs text-white/40 mt-2">
+                    카드를 클릭하면 빈 슬롯에 순서대로 배치됩니다.
                 </div>
             </div>
 
@@ -312,9 +394,14 @@ export default function CardPlacementBoard({ selectedCards, onPlacementComplete 
                             : "bg-gray-600 text-gray-400 cursor-not-allowed"
                     )}
                 >
-                    배치 완료 → 전투 시작
+                    {isPlacementComplete()
+                        ? "배치 완료 → 전투 시작"
+                        : hasHiddenSlots
+                            ? "히든 카드를 배치하세요"
+                            : "모든 카드를 배치하세요"
+                    }
                 </button>
             </div>
-        </div>
+        </div >
     );
 }

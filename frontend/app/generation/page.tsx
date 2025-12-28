@@ -20,6 +20,9 @@ import {
 } from '@/lib/generation-utils';
 import { getSubscribedFactions, TIER_CONFIG } from '@/lib/faction-subscription-utils';
 import CardRewardModal from '@/components/CardRewardModal';
+import { COMMANDERS } from '@/data/card-database';
+import { createCardFromTemplate } from '@/lib/card-generation-system';
+import { loadInventory } from '@/lib/inventory-system';
 
 export default function GenerationPage() {
     const router = useRouter();
@@ -33,6 +36,7 @@ export default function GenerationPage() {
     // Reward Modal State
     const [rewardModalOpen, setRewardModalOpen] = useState(false);
     const [rewardCards, setRewardCards] = useState<Card[]>([]);
+    const [rewardModalTitle, setRewardModalTitle] = useState("카드 획득!");
 
     useEffect(() => {
         try {
@@ -59,7 +63,7 @@ export default function GenerationPage() {
         setSubscriptions(getSubscribedFactions());
     };
 
-    const handleAssignFaction = (slotIndex: number, factionId: string) => {
+    const handleAssignFaction = async (slotIndex: number, factionId: string) => {
         const alreadyAssigned = slots.some(s => s.factionId === factionId);
         if (alreadyAssigned) {
             showAlert({ title: '중복 배치 불가', message: '이 군단은 이미 다른 슬롯에 배치되어 있습니다.', type: 'warning' });
@@ -71,6 +75,28 @@ export default function GenerationPage() {
             showAlert({ title: '배치 완료', message: '군단이 배치되었으며, 첫 카드를 즉시 생성할 수 있습니다!', type: 'success' });
             loadData();
             setSelectedSlotForAssignment(null);
+
+            // Commander Acquisition Logic
+            try {
+                const commanderTemplate = COMMANDERS.find(c => c.aiFactionId === factionId);
+                if (commanderTemplate) {
+                    const inventory = await loadInventory();
+                    // Check if player already owns this COMMANDER (by templateId)
+                    const hasCommander = inventory.some(c => c.templateId === commanderTemplate.id);
+
+                    if (!hasCommander) {
+                        console.log(`🎁 New Commander Found: ${commanderTemplate.name} for faction ${factionId}`);
+                        const newCommanderCard = createCardFromTemplate(commanderTemplate);
+                        await addCardToInventory(newCommanderCard);
+
+                        setRewardCards([newCommanderCard]);
+                        setRewardModalTitle("🎖️ COMMANDER ACQUIRED 🎖️");
+                        setRewardModalOpen(true);
+                    }
+                }
+            } catch (error) {
+                console.error("Failed to process Commander acquisition:", error);
+            }
         } else {
             showAlert({ title: '배치 실패', message: result.message, type: 'error' });
         }
@@ -287,7 +313,10 @@ export default function GenerationPage() {
                                             <div className="mt-auto space-y-2">
                                                 {canGenerate ? (
                                                     <button
-                                                        onClick={() => handleReceiveCard(slot.index)}
+                                                        onClick={() => {
+                                                            setRewardModalTitle("카드 획득!");
+                                                            handleReceiveCard(slot.index);
+                                                        }}
                                                         className="w-full py-3 bg-gradient-to-r from-pink-500 to-purple-500 text-white font-bold text-sm rounded-lg hover:from-pink-400 hover:to-purple-400 transition-all flex items-center justify-center gap-2 animate-bounce shadow-lg shadow-pink-500/20"
                                                     >
                                                         <Gift size={16} />
@@ -425,6 +454,7 @@ export default function GenerationPage() {
                     isOpen={rewardModalOpen}
                     onClose={() => setRewardModalOpen(false)}
                     cards={rewardCards}
+                    title={rewardModalTitle}
                 />
             </div>
         </CyberPageLayout>

@@ -13,7 +13,7 @@ import { useAlert } from '@/context/AlertContext';
 import { useFooter } from '@/context/FooterContext';
 import { useTranslation } from '@/context/LanguageContext';
 import { gameStorage } from '@/lib/game-storage';
-import { Card as GameCardType } from '@/lib/types';
+import { Card as GameCardType, Rarity } from '@/lib/types';
 import { getStoryStage, StoryStage, completeStage } from '@/lib/story-system';
 import {
     generateEnemies,
@@ -27,6 +27,7 @@ import { cn } from '@/lib/utils';
 import EnhancedBattleScene from '@/components/battle/EnhancedBattleScene';
 import { BattleType } from '@/lib/battle-victory-system';
 import CardPlacementBoard, { RoundPlacement } from '@/components/battle/CardPlacementBoard';
+import { selectBalancedDeck, getMainCards } from '@/lib/balanced-deck-selector';
 
 /**
  * 5장 전투 2단계 시스템:
@@ -499,6 +500,28 @@ export default function StageBattlePage() {
                             </div>
                         </div>
 
+                        {/* 주력 카드 섹션 (등급별 최고 카드) */}
+                        {allCards.length > 0 && (
+                            <div className="mb-8">
+                                <h4 className="text-sm font-bold text-amber-400 mb-3 flex items-center gap-2">
+                                    <span>⭐</span>
+                                    주력 카드 (전투 투입 권장)
+                                </h4>
+                                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 p-4 bg-amber-500/5 rounded-xl border border-amber-500/20">
+                                    {(getMainCards(allCards) as GameCardType[]).map(card => (
+                                        <motion.div key={`main-${card.id}`} onClick={() => toggleHandSelection(card)} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="cursor-pointer">
+                                            <GameCard card={card} isSelected={footer.state.selectionSlots.some(c => c.id === card.id)} />
+                                            <div className="absolute top-1 right-1 bg-amber-500 text-black text-[9px] font-black px-1 rounded shadow-lg z-20">MAIN</div>
+                                        </motion.div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="mb-4 flex items-center justify-between">
+                            <h4 className="text-sm font-bold text-white/60">전체 카드 목록</h4>
+                        </div>
+
                         {/* 카드가 없을 때 안내 */}
                         {allCards.length === 0 ? (
                             <div className="flex flex-col items-center justify-center py-16">
@@ -525,11 +548,21 @@ export default function StageBattlePage() {
                             </div>
                         ) : (
                             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                                {allCards.map(card => (
-                                    <motion.div key={card.id} onClick={() => toggleHandSelection(card)} whileTap={{ scale: 0.95 }}>
-                                        <GameCard card={card} isSelected={footer.state.selectionSlots.some(c => c.id === card.id)} />
-                                    </motion.div>
-                                ))}
+                                {allCards
+                                    .sort((a, b) => {
+                                        // 주력카드가 먼저 오게 정렬할 수도 있지만, 별도 섹션이 있으니 그냥 등급/전투력 순으로
+                                        const rarityScore = (r: string) => {
+                                            const orders: any = { commander: 10, unique: 9, legendary: 8, epic: 7, rare: 6, common: 5 };
+                                            return orders[r] || 0;
+                                        };
+                                        if (rarityScore(b.rarity || 'common') !== rarityScore(a.rarity || 'common')) return rarityScore(b.rarity || 'common') - rarityScore(a.rarity || 'common');
+                                        return (b.stats?.totalPower || 0) - (a.stats?.totalPower || 0);
+                                    })
+                                    .map(card => (
+                                        <motion.div key={card.id} onClick={() => toggleHandSelection(card)} whileTap={{ scale: 0.95 }}>
+                                            <GameCard card={card} isSelected={footer.state.selectionSlots.some(c => c.id === card.id)} />
+                                        </motion.div>
+                                    ))}
                             </div>
                         )}
 
@@ -590,7 +623,7 @@ export default function StageBattlePage() {
                                                         {/* 카드 이미지 */}
                                                         {(() => {
                                                             const { getCardCharacterImage } = require('@/lib/card-images');
-                                                            const cardImage = getCardCharacterImage(card.templateId, card.name, card.rarity);
+                                                            const cardImage = getCardCharacterImage(card.templateId, card.name || '', (card.rarity as Rarity) || 'common');
                                                             return (
                                                                 <div
                                                                     className="absolute inset-0 bg-cover bg-center"
@@ -671,9 +704,8 @@ export default function StageBattlePage() {
                                 <div className="flex items-center justify-between gap-4">
                                     <button
                                         onClick={() => {
-                                            // 자동 선택 - 등급별로 균형 잡힌 덱 구성
-                                            const { selectBalancedDeck } = require('@/lib/balanced-deck-selector');
-                                            const balancedDeck = selectBalancedDeck(allCards, 5);
+                                            // 자동 선택 - 등급별로 균형 잡힌 덱 구성 (주력카드 우선)
+                                            const balancedDeck = selectBalancedDeck(allCards, 5) as GameCardType[];
                                             // 기존 선택 초기화 후 추가 (수동 리셋)
                                             footer.state.selectionSlots.forEach(c => footer.removeFromSelection(c.id));
                                             setTimeout(() => {
@@ -750,21 +782,17 @@ export default function StageBattlePage() {
                                     <h4 className="text-xs font-bold text-red-400 mb-2 text-center">적 카드 (순서는 다름)</h4>
                                     <div className="flex gap-2 justify-center flex-wrap">
                                         {enemies.slice(0, 5).map((enemy, idx) => {
-                                            const { getCardCharacterImage } = require('@/lib/card-images');
-                                            const cardImage = getCardCharacterImage(enemy.templateId, enemy.name, enemy.rarity);
-
                                             return (
                                                 <div key={idx} className="relative w-14 h-20 rounded-lg border border-red-500/50 overflow-hidden">
                                                     <div
-                                                        className="absolute inset-0 bg-cover bg-center"
-                                                        style={{
-                                                            backgroundImage: `url(${cardImage || '/assets/cards/default-card.png'})`,
-                                                        }}
-                                                    />
+                                                        className="absolute inset-0 bg-cover bg-center bg-red-900/20 flex items-center justify-center text-2xl opacity-40"
+                                                    >
+                                                        👾
+                                                    </div>
                                                     <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
                                                     <div className="absolute bottom-0 left-0 right-0 p-0.5 text-center">
                                                         <div className="text-[8px] text-white truncate">{enemy.name}</div>
-                                                        <div className="text-[8px] text-red-400">⚡{Math.floor(enemy.stats?.totalPower || 0)}</div>
+                                                        <div className="text-[8px] text-red-400">⚡{Math.floor(enemy.power || 0)}</div>
                                                     </div>
                                                 </div>
                                             );
@@ -782,9 +810,9 @@ export default function StageBattlePage() {
                                         // Type info
                                         const typeInfo = assignedCard ? (() => {
                                             const type = assignedCard.type;
-                                            if (type === 'rock') return { emoji: '✊', bg: 'bg-red-500/80', border: 'border-red-300/50' };
-                                            if (type === 'paper') return { emoji: '✋', bg: 'bg-blue-500/80', border: 'border-blue-300/50' };
-                                            if (type === 'scissors') return { emoji: '✌️', bg: 'bg-green-500/80', border: 'border-green-300/50' };
+                                            if (type === 'EFFICIENCY') return { emoji: '✊', bg: 'bg-red-500/80', border: 'border-red-300/50' };
+                                            if (type === 'CREATIVITY') return { emoji: '✋', bg: 'bg-blue-500/80', border: 'border-blue-300/50' };
+                                            if (type === 'FUNCTION') return { emoji: '✌️', bg: 'bg-green-500/80', border: 'border-green-300/50' };
                                             return null;
                                         })() : null;
 
@@ -869,9 +897,9 @@ export default function StageBattlePage() {
                                             // Type info
                                             const typeInfo = (() => {
                                                 const type = card.type;
-                                                if (type === 'rock') return { emoji: '✊', bg: 'bg-red-500/80' };
-                                                if (type === 'paper') return { emoji: '✋', bg: 'bg-blue-500/80' };
-                                                if (type === 'scissors') return { emoji: '✌️', bg: 'bg-green-500/80' };
+                                                if (type === 'EFFICIENCY') return { emoji: '✊', bg: 'bg-red-500/80' };
+                                                if (type === 'CREATIVITY') return { emoji: '✋', bg: 'bg-blue-500/80' };
+                                                if (type === 'FUNCTION') return { emoji: '✌️', bg: 'bg-green-500/80' };
                                                 return null;
                                             })();
 
@@ -900,7 +928,7 @@ export default function StageBattlePage() {
                                                     <div
                                                         className="absolute inset-0 bg-cover bg-center"
                                                         style={{
-                                                            backgroundImage: `url(${getCardCharacterImage(card.templateId, card.name, card.rarity) || '/assets/cards/default-card.png'})`,
+                                                            backgroundImage: `url(${getCardCharacterImage(card.templateId, card.name || '', (card.rarity as Rarity) || 'common') || '/assets/cards/default-card.png'})`,
                                                         }}
                                                     />
                                                     <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />

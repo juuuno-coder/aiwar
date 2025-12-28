@@ -24,6 +24,7 @@ export default function FusionPage() {
     const [allCards, setAllCards] = useState<InventoryCard[]>([]);
     const [materialSlots, setMaterialSlots] = useState<(InventoryCard | null)[]>(Array(3).fill(null));
     const [userTokens, setUserTokens] = useState(0);
+    const [selectedRarity, setSelectedRarity] = useState<string>('all');
 
     // Reward Modal State
     const [rewardModalOpen, setRewardModalOpen] = useState(false);
@@ -160,6 +161,10 @@ export default function FusionPage() {
     const filledCount = materialSlots.filter(c => c !== null).length;
     const canFuseNow = filledCount === 3;
 
+    const displayCards = allCards.filter(c =>
+        selectedRarity === 'all' || (c.rarity || 'common') === selectedRarity
+    );
+
     return (
         <CyberPageLayout
             title="융합 실험실"
@@ -169,13 +174,80 @@ export default function FusionPage() {
         >
             {/* 메인 영역: 카드 목록 */}
             <div className="p-6 pb-[140px]"> {/* 푸터 높이 120px + 여유 */}
-                <div className="mb-4 flex items-center justify-between">
-                    <h2 className="text-lg font-bold text-white">내 카드 목록</h2>
-                    <p className="text-sm text-white/60">{allCards.length}장</p>
+                {/* Main Cards Section - 주력카드 */}
+                {allCards.length > 0 && (
+                    <div className="mb-6">
+                        <h3 className="text-sm font-bold text-white/80 mb-3 flex items-center gap-2">
+                            <span className="text-purple-400">⭐</span>
+                            주력 카드 (등급별 최고 레벨)
+                        </h3>
+                        <div className="grid grid-cols-3 sm:grid-cols-6 gap-3 bg-gradient-to-br from-purple-900/10 to-pink-900/10 p-3 rounded-xl border border-purple-500/20">
+                            {(() => {
+                                const mainCards: Record<string, InventoryCard> = {};
+                                const rarities = ['commander', 'unique', 'legendary', 'epic', 'rare', 'common'];
+
+                                allCards.forEach(card => {
+                                    const rarity = card.rarity || 'common';
+                                    if (!mainCards[rarity] || (card.level || 1) > (mainCards[rarity].level || 1)) {
+                                        mainCards[rarity] = card;
+                                    }
+                                });
+
+                                return rarities.map(rarity => {
+                                    const card = mainCards[rarity];
+                                    if (!card) return null;
+
+                                    if (selectedRarity !== 'all' && (card.rarity || 'common') !== selectedRarity) return null;
+
+                                    const isSelected = materialSlots.some(s => s?.id === card.id);
+
+                                    return (
+                                        <div
+                                            key={rarity}
+                                            draggable
+                                            onDragStart={(e) => handleDragStart(e, card)}
+                                            onClick={() => handleCardClick(card)}
+                                            className={cn(
+                                                "cursor-grab active:cursor-grabbing transition-all hover:scale-105",
+                                                isSelected && "opacity-50 ring-2 ring-purple-500"
+                                            )}
+                                        >
+                                            <GameCard card={card} />
+                                        </div>
+                                    );
+                                }).filter(Boolean);
+                            })()}
+                        </div>
+                    </div>
+                )}
+
+                <div className="mb-4 flex flex-col gap-4">
+                    <div className="flex items-center justify-between">
+                        <h2 className="text-lg font-bold text-white">내 카드 목록</h2>
+                        <p className="text-sm text-white/60">{displayCards.length}장</p>
+                    </div>
+
+                    {/* Rarity Filter Buttons */}
+                    <div className="flex flex-wrap gap-2">
+                        {['all', 'common', 'rare', 'epic', 'legendary', 'unique'].map(rarity => (
+                            <button
+                                key={rarity}
+                                onClick={() => setSelectedRarity(rarity)}
+                                className={cn(
+                                    "px-3 py-1.5 rounded-lg text-xs font-bold uppercase transition-all border",
+                                    selectedRarity === rarity
+                                        ? "bg-purple-500 text-black border-purple-400 shadow-[0_0_10px_rgba(168,85,247,0.5)]"
+                                        : "bg-black/40 text-white/60 border-white/10 hover:bg-white/10 hover:border-white/30"
+                                )}
+                            >
+                                {rarity === 'all' ? '전체' : rarity}
+                            </button>
+                        ))}
+                    </div>
                 </div>
 
                 <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-                    {allCards.map(card => {
+                    {displayCards.map(card => {
                         const isSelected = materialSlots.some(s => s?.id === card.id);
 
                         return (

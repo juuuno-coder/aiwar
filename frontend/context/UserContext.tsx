@@ -13,6 +13,7 @@ import { addCardToInventory } from '@/lib/inventory-system';
 import type { Rarity } from '@/lib/types';
 import { useNotification } from '@/context/NotificationContext';
 import { useFirebase } from '@/components/FirebaseProvider';
+import { addNotification } from '@/components/NotificationCenter';
 
 interface UserContextType {
     coins: number;
@@ -71,6 +72,41 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
             setLoading(false);
         }
     }, [mounted, profile]);
+
+    const checkFeatureUnlocks = (newLevel: number) => {
+        if (newLevel === 3) {
+            addNotification({
+                type: 'levelup',
+                title: '연구소 잠금 해제!',
+                message: '이제 연구소에서 AI 기술을 연구하여 카드를 강화할 수 있습니다.',
+                icon: '🧪'
+            });
+        }
+        if (newLevel === 5) {
+            addNotification({
+                type: 'levelup',
+                title: 'PVP 아레나 잠금 해제!',
+                message: '다른 플레이어와 실력을 겨뤄보세요! 아레나가 개방되었습니다.',
+                icon: '⚔️'
+            });
+        }
+        if (newLevel === 10) {
+            addNotification({
+                type: 'levelup',
+                title: '랭크전 시작 가능!',
+                message: '진정한 실력자를 가리는 랭크전에 참여하여 명예를 드높이세요!',
+                icon: '🏆'
+            });
+        }
+
+        // General Level Up Notification
+        addNotification({
+            type: 'levelup',
+            title: `레벨 업! Lv.${newLevel}`,
+            message: `축하합니다! 레벨 ${newLevel}이 되었습니다. 더 강력한 카드를 생성할 수 있습니다.`,
+            icon: '🆙'
+        });
+    };
 
     const refreshData = useCallback(async () => {
         if (!mounted) return;
@@ -159,15 +195,18 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
             await firebaseUpdateExpAndLevel(currentExp, currentLevel, user?.uid);
             await reloadProfile(user?.uid);
 
+            // Trigger Notification for Feature Unlocks (Firebase Mode)
+            if (leveledUp) {
+                checkFeatureUnlocks(currentLevel);
+            }
+
             return { level: currentLevel, experience: currentExp, leveledUp };
         } else {
             const result = await gameStorage.addExperience(amount, user?.uid);
 
             // Check for local storage level up
             if (result.leveledUp) {
-                // We need to import useNotification but hooks can't be used outside component directly ideally in same logic flow
-                // But here we are inside UserProvider which IS a component component
-                // Wait, addExperienceByContext is inside the component
+                checkFeatureUnlocks(result.level);
             }
 
             setLevel(result.level);
@@ -206,6 +245,8 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
             setExperience(MAX_EXP);
         }
     };
+
+
 
     // Auto-detect admin email for convenience and redundancy
     useEffect(() => {

@@ -4,6 +4,7 @@ import aiFactionsData from '@/data/ai-factions.json';
 // Free/Pro/Ultra 티어에 따라 생성 시간과 일일 제한이 다름
 
 import { storage } from './utils';
+import { gameStorage } from './game-storage';
 import { Card } from './types';
 import { generateId } from './utils';
 import {
@@ -175,8 +176,18 @@ export async function generateCard(slotIndex: number): Promise<{ success: boolea
 
     // 실제 카드 생성 (등급별 확률 적용 + 친밀도 + 군단 효과)
     const { generateRandomCard } = await import('./card-generation-system');
+
+    // Research Stat Extraction
+    const gameState = await gameStorage.loadGameState();
+    const researchStats = gameState.research?.stats;
+    const researchBonuses = {
+        efficiency: researchStats?.efficiency?.currentLevel || 0,
+        creativity: researchStats?.insight?.currentLevel || 0, // Insight maps to Creativity
+        function: researchStats?.mastery?.currentLevel || 0    // Mastery maps to Function
+    };
+
     // 친밀도와 군단 효과를 전달하여 생성
-    const newCard = generateRandomCard(subscription.tier, subscription.affinity || 0, factionData?.effects);
+    const newCard = generateRandomCard(subscription.tier, subscription.affinity || 0, factionData?.effects, researchBonuses);
 
 
     // 생성 카운터 증가
@@ -195,10 +206,14 @@ export async function generateCard(slotIndex: number): Promise<{ success: boolea
     slot.lastGeneratedCard = newCard;
     storage.set('generationSlots', slots);
 
+    // Check for active bonuses
+    const hasBonuses = researchBonuses.efficiency > 1 || researchBonuses.creativity > 1 || researchBonuses.function > 1;
+    const bonusText = hasBonuses ? `\n(연구 보너스 적용됨! +${Math.max(researchBonuses.efficiency, researchBonuses.creativity, researchBonuses.function) * 3} 스탯)` : '';
+
     return {
         success: true,
         card: newCard,
-        message: `${(newCard.rarity || 'COMMON').toUpperCase()} 등급 카드가 생성되었습니다!`
+        message: `${(newCard.rarity || 'COMMON').toUpperCase()} 등급 카드가 생성되었습니다!${bonusText}`
     };
 }
 

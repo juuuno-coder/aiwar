@@ -10,6 +10,7 @@ export interface FactionSubscription {
     factionId: string;
     tier: SubscriptionTier;
     subscribedAt: Date;
+    lastBilledAt: string; // ISO string of last deduction
     dailyCost: number; // 일간 구독 비용
     dailyGenerationLimit: number;
     generationInterval: number; // minutes
@@ -20,6 +21,8 @@ export interface FactionSubscription {
 
 /**
  * 티어별 설정 (게임 밸런스 고려)
+ * - cost는 '일간 유지비'로 설정 (Option 2 반영)
+ * - 최초 가입 시에도 1일치 비용 선납
  */
 export const TIER_CONFIG = {
     free: {
@@ -30,18 +33,18 @@ export const TIER_CONFIG = {
         description: '무료 티어 - 체험용'
     },
     pro: {
-        cost: 500,
+        cost: 40, // 일일 유지비 현실화 (Ultra의 1/5 수준으로 조정)
         generationInterval: 20, // 20 minutes
         dailyLimit: 10,
         name: 'Pro',
-        description: '프로 티어 - 일반 플레이어용'
+        description: '프로 티어 - 매일 40코인 자동 차감'
     },
     ultra: {
-        cost: 2000,
+        cost: 200, // 5개 구독 시 1000코인 달성 (200코인/일)
         generationInterval: 10, // 10 minutes
         dailyLimit: 999999, // unlimited
         name: 'Ultra',
-        description: '울트라 티어 - 프리미엄 무제한'
+        description: '울트라 티어 - 매일 200코인 자동 차감'
     }
 };
 
@@ -54,18 +57,19 @@ export function getSubscribedFactions(): FactionSubscription[] {
     // 날짜 변환 및 일일 카운터 리셋
     const today = new Date().toISOString().split('T')[0];
 
-    return subscriptions.map(sub => {
+    let billingOccurred = false;
+    const currentSubs = subscriptions.map(sub => {
         const subscription = {
             ...sub,
             subscribedAt: new Date(sub.subscribedAt)
         };
 
-        // 티어 설정에서 최신 값 가져와서 동기화 (설정 변경 시 자동 적용)
+        // 티어 설정에서 최신 값 가져와서 동기화
         const config = TIER_CONFIG[subscription.tier];
         if (config) {
             subscription.dailyCost = config.cost;
             subscription.dailyGenerationLimit = config.dailyLimit;
-            subscription.generationInterval = config.generationInterval; // 120분 등 잘못된 값 수정
+            subscription.generationInterval = config.generationInterval;
         }
 
         // 날짜가 바뀌면 카운터 리셋
@@ -74,13 +78,78 @@ export function getSubscribedFactions(): FactionSubscription[] {
             subscription.lastResetDate = today;
         }
 
-        // 친밀도 초기화 (기존 데이터 호환)
+        // 친밀도 초기화
         if (subscription.affinity === undefined) {
             subscription.affinity = 0;
         }
 
+        // 필드 초기화 (기존 데이터 호환)
+        if (!subscription.lastBilledAt) {
+            subscription.lastBilledAt = new Date().toISOString();
+        }
+
         return subscription;
     });
+
+    // 일일 구독료 정산 (마켓 이코노미: 접속 시 정산)
+    const { billedSubs, updatedCoins } = processRecurringBilling(currentSubs);
+    if (updatedCoins !== undefined) {
+        saveSubscriptions(billedSubs);
+        return billedSubs;
+    }
+
+    return currentSubs;
+}
+
+/**
+ * 일간 반복 청구 프로세스 (Option 2)
+ */
+function processRecurringBilling(subscriptions: FactionSubscription[]): { billedSubs: FactionSubscription[], updatedCoins?: number } {
+    const state = getGameState();
+    let totalDeduction = 0;
+    const now = new Date();
+    let changed = false;
+
+    const billedSubs = subscriptions.map(sub => {
+        const lastBilled = new Date(sub.lastBilledAt);
+        const hoursDiff = (now.getTime() - lastBilled.getTime()) / (1000 * 60 * 60);
+
+        // 24시간 이상 지났을 경우 정산
+        if (hoursDiff >= 24) {
+            const daysPassed = Math.floor(hoursDiff / 24);
+            const cost = sub.dailyCost * daysPassed;
+
+            if (cost > 0) {
+                totalDeduction += cost;
+                changed = true;
+
+                // 친밀도 보너스 (구독 유지 보상): 1일당 5 포인트
+                const affinityBonus = daysPassed * 5;
+                const newAffinity = Math.min((sub.affinity || 0) + affinityBonus, 100);
+
+                // 마지막 청구 시간 업데이트 (다음 날로)
+                const nextBilled = new Date(lastBilled);
+                nextBilled.setDate(nextBilled.getDate() + daysPassed);
+
+                return {
+                    ...sub,
+                    lastBilledAt: nextBilled.toISOString(),
+                    affinity: newAffinity
+                };
+            }
+        }
+        return sub;
+    });
+
+    if (changed && totalDeduction > 0) {
+        // 코인이 부족할 경우? 일단 차감 (마이너스 허용 혹은 0으로 수렴)
+        // 여기서는 마이너스를 허용하여 사용자가 '빚'을 지게 하여 구독 취소를 유도 (마켓 이코노미)
+        const newCoins = state.coins - totalDeduction;
+        updateGameState({ coins: newCoins });
+        return { billedSubs, updatedCoins: newCoins };
+    }
+
+    return { billedSubs };
 }
 
 /**
@@ -133,6 +202,7 @@ export function subscribeFaction(
         subscriptions[existingIndex] = {
             ...existing,
             tier,
+            lastBilledAt: existing.lastBilledAt || new Date().toISOString(),
             dailyCost: config.cost,
             dailyGenerationLimit: config.dailyLimit,
             generationInterval: config.generationInterval,
@@ -169,10 +239,12 @@ export function subscribeFaction(
 
     // 구독 추가
     const today = new Date().toISOString().split('T')[0];
+    const nowIso = new Date().toISOString();
     const newSubscription: FactionSubscription = {
         factionId,
         tier,
         subscribedAt: new Date(),
+        lastBilledAt: nowIso,
         dailyCost: config.cost, // 일간 비용
         dailyGenerationLimit: config.dailyLimit,
         generationInterval: config.generationInterval,

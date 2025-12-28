@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
+import { getTypeIcon, getTypeColor } from '@/lib/type-system';
 
 interface RoundPlacementSlotProps {
     roundNumber: number;
@@ -102,22 +103,17 @@ export default function RoundPlacementSlot({
                             );
                         })()}
 
-                        {/* Type Icon */}
-                        {(() => {
-                            const type = mainCard.type;
-                            if (type === 'rock') return <div className="absolute top-0.5 right-6 px-0.5 py-0.5 rounded bg-red-500/80 text-xs shadow-lg z-10">✊</div>;
-                            if (type === 'paper') return <div className="absolute top-0.5 right-6 px-0.5 py-0.5 rounded bg-blue-500/80 text-xs shadow-lg z-10">✋</div>;
-                            if (type === 'scissors') return <div className="absolute top-0.5 right-6 px-0.5 py-0.5 rounded bg-green-500/80 text-xs shadow-lg z-10">✌️</div>;
-                            return null;
-                        })()}
+                        {/* Type Icon - Large and Prominent */}
+                        {mainCard.type && (
+                            <div
+                                className="absolute top-1 right-8 w-8 h-8 rounded-full border-2 border-white flex items-center justify-center text-lg shadow-xl z-20"
+                                style={{ backgroundColor: getTypeColor(mainCard.type) }}
+                            >
+                                {getTypeIcon(mainCard.type)}
+                            </div>
+                        )}
 
-                        {/* Remove Button */}
-                        <button
-                            onClick={onRemoveMain}
-                            className="absolute top-0.5 right-0.5 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center text-white text-xs font-bold hover:bg-red-600 z-10"
-                        >
-                            ×
-                        </button>
+
 
                         {/* Level Badge */}
                         <div className="absolute bottom-6 right-0.5 z-10">
@@ -169,22 +165,17 @@ export default function RoundPlacementSlot({
                                 🎭
                             </div>
 
-                            {/* Type Icon */}
-                            {(() => {
-                                const type = hiddenCard.type;
-                                if (type === 'rock') return <div className="absolute top-0.5 right-6 px-0.5 py-0.5 rounded bg-red-500/80 text-xs shadow-lg z-10">✊</div>;
-                                if (type === 'paper') return <div className="absolute top-0.5 right-6 px-0.5 py-0.5 rounded bg-blue-500/80 text-xs shadow-lg z-10">✋</div>;
-                                if (type === 'scissors') return <div className="absolute top-0.5 right-6 px-0.5 py-0.5 rounded bg-green-500/80 text-xs shadow-lg z-10">✌️</div>;
-                                return null;
-                            })()}
+                            {/* Type Icon - Large and Prominent */}
+                            {hiddenCard.type && (
+                                <div
+                                    className="absolute top-1 right-8 w-8 h-8 rounded-full border-2 border-white flex items-center justify-center text-lg shadow-xl z-20"
+                                    style={{ backgroundColor: getTypeColor(hiddenCard.type) }}
+                                >
+                                    {getTypeIcon(hiddenCard.type)}
+                                </div>
+                            )}
 
-                            {/* Remove Button */}
-                            <button
-                                onClick={onRemoveHidden}
-                                className="absolute top-0.5 right-0.5 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center text-white text-xs font-bold hover:bg-red-600 z-10"
-                            >
-                                ×
-                            </button>
+
 
                             {/* Level Badge */}
                             <div className="absolute bottom-6 right-0.5 z-10">

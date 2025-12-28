@@ -86,7 +86,7 @@ export default function FactionsPage() {
 
         showConfirm({
             title: `${config.name} 티어 구독`,
-            message: `${factionId} 군단을 ${config.name} 티어로 구독하시겠습니까?\n\n비용: ${costMsg}\n생성 주기: ${config.generationInterval}분\n일일 제한: ${config.dailyLimit === 999999 ? '무제한' : config.dailyLimit + '회'}`,
+            message: `${factionId} 군단을 ${config.name} 티어로 구독하시겠습니까?\n\n⚠️ 주의: 이 티어는 매일 ${config.cost.toLocaleString()} 코인이 자동 차감되는Recurring Billing(정기 결제) 방식입니다.`,
             onConfirm: () => {
                 const result = subscribeFaction(factionId, tier);
                 if (result.success) {
@@ -163,7 +163,7 @@ export default function FactionsPage() {
             description="AI 군단을 구독하여 카드를 자동 생성하세요"
             color="purple"
         >
-            <div className="max-h-[calc(100vh-200px)] flex flex-col">
+            <div className="flex flex-col">
                 {/* Subscription Info */}
                 <div className="mb-6 bg-gradient-to-r from-purple-500/10 to-cyan-500/10 border border-purple-500/20 rounded-lg p-6 flex-shrink-0">
                     <div className="flex items-start justify-between mb-4">
@@ -193,19 +193,27 @@ export default function FactionsPage() {
                                 </div>
                                 <div className="bg-blue-500/10 border border-blue-500/20 rounded p-2">
                                     <p className="font-bold text-blue-400 mb-1">Pro</p>
-                                    <p className="text-white/60">500코인 • Lv.10 • 20회/일</p>
+                                    <p className="text-white/60">40코인 • Lv.10 • 20회/일</p>
                                 </div>
-                                <div className="bg-purple-500/10 border border-purple-500/20 rounded p-2">
+                                <div className="bg-purple-500/10 border border-blue-500/20 rounded p-2">
                                     <p className="font-bold text-purple-400 mb-1">Ultra</p>
-                                    <p className="text-white/60">2000코인 • Lv.30 • 무제한</p>
+                                    <p className="text-white/60">200코인 • Lv.30 • 무제한</p>
                                 </div>
                             </div>
                         </div>
                     </div>
+
+                    {/* Market Economy Reminder */}
+                    <div className="mt-4 p-3 bg-amber-900/20 border border-amber-500/30 rounded-lg animate-pulse">
+                        <p className="text-sm text-amber-300 flex items-center gap-2">
+                            <Zap size={16} className="text-amber-400" />
+                            <strong>시장 경제 알림:</strong> 구독 중인 군단은 접속 여부와 관계없이 매일 유지비가 차감됩니다. <strong>게임을 종료하기 전 반드시 구독 해지를 검토하세요!</strong>
+                        </p>
+                    </div>
                 </div>
 
                 {/* Factions Grid - Scrollable Container */}
-                <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
+                <div className="flex-1 pb-4">
                     <h2 className="text-xl font-bold text-white mb-4">
                         전체 AI 군단 ({factions.length})
                     </h2>

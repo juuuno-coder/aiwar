@@ -121,7 +121,7 @@ export default function UniqueCreatePage() {
             return;
         }
 
-        if (confirm('신청서를 제출하시겠습니까? (10,000 코인 / 2,000 토큰 소모)')) {
+        if (confirm('유니크 생성 프로세스를 시작하시겠습니까?\n이 과정에서 전설 카드 5장이 영구적으로 소모되며, 10,000 코인과 2,000 토큰이 생성 에너지로 사용됩니다.')) {
             // InventoryCard[] -> Card[] 변환 (acquiredAt 타입 호환성 해결)
             const materialCards = filledMaterials.map(card => ({
                 ...card,
@@ -157,8 +157,8 @@ export default function UniqueCreatePage() {
     return (
         <CyberPageLayout
             title="UNIQUE_CREATION"
-            subtitle="Ultimate Card Synthesis"
-            description="강화되지 않은 전설 카드 5장을 소모하여 유니크 카드 생성"
+            subtitle="The Ultimate Card Creation"
+            description="전설급 카드 5장의 정수를 융합하여 단 하나의 유니크 카드를 생성합니다."
             color="red"
         >
             {/* 탭 버튼 - 백 버튼 아래 배치 */}
@@ -172,7 +172,7 @@ export default function UniqueCreatePage() {
                             : "bg-white/5 text-white/60 hover:bg-white/10 border border-transparent"
                     )}
                 >
-                    신청서 작성
+                    유니크 생성
                 </button>
                 <button
                     onClick={() => setViewMode('list')}
@@ -183,7 +183,7 @@ export default function UniqueCreatePage() {
                             : "bg-white/5 text-white/60 hover:bg-white/10 border border-transparent"
                     )}
                 >
-                    내 신청 현황 ({myApps.length})
+                    생성 기록 ({myApps.length})
                 </button>
             </div>
 
@@ -193,7 +193,7 @@ export default function UniqueCreatePage() {
                     <div className="pb-[160px]">
                         {/* 입력 폼 */}
                         <div className="bg-white/5 border border-white/10 rounded-lg p-6 mb-6">
-                            <h3 className="text-xl font-bold mb-4 text-white">카드 정보 입력</h3>
+                            <h3 className="text-xl font-bold mb-4 text-white">유니크 개체 설계</h3>
                             <div className="grid grid-cols-2 gap-6">
                                 <div className="space-y-4">
                                     <div>
@@ -226,12 +226,12 @@ export default function UniqueCreatePage() {
                             {filledCount === 5 && (
                                 <div className="mt-4 p-4 bg-red-500/10 rounded-lg">
                                     <div className="flex justify-between items-center mb-2">
-                                        <span className="text-gray-400">신청 비용</span>
+                                        <span className="text-gray-400">생성 요구 에너지</span>
                                         <span className="font-bold text-yellow-400">10,000 코인 + 2,000 토큰</span>
                                     </div>
                                     <p className="text-xs text-gray-500">
-                                        * 관리자 승인까지 약 36시간이 소요됩니다.<br />
-                                        * 승인 거절 시 재료는 반환되지 않을 수 있습니다.
+                                        * 차원 동기화(승인) 작업은 시스템 부하에 따라 최대 36시간이 소요될 수 있습니다.<br />
+                                        * 생성 실패(거절) 시 투입된 매개체(재료)는 소멸할 수 있습니다.
                                     </p>
                                 </div>
                             )}
@@ -316,8 +316,8 @@ export default function UniqueCreatePage() {
                                         app.status === 'approved' ? 'bg-green-500/20 text-green-400' :
                                             'bg-red-500/20 text-red-400'
                                         }`}>
-                                        {app.status === 'pending' ? '심사 중 (약 36시간)' :
-                                            app.status === 'approved' ? '승인됨' : '거절됨'}
+                                        {app.status === 'pending' ? '차원 동기화 중 (진행률 12%)' :
+                                            app.status === 'approved' ? '생성 완료' : '생성 실패'}
                                     </span>
                                 </div>
                                 <div className="flex gap-4 items-start mb-4">
@@ -338,7 +338,7 @@ export default function UniqueCreatePage() {
                                 </div>
                                 {app.status === 'pending' && (
                                     <div className="bg-white/5 p-3 rounded text-xs text-gray-400 mt-2">
-                                        관리자가 내용을 검토하고 있습니다. 선정적인 이미지나 부적절한 내용은 거절될 수 있습니다.
+                                        시스템이 차원 데이터를 재구성하고 있습니다. 부적절한 데이터(이미지 등)는 차원 붕괴(기각)의 원인이 됩니다.
                                     </div>
                                 )}
                             </div>

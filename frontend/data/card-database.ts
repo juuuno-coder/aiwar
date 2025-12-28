@@ -109,6 +109,162 @@ export const CARD_DATABASE: CardTemplate[] = [
         specialAbility: { name: 'Harmonic Resonance', description: '음악 타입 카드 스탯 25% 증가', type: 'passive' }
     },
 
+    // DALL-E - OpenAI (Represented by Sam Altman again or generic) -> Let's use a "Creative Spirit" concept or specific lead if known. Aditya Ramesh? Let's use "Aditya Ramesh" (Lead Researcher).
+    {
+        id: 'cmdr-dalle',
+        name: 'Aditya Ramesh',
+        aiFactionId: 'dalle',
+        rarity: 'commander',
+        specialty: 'image',
+        cardType: 'normal',
+        imageUrl: '/assets/cards/cmdr-dalle.png',
+        description: 'DALL-E의 수석 연구원. 텍스트와 이미지의 관계를 근본적으로 재정의한 선구자.',
+        baseStats: { creativity: { min: 95, max: 100 }, accuracy: { min: 85, max: 95 }, speed: { min: 80, max: 90 }, stability: { min: 80, max: 90 }, ethics: { min: 70, max: 80 } },
+        specialAbility: { name: 'Latent Space', description: '이미지 생성 속도 15% 증가', type: 'passive' }
+    },
+    // Stable Diffusion - Emad Mostaque (Founder of Stability AI)
+    {
+        id: 'cmdr-stable',
+        name: 'Emad Mostaque',
+        aiFactionId: 'stable-diffusion',
+        rarity: 'commander',
+        specialty: 'image',
+        cardType: 'normal',
+        imageUrl: '/assets/cards/cmdr-stable.png',
+        description: 'Stability AI의 설립자. AI의 민주화를 위해 오픈 소스 혁명을 주도한다.',
+        baseStats: { creativity: { min: 90, max: 95 }, accuracy: { min: 75, max: 85 }, speed: { min: 90, max: 100 }, stability: { min: 60, max: 80 }, ethics: { min: 60, max: 70 } },
+        specialAbility: { name: 'Open Weight', description: '팀 전체 창의성 +10%', type: 'passive' }
+    },
+    // Flux - Black Forest Labs Team (Generic Representative)
+    {
+        id: 'cmdr-flux',
+        name: 'Robin Rombach',
+        aiFactionId: 'flux',
+        rarity: 'commander',
+        specialty: 'image',
+        cardType: 'normal',
+        imageUrl: '/assets/cards/cmdr-flux.png',
+        description: 'Black Forest Labs의 설립자. 최고의 퀄리티와 빠른 속도를 동시에 구현하는 기술적 리더.',
+        baseStats: { creativity: { min: 92, max: 98 }, accuracy: { min: 90, max: 98 }, speed: { min: 95, max: 100 }, stability: { min: 85, max: 95 }, ethics: { min: 75, max: 85 } },
+        specialAbility: { name: 'Hyper Flux', description: '이미지 카드 정확도 +15%', type: 'passive' }
+    },
+    // Kling - Kuaishou AI Team
+    {
+        id: 'cmdr-kling',
+        name: 'Cheng Yixiao',
+        aiFactionId: 'kling',
+        rarity: 'commander',
+        specialty: 'video',
+        cardType: 'normal',
+        imageUrl: '/assets/cards/cmdr-kling.png',
+        description: 'Kuaishou의 CEO. 아시아를 넘어 세계로 뻗어나가는 고화질 영상 생성 AI의 지휘자.',
+        baseStats: { creativity: { min: 88, max: 95 }, accuracy: { min: 85, max: 92 }, speed: { min: 80, max: 90 }, stability: { min: 90, max: 100 }, ethics: { min: 60, max: 75 } },
+        specialAbility: { name: 'High Def Stream', description: '비디오 지속 시간 +20%', type: 'passive' }
+    },
+    // Runway - Cristobal Valenzuela
+    {
+        id: 'cmdr-runway',
+        name: 'Cristobal Valenzuela',
+        aiFactionId: 'runway',
+        rarity: 'commander',
+        specialty: 'video',
+        cardType: 'normal',
+        imageUrl: '/assets/cards/cmdr-runway.png',
+        description: 'Runway의 CEO. 예술가들을 위한 AI 도구를 만들며 영화 제작의 미래를 바꾼다.',
+        baseStats: { creativity: { min: 95, max: 100 }, accuracy: { min: 80, max: 90 }, speed: { min: 85, max: 95 }, stability: { min: 80, max: 90 }, ethics: { min: 75, max: 85 } },
+        specialAbility: { name: 'Gen-3 Alpha', description: '비디오 퀄리티 대폭 상승', type: 'passive' }
+    },
+    // Pika - Demi Guo
+    {
+        id: 'cmdr-pika',
+        name: 'Demi Guo',
+        aiFactionId: 'pika',
+        rarity: 'commander',
+        specialty: 'video',
+        cardType: 'normal',
+        imageUrl: '/assets/cards/cmdr-pika.png',
+        description: 'Pika Labs의 설립자. 누구나 쉽게 영상을 만들 수 있도록 상상력을 움직임으로 바꾼다.',
+        baseStats: { creativity: { min: 90, max: 98 }, accuracy: { min: 82, max: 90 }, speed: { min: 92, max: 100 }, stability: { min: 85, max: 95 }, ethics: { min: 75, max: 85 } },
+        specialAbility: { name: 'Fluid Motion', description: '애니메이션 효과 2배', type: 'passive' }
+    },
+    // Udio - David Ding
+    {
+        id: 'cmdr-udio',
+        name: 'David Ding',
+        aiFactionId: 'udio',
+        rarity: 'commander',
+        specialty: 'music',
+        cardType: 'normal',
+        imageUrl: '/assets/cards/cmdr-udio.png',
+        description: 'Udio의 CEO. 전 구글 딥마인드 연구원 출신으로 음악 생성의 새로운 지평을 열었다.',
+        baseStats: { creativity: { min: 95, max: 100 }, accuracy: { min: 85, max: 95 }, speed: { min: 80, max: 90 }, stability: { min: 80, max: 90 }, ethics: { min: 70, max: 80 } },
+        specialAbility: { name: 'High Fidelity', description: '음악 카드 품질 +20%', type: 'passive' }
+    },
+    // ElevenLabs - Mati Staniszewski
+    {
+        id: 'cmdr-eleven',
+        name: 'Mati Staniszewski',
+        aiFactionId: 'elevenlabs',
+        rarity: 'commander',
+        specialty: 'voice',
+        cardType: 'normal',
+        imageUrl: '/assets/cards/cmdr-eleven.png',
+        description: 'ElevenLabs의 CEO. 감정을 담은 초현실적 음성 합성 기술의 리더.',
+        baseStats: { creativity: { min: 85, max: 95 }, accuracy: { min: 98, max: 100 }, speed: { min: 90, max: 100 }, stability: { min: 90, max: 100 }, ethics: { min: 65, max: 80 } },
+        specialAbility: { name: 'Voice Clone', description: '상대방 스킬 복제 확률 10%', type: 'active' }
+    },
+    // MusicGen - Jade Copet (Meta AI Lead)
+    {
+        id: 'cmdr-musicgen',
+        name: 'Jade Copet',
+        aiFactionId: 'musicgen',
+        rarity: 'commander',
+        specialty: 'music',
+        cardType: 'normal',
+        imageUrl: '/assets/cards/cmdr-musicgen.png',
+        description: 'Meta AI의 오디오 연구 리드. 오픈 소스 오디오 생성의 표준을 정립.',
+        baseStats: { creativity: { min: 88, max: 95 }, accuracy: { min: 85, max: 92 }, speed: { min: 85, max: 95 }, stability: { min: 85, max: 95 }, ethics: { min: 80, max: 90 } },
+        specialAbility: { name: 'Audiocraft', description: '음악 생성 안정성 +30%', type: 'passive' }
+    },
+    // Cursor - Michael Truell
+    {
+        id: 'cmdr-cursor',
+        name: 'Michael Truell',
+        aiFactionId: 'cursor',
+        rarity: 'commander',
+        specialty: 'code',
+        cardType: 'normal',
+        imageUrl: '/assets/cards/cmdr-cursor.png',
+        description: 'Cursor의 공동 창립자. IDE와 AI의 완벽한 결합을 통해 코딩 경험을 혁신한다.',
+        baseStats: { creativity: { min: 80, max: 90 }, accuracy: { min: 92, max: 98 }, speed: { min: 98, max: 100 }, stability: { min: 90, max: 100 }, ethics: { min: 85, max: 95 } },
+        specialAbility: { name: 'Codebase RAG', description: '코드 카드 효율 20% 증가', type: 'passive' }
+    },
+    // Replit - Amjad Masad
+    {
+        id: 'cmdr-replit',
+        name: 'Amjad Masad',
+        aiFactionId: 'replit',
+        rarity: 'commander',
+        specialty: 'code',
+        cardType: 'normal',
+        imageUrl: '/assets/cards/cmdr-replit.png',
+        description: 'Replit의 CEO. 브라우저 하나로 아이디어를 소프트웨어로 만드는 세상을 꿈꾼다.',
+        baseStats: { creativity: { min: 90, max: 95 }, accuracy: { min: 85, max: 90 }, speed: { min: 95, max: 100 }, stability: { min: 85, max: 95 }, ethics: { min: 80, max: 90 } },
+        specialAbility: { name: 'Ghostwriter', description: '배포 속도 50% 단축', type: 'active' }
+    },
+    // Codeium - Varun Mohan
+    {
+        id: 'cmdr-codeium',
+        name: 'Varun Mohan',
+        aiFactionId: 'codeium',
+        rarity: 'commander',
+        specialty: 'code',
+        cardType: 'normal',
+        imageUrl: '/assets/cards/cmdr-codeium.png',
+        description: 'Codeium의 CEO. 모든 개발자에게 무료로 고성능 AI 도구를 제공하여 생산성을 극대화한다.',
+        baseStats: { creativity: { min: 75, max: 85 }, accuracy: { min: 90, max: 98 }, speed: { min: 95, max: 100 }, stability: { min: 92, max: 100 }, ethics: { min: 85, max: 95 } },
+        specialAbility: { name: 'Context Aware', description: '코드 정확도 10% 증가', type: 'passive' }
+    },
 
     // 2. UNIQUE TIER (The Singularities)
     {

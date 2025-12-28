@@ -52,7 +52,7 @@ export default function Sidebar({ isOpen, onToggle }: SidebarProps) {
         { name: language === 'ko' ? '내 카드' : 'My Cards', path: '/my-cards', icon: <Shield size={18} />, color: "primary" },
         { name: language === 'ko' ? '생성' : 'Generation', path: '/generation', icon: <Zap size={18} />, color: "warning" },
         { name: language === 'ko' ? 'AI 군단' : 'AI Factions', path: '/factions', icon: <Trophy size={18} />, color: "secondary" },
-        { name: language === 'ko' ? '유니크 생성' : 'Unique Creation', path: '/unique-create', icon: <Sparkles size={18} />, color: "success" },
+        { name: language === 'ko' ? '유니크 생성' : 'Unique Synthesis', path: '/unique-create', icon: <Sparkles size={18} />, color: "success" },
         { name: language === 'ko' ? '강화' : 'Enhancement', path: '/enhance', icon: <Heart size={18} />, color: "danger" },
         { name: language === 'ko' ? '합성' : 'Fusion', path: '/fusion', icon: <FlaskConical size={18} />, color: "secondary" },
         { name: language === 'ko' ? '도감' : 'Encyclopedia', path: '/encyclopedia', icon: <BookOpen size={18} />, color: "default" },

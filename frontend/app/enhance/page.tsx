@@ -18,6 +18,7 @@ export default function EnhancePage() {
     const [materialSlots, setMaterialSlots] = useState<(InventoryCard | null)[]>(Array(10).fill(null));
     const [userTokens, setUserTokens] = useState(0);
     const [discount, setDiscount] = useState(0);
+    const [selectedRarity, setSelectedRarity] = useState<string>('all');
 
     // 강화 완료 모달
     const [rewardModalOpen, setRewardModalOpen] = useState(false);
@@ -32,7 +33,10 @@ export default function EnhancePage() {
         const { getGameState } = await import('@/lib/game-state');
         const { getResearchBonus } = await import('@/lib/research-system');
 
-        const cards = await loadInventory();
+        const allInventory = await loadInventory();
+        // Filter out commander cards - they cannot be enhanced
+        const cards = allInventory.filter(c => c.rarity !== 'commander');
+
         const gameState = getGameState();
 
         let discountVal = 0;
@@ -168,7 +172,8 @@ export default function EnhancePage() {
     // 모든 카드 표시 (재료로 아무 카드나 사용 가능)
     const displayCards = allCards.filter(c =>
         c.instanceId !== targetCard?.instanceId &&
-        !materialSlots.some(s => s?.instanceId === c.instanceId)
+        !materialSlots.some(s => s?.instanceId === c.instanceId) &&
+        (selectedRarity === 'all' || (c.rarity || 'common') === selectedRarity)
     );
 
     return (
@@ -180,13 +185,88 @@ export default function EnhancePage() {
         >
             {/* 메인 영역: 카드 목록 */}
             <div className="p-6 pb-[140px]"> {/* 푸터 높이 120px + 여유 */}
-                <div className="mb-4 flex items-center justify-between">
-                    <h2 className="text-lg font-bold text-white">
-                        {targetCard ? `${targetCard.name} 카드 목록` : '내 카드 목록'}
-                    </h2>
-                    <p className="text-sm text-white/60">
-                        {displayCards.length}장
+                {/* Main Cards Section - 주력카드 */}
+                {allCards.length > 0 && (
+                    <div className="mb-6">
+                        <h3 className="text-sm font-bold text-white/80 mb-3 flex items-center gap-2">
+                            <span className="text-amber-400">⭐</span>
+                            주력 카드 (등급별 최고 레벨)
+                        </h3>
+                        <div className="grid grid-cols-3 sm:grid-cols-6 gap-3 bg-gradient-to-br from-amber-900/10 to-purple-900/10 p-3 rounded-xl border border-amber-500/20">
+                            {(() => {
+                                const mainCards: Record<string, InventoryCard> = {};
+                                const rarities = ['commander', 'unique', 'legendary', 'epic', 'rare', 'common'];
+
+                                allCards.forEach(card => {
+                                    const rarity = card.rarity || 'common';
+                                    if (!mainCards[rarity] || (card.level || 1) > (mainCards[rarity].level || 1)) {
+                                        mainCards[rarity] = card;
+                                    }
+                                });
+
+                                return rarities.map(rarity => {
+                                    const card = mainCards[rarity];
+                                    if (!card) return null;
+
+                                    if (selectedRarity !== 'all' && (card.rarity || 'common') !== selectedRarity) return null;
+
+                                    const isSelected = card.id === targetCard?.id || materialSlots.some(s => s?.id === card.id);
+
+                                    return (
+                                        <div
+                                            key={rarity}
+                                            draggable
+                                            onDragStart={(e) => handleDragStart(e, card)}
+                                            onClick={() => handleCardClick(card)}
+                                            className={cn(
+                                                "cursor-grab active:cursor-grabbing transition-all hover:scale-105",
+                                                isSelected && "opacity-50 ring-2 ring-cyan-500"
+                                            )}
+                                        >
+                                            <GameCard card={card} />
+                                        </div>
+                                    );
+                                }).filter(Boolean);
+                            })()}
+                        </div>
+                    </div>
+                )}
+
+                {/* Commander Card Notice */}
+                <div className="mb-4 p-3 bg-purple-900/20 border border-purple-500/30 rounded-lg">
+                    <p className="text-sm text-purple-300 flex items-center gap-2">
+                        <span className="text-lg">ℹ️</span>
+                        <span><strong>군단장 카드</strong>는 강화할 수 없습니다. 구독 친밀도에 따라 자동으로 성장합니다.</span>
                     </p>
+                </div>
+
+                <div className="mb-4 flex flex-col gap-4">
+                    <div className="flex items-center justify-between">
+                        <h2 className="text-lg font-bold text-white">
+                            {targetCard ? `${targetCard.name} 카드 목록` : '내 카드 목록'}
+                        </h2>
+                        <p className="text-sm text-white/60">
+                            {displayCards.length}장
+                        </p>
+                    </div>
+
+                    {/* Rarity Filter Buttons */}
+                    <div className="flex flex-wrap gap-2">
+                        {['all', 'common', 'rare', 'epic', 'legendary', 'unique'].map(rarity => (
+                            <button
+                                key={rarity}
+                                onClick={() => setSelectedRarity(rarity)}
+                                className={cn(
+                                    "px-3 py-1.5 rounded-lg text-xs font-bold uppercase transition-all border",
+                                    selectedRarity === rarity
+                                        ? "bg-cyan-500 text-black border-cyan-400 shadow-[0_0_10px_rgba(6,182,212,0.5)]"
+                                        : "bg-black/40 text-white/60 border-white/10 hover:bg-white/10 hover:border-white/30"
+                                )}
+                            >
+                                {rarity === 'all' ? '전체' : rarity}
+                            </button>
+                        ))}
+                    </div>
                 </div>
 
                 <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">

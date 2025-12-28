@@ -16,6 +16,7 @@ import { rerollCardStats } from '@/lib/card-generation-system'; // Import reroll
 import { useFirebase } from '@/components/FirebaseProvider';
 import { gameStorage } from '@/lib/game-storage';
 import { getCardName } from '@/data/card-translations';
+import InventoryCardDetail from '@/components/InventoryCardDetail';
 
 type SortOption = 'power' | 'rarity' | 'name' | 'acquiredAt';
 type FilterOption = 'all' | 'common' | 'rare' | 'epic' | 'legendary' | 'unique' | 'commander';
@@ -241,6 +242,58 @@ export default function MyCardsPage() {
                 </button>
             </div>
 
+            {/* Main Cards Section - 주력카드 */}
+            {!loading && cards.length > 0 && (
+                <div className="mb-8">
+                    <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                        <span className="text-amber-400">⭐</span>
+                        {language === 'ko' ? '주력 카드' : 'Main Cards'}
+                        <span className="text-xs text-white/40 font-normal">
+                            ({language === 'ko' ? '등급별 최고 레벨' : 'Highest level per rarity'})
+                        </span>
+                    </h3>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4 bg-gradient-to-br from-amber-900/10 to-purple-900/10 p-4 rounded-xl border border-amber-500/20">
+                        {(() => {
+                            // Get highest level card per rarity
+                            const mainCards: Record<string, InventoryCard> = {};
+                            const rarities = ['commander', 'unique', 'legendary', 'epic', 'rare', 'common'];
+
+                            cards.forEach(card => {
+                                const rarity = card.rarity || 'common';
+                                if (!mainCards[rarity] || (card.level || 1) > (mainCards[rarity].level || 1)) {
+                                    mainCards[rarity] = card;
+                                }
+                            });
+
+                            return rarities.map(rarity => {
+                                const card = mainCards[rarity];
+                                if (!card) return null;
+
+                                return (
+                                    <motion.div
+                                        key={rarity}
+                                        initial={{ opacity: 0, scale: 0.9 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        className="cursor-pointer relative"
+                                        onClick={() => setSelectedCard(card)}
+                                    >
+                                        <GameCard card={card} isSelected={selectedCard?.id === card.id} />
+                                        {/* Rarity Label */}
+                                        <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 px-2 py-0.5 bg-black/80 border border-white/20 rounded text-[8px] font-bold text-white/60 whitespace-nowrap">
+                                            {rarity === 'commander' ? '군단장' :
+                                                rarity === 'unique' ? '유니크' :
+                                                    rarity === 'legendary' ? '전설' :
+                                                        rarity === 'epic' ? '영웅' :
+                                                            rarity === 'rare' ? '희귀' : '일반'}
+                                        </div>
+                                    </motion.div>
+                                );
+                            }).filter(Boolean);
+                        })()}
+                    </div>
+                </div>
+            )}
+
             {/* Filters */}
             <div className="flex flex-wrap gap-3 mb-6 bg-black/20 p-3 rounded-xl border border-white/5">
                 <div className="flex gap-2 overflow-x-auto pb-2 md:pb-0">
@@ -330,56 +383,15 @@ export default function MyCardsPage() {
                 </div>
             )}
 
-            {/* Selected Card Quick Actions Overlay */}
+            {/* Selected Card Rich Detail View */}
             <AnimatePresence>
                 {selectedCard && (
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: 20 }}
-                        className="fixed bottom-0 left-0 right-0 z-50 p-4 bg-gradient-to-t from-black via-black/90 to-transparent flex justify-center pb-8 pointer-events-none"
-                    >
-                        <div className="bg-black/80 border border-white/20 backdrop-blur-xl rounded-2xl p-4 flex items-center gap-6 shadow-2xl shadow-purple-500/20 pointer-events-auto max-w-2xl w-full">
-                            {/* Mini Card Preview */}
-                            <div className="w-16 h-20 bg-white/5 rounded border border-white/10 flex-none hidden md:block" />
-
-                            <div className="flex-1 min-w-0">
-                                <p className="font-bold text-white text-lg truncate font-orbitron">
-                                    {getCardName(selectedCard.templateId || selectedCard.id || '', selectedCard.name || '', language as 'ko' | 'en')}
-                                </p>
-                                <div className="flex gap-2 mt-1">
-                                    <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded bg-white/10 uppercase",
-                                        selectedCard.rarity === 'legendary' ? 'text-amber-400' :
-                                            selectedCard.rarity === 'epic' ? 'text-purple-400' : 'text-white/60'
-                                    )}>
-                                        {selectedCard.rarity}
-                                    </span>
-                                    <span className="text-[10px] text-white/40 font-mono py-0.5">LV.{selectedCard.level || 1}</span>
-                                </div>
-                            </div>
-
-                            <div className="flex gap-2">
-                                <button
-                                    onClick={() => router.push(`/enhance?cardId=${selectedCard.id}`)}
-                                    className="px-4 py-3 bg-amber-500/10 border border-amber-500/40 text-amber-400 rounded-lg text-xs font-mono uppercase font-bold hover:bg-amber-500/20 transition-all"
-                                >
-                                    {language === 'ko' ? '강화' : 'Enhance'}
-                                </button>
-                                <button
-                                    onClick={() => router.push(`/fusion?cardId=${selectedCard.id}`)}
-                                    className="px-4 py-3 bg-purple-500/10 border border-purple-500/40 text-purple-400 rounded-lg text-xs font-mono uppercase font-bold hover:bg-purple-500/20 transition-all"
-                                >
-                                    {language === 'ko' ? '합성' : 'Fuse'}
-                                </button>
-                                <button
-                                    onClick={() => setSelectedCard(null)}
-                                    className="w-10 h-10 flex items-center justify-center bg-white/5 border border-white/10 rounded-lg text-white/40 hover:text-white hover:bg-white/10 transition-all"
-                                >
-                                    ✕
-                                </button>
-                            </div>
-                        </div>
-                    </motion.div>
+                    <InventoryCardDetail
+                        card={selectedCard}
+                        onClose={() => setSelectedCard(null)}
+                        onEnhance={(id) => router.push(`/enhance?cardId=${id}`)}
+                        onFuse={(id) => router.push(`/fusion?cardId=${id}`)}
+                    />
                 )}
             </AnimatePresence>
 
@@ -403,8 +415,8 @@ export default function MyCardsPage() {
 
                             <p className="text-gray-300 mb-6 leading-relaxed">
                                 {language === 'ko'
-                                    ? '모든 카드의 능력치가 새로운 로직(40~100)으로 재설정됩니다. 이 작업은 되돌릴 수 없습니다.'
-                                    : 'All card stats will be rerolled with the new logic (40~100). This action cannot be undone.'}
+                                    ? '모든 카드의 능력치가 새로운 균형 로직으로 재설정됩니다. 등급 간 갭이 좁아져 레벨업이 더 중요해집니다. (일반: 40~60, 희귀: 50~70, 영웅: 60~80, 전설: 70~90, 유니크/군단장: 80~90) 이 작업은 되돌릴 수 없습니다.'
+                                    : 'All card stats will be rerolled with new balanced ranges. Gaps between rarities are narrower, making level-ups more important. (Common: 40~60, Rare: 50~70, Epic: 60~80, Legendary: 70~90, Unique/Commander: 80~90) This action cannot be undone.'}
                             </p>
 
                             <div className="flex gap-3 justify-end">

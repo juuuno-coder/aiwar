@@ -83,18 +83,18 @@ function selectRandomRarity(weights: Record<Rarity, number>): Rarity {
 /**
  * 특정 등급의 카드 중 랜덤 선택 (군단 효과 적용 가능)
  */
-function selectCardByRarity(rarity: Rarity, factionEffects?: FactionEffects): Card {
+function selectCardByRarity(rarity: Rarity, factionEffects?: FactionEffects, researchBonuses?: ResearchBonuses): Card {
     const cardsOfRarity = CARD_DATABASE.filter(card => card.rarity === rarity);
 
     if (cardsOfRarity.length === 0) {
         // 해당 등급 카드가 없으면 common으로 폴백
         const commonCards = CARD_DATABASE.filter(card => card.rarity === 'common');
         const template = commonCards[Math.floor(Math.random() * commonCards.length)];
-        return createCardFromTemplate(template, factionEffects);
+        return createCardFromTemplate(template, factionEffects, researchBonuses);
     }
 
     const template = cardsOfRarity[Math.floor(Math.random() * cardsOfRarity.length)];
-    return createCardFromTemplate(template, factionEffects);
+    return createCardFromTemplate(template, factionEffects, researchBonuses);
 }
 
 /**
@@ -102,14 +102,20 @@ function selectCardByRarity(rarity: Rarity, factionEffects?: FactionEffects): Ca
  */
 const RARITY_POWER_RANGES: Record<string, { min: number, max: number }> = {
     common: { min: 40, max: 60 },
-    rare: { min: 60, max: 70 },
-    epic: { min: 70, max: 80 },
-    legendary: { min: 80, max: 100 },
-    unique: { min: 80, max: 100 },
-    commander: { min: 80, max: 100 }
+    rare: { min: 50, max: 70 },      // Changed from 60~70
+    epic: { min: 60, max: 80 },      // Changed from 70~80
+    legendary: { min: 70, max: 90 }, // Changed from 80~100
+    unique: { min: 80, max: 90 },    // Changed from 80~100
+    commander: { min: 80, max: 90 }  // Changed from 80~100
 };
 
-function createCardFromTemplate(template: any, factionEffects?: FactionEffects): Card {
+export interface ResearchBonuses {
+    efficiency?: number; // Level
+    creativity?: number; // Level (Insight)
+    function?: number;   // Level (Mastery)
+}
+
+export function createCardFromTemplate(template: any, factionEffects?: FactionEffects, researchBonuses?: ResearchBonuses): Card {
     const rarity = template.rarity || 'common';
     const powerRange = RARITY_POWER_RANGES[rarity.toLowerCase()] || RARITY_POWER_RANGES.common;
 
@@ -119,7 +125,7 @@ function createCardFromTemplate(template: any, factionEffects?: FactionEffects):
     const minPower = Math.floor(powerRange.min * bonusMultiplier);
     const maxPower = Math.floor(powerRange.max * bonusMultiplier);
 
-    const totalPower = Math.floor(Math.random() * (maxPower - minPower + 1)) + minPower;
+    let totalPower = Math.floor(Math.random() * (maxPower - minPower + 1)) + minPower;
 
     // 2. 3대 스탯 분배 (주 스탯 몰아주기)
     // 2. 3대 스탯 분배 (주 스탯 균형 조정: 40% ~ 60%)
@@ -163,11 +169,27 @@ function createCardFromTemplate(template: any, factionEffects?: FactionEffects):
         creativity = mainStatValue;
         efficiency = subStat1;
         func = subStat2;
-    } else { // FUNCTION = 가위
         func = mainStatValue;
         efficiency = subStat1;
         creativity = subStat2;
     }
+
+    // Apply Research Bonuses
+    // Bonus = (Level - 1) * 3
+    if (researchBonuses) {
+        if (researchBonuses.efficiency && researchBonuses.efficiency > 1) {
+            efficiency += (researchBonuses.efficiency - 1) * 3;
+        }
+        if (researchBonuses.creativity && researchBonuses.creativity > 1) {
+            creativity += (researchBonuses.creativity - 1) * 3;
+        }
+        if (researchBonuses.function && researchBonuses.function > 1) {
+            func += (researchBonuses.function - 1) * 3;
+        }
+    }
+
+    // Recalculate Total Power after bonuses
+    totalPower = efficiency + creativity + func;
 
     const stats = {
         efficiency,
@@ -210,17 +232,17 @@ function createCardFromTemplate(template: any, factionEffects?: FactionEffects):
 /**
  * 메인 함수: 티어에 따라 랜덤 카드 생성
  */
-export function generateRandomCard(tier: string = 'free', affinity: number = 0, factionEffects?: FactionEffects): Card {
+export function generateRandomCard(tier: string = 'free', affinity: number = 0, factionEffects?: FactionEffects, researchBonuses?: ResearchBonuses): Card {
     const weights = calculateRarityWeights(tier, affinity);
     const selectedRarity = selectRandomRarity(weights);
-    return selectCardByRarity(selectedRarity, factionEffects);
+    return selectCardByRarity(selectedRarity, factionEffects, researchBonuses);
 }
 
 /**
  * 특정 등급의 랜덤 카드 생성 (카드팩용)
  */
-export function generateCardByRarity(rarity: Rarity, userId?: string): Card {
-    const card = selectCardByRarity(rarity);
+export function generateCardByRarity(rarity: Rarity, userId?: string, researchBonuses?: ResearchBonuses): Card {
+    const card = selectCardByRarity(rarity, undefined, researchBonuses);
     if (userId) {
         card.ownerId = userId;
     }

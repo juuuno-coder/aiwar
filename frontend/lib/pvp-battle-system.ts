@@ -3,6 +3,7 @@
 
 import { Card } from './types';
 import { getGameState, updateGameState } from './game-state';
+import { gameStorage } from './game-storage';
 import { BattleMode as BaseBattleMode } from './battle-modes';
 import { generateRandomCard } from './card-generation-system';
 
@@ -275,12 +276,54 @@ export function determineRoundWinner(
 /**
  * AI 상대 생성 (더미 지휘관 시스템 적용)
  */
-export function generateAIOpponent(playerLevel: number = 1, cardPool: Card[] = []): BattleParticipant {
+export function generateAIOpponent(playerLevel: number = 1, cardPool: Card[] = [], playerRating: number = 0): BattleParticipant {
     // 1. 랜덤 지휘관 선택
     const commander = DUMMY_COMMANDERS[Math.floor(Math.random() * DUMMY_COMMANDERS.length)];
     const displayName = `${commander.title} ${commander.name}`;
 
     let aiCards: Card[] = [];
+
+    // 0. 초보자 배려 모드 (레이팅 1100 미만)
+    // 패턴: 보(Paper) 4개, 가위(Scissors) 1개 (보보보보가위)
+    if (playerRating < 1100) {
+        console.log("👶 Easy Mode AI Activated (Rating < 1100)");
+
+        // 보 (Paper) = CREATIVITY
+        const paperCard = {
+            id: 'easy-paper',
+            name: '초보자용 보',
+            rarity: 'common',
+            type: 'CREATIVITY',
+            level: Math.max(1, playerLevel - 1), // 플레이어보다 낮은 레벨
+            stats: { efficiency: 0, creativity: 10, function: 0, totalPower: 10 }
+        };
+
+        // 가위 (Scissors) = FUNCTION
+        const scissorsCard = {
+            id: 'easy-scissors',
+            name: '초보자용 가위',
+            rarity: 'common',
+            type: 'FUNCTION',
+            level: Math.max(1, playerLevel - 1),
+            stats: { efficiency: 0, creativity: 0, function: 10, totalPower: 10 }
+        };
+
+        // 4 Paper + 1 Scissors
+        aiCards = [
+            { ...paperCard, id: `ai-easy-1` },
+            { ...paperCard, id: `ai-easy-2` },
+            { ...paperCard, id: `ai-easy-3` },
+            { ...paperCard, id: `ai-easy-4` },
+            { ...scissorsCard, id: `ai-easy-5` }
+        ] as any; // Cast to satisfy specific card properties if needed
+
+        return {
+            name: "초보자 도우미 봇",
+            level: Math.max(1, playerLevel - 1),
+            deck: aiCards,
+            style: "초보자를 위해 단순한 패턴(보보보보가위)을 사용합니다."
+        };
+    }
 
     // 2. 덱 구성 시도 (기존 풀 활용)
     // 풀이 충분하다면 지휘관 성향에 맞는 카드 위주로 선택
@@ -624,6 +667,20 @@ export async function applyBattleResult(
         console.log("✅ Global ranking updated");
     } catch (error) {
         console.error("❌ Failed to update global ranking:", error);
+    }
+
+    // 3. 보상 지급 (Coins & XP)
+    try {
+        if (result.rewards.coins > 0) {
+            await gameStorage.addCoins(result.rewards.coins);
+            console.log(`💰 Added ${result.rewards.coins} coins`);
+        }
+        if (result.rewards.experience > 0) {
+            const { leveledUp } = await gameStorage.addExperience(result.rewards.experience);
+            console.log(`✨ Added ${result.rewards.experience} exp (Level Up: ${leveledUp})`);
+        }
+    } catch (error) {
+        console.error("❌ Failed to apply rewards:", error);
     }
 
     console.log("🏁 Battle result processing complete");

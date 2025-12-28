@@ -86,7 +86,7 @@ export default function UniqueFooter({
                             )}
                         >
                             <Sparkles size={16} />
-                            신청 제출
+                            유니크 생성
                         </button>
                     </div>
                 </div>

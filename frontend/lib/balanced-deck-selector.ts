@@ -58,13 +58,17 @@ export function selectBalancedDeck(
 
         const rarityCards = byRarity[rarity] || [];
         if (rarityCards.length > 0) {
-            // 전투력 기준 정렬 후 최고 카드 선택
-            const sortedByPower = [...rarityCards].sort((a, b) => {
+            // 레벨 우선, 그 다음 전투력 기준 정렬 후 최고 카드 선택
+            const sortedByPriority = [...rarityCards].sort((a, b) => {
+                const levelA = a.level || 1;
+                const levelB = b.level || 1;
+                if (levelA !== levelB) return levelB - levelA;
+
                 const powerA = a.stats?.totalPower || 0;
                 const powerB = b.stats?.totalPower || 0;
                 return powerB - powerA;
             });
-            selected.push(sortedByPower[0]);
+            selected.push(sortedByPriority[0]);
         }
     }
 
@@ -116,4 +120,34 @@ export function isBalancedDeck(cards: (Card | InventoryCard)[]): boolean {
     // 최소한 3개 이상의 다른 등급이 있어야 균형 잡힌 것으로 간주
     const uniqueRarities = Object.values(distribution).filter(count => count > 0).length;
     return uniqueRarities >= 3;
+}
+
+/**
+ * 주력 카드 추출 (등급별 최고 레벨 카드)
+ */
+export function getMainCards(cards: (Card | InventoryCard)[]): (Card | InventoryCard)[] {
+    const mainCardsMap: Record<string, Card | InventoryCard> = {};
+    const rarities: Rarity[] = ['commander', 'unique', 'legendary', 'epic', 'rare', 'common'];
+
+    cards.forEach(card => {
+        const rarity = card.rarity || 'common';
+        const currentMain = mainCardsMap[rarity];
+        const cardLevel = card.level || 1;
+        const currentMainLevel = currentMain?.level || 1;
+
+        if (!currentMain || cardLevel > currentMainLevel) {
+            mainCardsMap[rarity] = card;
+        } else if (cardLevel === currentMainLevel) {
+            // 레벨이 같으면 전투력 높은 쪽
+            const currentPower = currentMain.stats?.totalPower || 0;
+            const cardPower = card.stats?.totalPower || 0;
+            if (cardPower > currentPower) {
+                mainCardsMap[rarity] = card;
+            }
+        }
+    });
+
+    return rarities
+        .map(rarity => mainCardsMap[rarity])
+        .filter((card): card is (Card | InventoryCard) => !!card);
 }
