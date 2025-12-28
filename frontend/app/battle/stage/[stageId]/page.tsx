@@ -761,25 +761,38 @@ export default function StageBattlePage() {
                                     {[1, 2, 3, 4, 5].map(round => {
                                         const assignedCard = mainAssignments[round - 1];
                                         const isHiddenRound = round === 2 || round === 4;
+                                        const { getCardCharacterImage } = require('@/lib/card-images');
+
                                         return (
                                             <div key={round} className="flex flex-col items-center">
                                                 <div className={`text-xs font-bold mb-2 ${isHiddenRound ? 'text-purple-400' : 'text-gray-400'}`}>
                                                     R{round} {isHiddenRound && '(히든)'}
                                                 </div>
                                                 <div
-                                                    className={`w-full aspect-[3/4] rounded-xl border-2 border-dashed flex items-center justify-center transition-all ${assignedCard
-                                                        ? 'border-cyan-500 bg-cyan-500/10'
-                                                        : 'border-white/20 bg-white/5 hover:border-white/40'
+                                                    className={`w-full aspect-[3/4] rounded-xl border-2 overflow-hidden transition-all relative ${assignedCard
+                                                        ? 'border-cyan-500 bg-cyan-500/10 shadow-lg shadow-cyan-500/30'
+                                                        : 'border-dashed border-white/20 bg-white/5 hover:border-white/40'
                                                         }`}
                                                 >
                                                     {assignedCard ? (
-                                                        <div className="text-center p-2">
-                                                            <div className="text-2xl mb-1">⚔️</div>
-                                                            <div className="text-xs text-white truncate">{assignedCard.name}</div>
-                                                            <div className="text-xs text-cyan-400">{assignedCard.stats?.totalPower || 0}</div>
-                                                        </div>
+                                                        <>
+                                                            {/* 카드 이미지 */}
+                                                            <div
+                                                                className="absolute inset-0 bg-cover bg-center"
+                                                                style={{
+                                                                    backgroundImage: `url(${getCardCharacterImage(assignedCard.templateId, assignedCard.name, assignedCard.rarity) || '/assets/cards/default-card.png'})`,
+                                                                }}
+                                                            />
+                                                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+
+                                                            {/* 카드 정보 */}
+                                                            <div className="absolute bottom-0 left-0 right-0 p-2 text-center">
+                                                                <div className="text-xs font-bold text-white truncate">{assignedCard.name}</div>
+                                                                <div className="text-xs text-cyan-400">⚡{Math.floor(assignedCard.stats?.totalPower || 0)}</div>
+                                                            </div>
+                                                        </>
                                                     ) : (
-                                                        <div className="text-white/30 text-3xl">+</div>
+                                                        <div className="absolute inset-0 flex items-center justify-center text-white/30 text-3xl">+</div>
                                                     )}
                                                 </div>
                                             </div>
@@ -794,6 +807,8 @@ export default function StageBattlePage() {
                                         {selectedHand.map((card, idx) => {
                                             const isAssigned = mainAssignments.some(a => a?.id === card.id);
                                             const assignedRound = mainAssignments.findIndex(a => a?.id === card.id) + 1;
+                                            const { getCardCharacterImage } = require('@/lib/card-images');
+
                                             return (
                                                 <motion.div
                                                     key={card.id}
@@ -810,16 +825,31 @@ export default function StageBattlePage() {
                                                             setMainAssignments(newAssignments);
                                                         }
                                                     }}
-                                                    className={`w-20 h-28 rounded-lg border-2 flex flex-col items-center justify-center cursor-pointer transition-all ${isAssigned
-                                                        ? 'border-green-500 bg-green-500/20'
+                                                    className={`relative w-20 h-28 rounded-lg border-2 overflow-hidden cursor-pointer transition-all ${isAssigned
+                                                        ? 'border-green-500 bg-green-500/20 opacity-50'
                                                         : 'border-white/20 bg-white/5 hover:border-cyan-500'
                                                         }`}
                                                 >
-                                                    <div className="text-lg">⚔️</div>
-                                                    <div className="text-[10px] text-white truncate px-1">{card.name}</div>
-                                                    <div className="text-[10px] text-cyan-400">{card.stats?.totalPower || 0}</div>
+                                                    {/* 카드 이미지 */}
+                                                    <div
+                                                        className="absolute inset-0 bg-cover bg-center"
+                                                        style={{
+                                                            backgroundImage: `url(${getCardCharacterImage(card.templateId, card.name, card.rarity) || '/assets/cards/default-card.png'})`,
+                                                        }}
+                                                    />
+                                                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
+
+                                                    {/* 카드 정보 */}
+                                                    <div className="absolute bottom-0 left-0 right-0 p-1 text-center">
+                                                        <div className="text-[10px] text-white truncate px-1">{card.name}</div>
+                                                        <div className="text-[10px] text-cyan-400">⚡{Math.floor(card.stats?.totalPower || 0)}</div>
+                                                    </div>
+
+                                                    {/* 배치 상태 표시 */}
                                                     {isAssigned && (
-                                                        <div className="text-[9px] text-green-400 mt-1">R{assignedRound}</div>
+                                                        <div className="absolute top-1 right-1 bg-green-500 rounded-full px-1.5 py-0.5 text-[9px] text-white font-bold">
+                                                            R{assignedRound}
+                                                        </div>
                                                     )}
                                                 </motion.div>
                                             );
