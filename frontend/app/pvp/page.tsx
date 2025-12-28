@@ -481,9 +481,27 @@ export default function PVPArenaPage() {
                                             // 가위바위보 타입 결정
                                             const getTypeInfo = (c: Card) => {
                                                 const type = c.type || 'EFFICIENCY';
-                                                if (type === 'EFFICIENCY') return { emoji: '✊', name: '바위', color: 'text-amber-400', bg: 'bg-amber-500/20' };
-                                                if (type === 'CREATIVITY') return { emoji: '✌️', name: '가위', color: 'text-red-400', bg: 'bg-red-500/20' };
-                                                return { emoji: '🖐️', name: '보', color: 'text-blue-400', bg: 'bg-blue-500/20' };
+                                                if (type === 'EFFICIENCY') return {
+                                                    emoji: '✊',
+                                                    name: '바위',
+                                                    color: 'text-amber-400',
+                                                    bg: 'bg-gradient-to-br from-amber-500 to-orange-600',
+                                                    border: 'border-2 border-amber-300/50'
+                                                };
+                                                if (type === 'CREATIVITY') return {
+                                                    emoji: '✌️',
+                                                    name: '가위',
+                                                    color: 'text-red-400',
+                                                    bg: 'bg-gradient-to-br from-red-500 to-pink-600',
+                                                    border: 'border-2 border-red-300/50'
+                                                };
+                                                return {
+                                                    emoji: '🖐️',
+                                                    name: '보',
+                                                    color: 'text-blue-400',
+                                                    bg: 'bg-gradient-to-br from-blue-500 to-cyan-600',
+                                                    border: 'border-2 border-blue-300/50'
+                                                };
                                             };
                                             const typeInfo = card ? getTypeInfo(card) : null;
 
@@ -533,7 +551,8 @@ export default function PVPArenaPage() {
                                                             {typeInfo && (
                                                                 <div className={cn(
                                                                     "absolute top-1.5 right-1.5 px-2 py-1 rounded-full text-lg shadow-lg z-10",
-                                                                    typeInfo.bg
+                                                                    typeInfo.bg,
+                                                                    typeInfo.border
                                                                 )}>
                                                                     {typeInfo.emoji}
                                                                 </div>
