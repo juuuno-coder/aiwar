@@ -32,6 +32,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import RealtimeMatchingModal from '@/components/RealtimeMatchingModal';
+import CardPlacementBoard, { RoundPlacement } from '@/components/battle/CardPlacementBoard';
 
 type Phase =
     | 'stats'
@@ -39,7 +40,7 @@ type Phase =
     | 'deck-select'
     | 'match-type'
     | 'deck-reveal'
-    | 'card-order'
+    | 'card-placement'
     | 'battle'
     | 'result';
 
@@ -125,7 +126,7 @@ export default function PVPArenaPage() {
                             // 단판승부는 순서 배치 없이 바로 전투
                             handleStartBattle();
                         } else {
-                            setPhase('card-order');
+                            setPhase('card-placement');
                         }
                         return 0;
                     }
@@ -769,45 +770,28 @@ export default function PVPArenaPage() {
                     )}
 
                     {/* 5단계: 카드 순서 배치 */}
-                    {phase === 'card-order' && (
+                    {phase === 'card-placement' && (
                         <motion.div
-                            key="card-order"
+                            key="card-placement"
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: -20 }}
                         >
-                            <div className="text-center mb-8">
-                                <h2 className="text-3xl font-black text-white mb-2">카드 순서 배치</h2>
-                                <p className="text-white/60">드래그하여 출전 순서를 변경하세요</p>
-                            </div>
-
-                            <Reorder.Group
-                                axis="x"
-                                values={cardOrder}
-                                onReorder={setCardOrder}
-                                className="flex gap-4 justify-center mb-8"
-                            >
-                                {cardOrder.map((index) => (
-                                    <Reorder.Item key={index} value={index} className="cursor-move">
-                                        <div className="relative">
-                                            <div className="absolute -top-3 -left-3 w-8 h-8 bg-cyan-500 rounded-full flex items-center justify-center text-white font-bold text-sm z-10">
-                                                {cardOrder.indexOf(index) + 1}
-                                            </div>
-                                            <GameCard card={playerDeck[index]} />
-                                        </div>
-                                    </Reorder.Item>
-                                ))}
-                            </Reorder.Group>
-
-                            <div className="text-center">
-                                <button
-                                    onClick={handleOrderConfirm}
-                                    className="px-12 py-4 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white font-bold text-lg rounded-xl transition-all shadow-lg hover:scale-105 flex items-center gap-2 mx-auto"
-                                >
-                                    <Play size={24} />
-                                    전투 시작
-                                </button>
-                            </div>
+                            <CardPlacementBoard
+                                selectedCards={playerDeck}
+                                onPlacementComplete={(placement: RoundPlacement) => {
+                                    // Convert placement to cardOrder array
+                                    const order = [
+                                        playerDeck.findIndex(c => c.id === placement.round1.id),
+                                        playerDeck.findIndex(c => c.id === placement.round2.main.id),
+                                        playerDeck.findIndex(c => c.id === placement.round3.id),
+                                        playerDeck.findIndex(c => c.id === placement.round4.main.id),
+                                        playerDeck.findIndex(c => c.id === placement.round5.id),
+                                    ];
+                                    setCardOrder(order);
+                                    handleStartBattle();
+                                }}
+                            />
                         </motion.div>
                     )}
 
