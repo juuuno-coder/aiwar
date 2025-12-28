@@ -49,7 +49,7 @@ export default function SignupPage() {
             login(email, password);
 
             setTimeout(() => {
-                router.push('/'); // Redirect to Intro/Main which will handle auth check and nickname setup
+                router.push('/main'); // Redirect to Main to trigger nickname modal
             }, 500);
         } else {
             setError(signupResult.message);
@@ -65,8 +65,8 @@ export default function SignupPage() {
                 {/* Header */}
                 <div className="text-center mb-8">
                     <div className="text-5xl mb-4 animate-pulse">🧬</div>
-                    <h1 className="text-4xl font-black text-white mb-2 orbitron tracking-tight text-center">NEW RECRUIT_</h1>
-                    <p className="text-cyan-400/60 font-mono text-sm tracking-widest text-center">JOIN THE NEURAL NETWORK</p>
+                    <h1 className="text-4xl font-black text-white mb-2 orbitron tracking-tight text-center">신규 지휘관_</h1>
+                    <p className="text-cyan-400/60 font-mono text-sm tracking-widest text-center">AI 전쟁에 참여하세요</p>
                 </div>
 
                 {/* Signup Form */}
@@ -78,39 +78,39 @@ export default function SignupPage() {
                     <form onSubmit={handleSubmit} className="space-y-4">
                         {/* Email */}
                         <div className="space-y-1">
-                            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Email Address</label>
+                            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">이메일 주소</label>
                             <input
                                 type="email"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                                 className="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 text-white placeholder-white/20 focus:outline-none focus:ring-1 focus:ring-cyan-500/50 focus:border-cyan-500/50 transition-all font-mono text-sm"
-                                placeholder="NAME@EXAMPLE.COM"
+                                placeholder="이메일을 입력하세요"
                                 required
                             />
                         </div>
 
                         {/* Password */}
                         <div className="space-y-1">
-                            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Access Code</label>
+                            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">비밀번호</label>
                             <input
                                 type="password"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 className="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 text-white placeholder-white/20 focus:outline-none focus:ring-1 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all font-mono text-sm"
-                                placeholder="PASSWORD"
+                                placeholder="비밀번호를 입력하세요"
                                 required
                             />
                         </div>
 
                         {/* Confirm Password */}
                         <div className="space-y-1">
-                            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Verify Code</label>
+                            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">비밀번호 확인</label>
                             <input
                                 type="password"
                                 value={confirmPassword}
                                 onChange={(e) => setConfirmPassword(e.target.value)}
                                 className="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 text-white placeholder-white/20 focus:outline-none focus:ring-1 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all font-mono text-sm"
-                                placeholder="CONFIRM PASSWORD"
+                                placeholder="비밀번호를 다시 입력하세요"
                                 required
                             />
                         </div>
@@ -118,7 +118,7 @@ export default function SignupPage() {
                         {/* Error Message */}
                         {error && (
                             <div className="bg-red-900/20 border border-red-500/50 rounded p-3 text-red-400 text-xs font-mono text-center animate-pulse">
-                                [ERROR]: {error}
+                                [오류]: {error}
                             </div>
                         )}
 
@@ -131,7 +131,7 @@ export default function SignupPage() {
                                 containerClassName="w-full rounded-xl"
                                 className="w-full bg-gradient-to-r from-purple-900/80 to-pink-900/80 hover:from-purple-800 hover:to-pink-800 text-white py-4 font-black orbitron tracking-widest uppercase"
                             >
-                                {isLoading ? 'REGISTERING...' : 'INITIATE REGISTRATION'}
+                                {isLoading ? '등록 중...' : '지휘관 등록'}
                             </HoverBorderGradient>
                         </div>
                     </form>
@@ -139,9 +139,9 @@ export default function SignupPage() {
                     {/* Footer Links */}
                     <div className="mt-8 flex flex-col items-center gap-4 text-sm font-mono">
                         <p className="text-gray-500 text-xs">
-                            ALREADY REGISTERED?{' '}
+                            이미 계정이 있으신가요?{' '}
                             <Link href="/intro" className="text-purple-400 hover:text-purple-300 font-bold ml-1 hover:underline text-center">
-                                LOGIN HERE
+                                로그인하기
                             </Link>
                         </p>
                     </div>

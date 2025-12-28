@@ -282,33 +282,33 @@ export default function IntroPage() {
                                     >
 
                                         <div className="text-center mb-8">
-                                            <h2 className="text-xl font-bold orbitron text-white mb-2">COMMANDER_ACCESS</h2>
-                                            <p className="text-[10px] font-mono text-white/40">Enter credentials to access the network</p>
+                                            <h2 className="text-xl font-bold orbitron text-white mb-2">지휘관 인증</h2>
+                                            <p className="text-[10px] font-mono text-white/40">네트워크 접속을 위한 인증 정보를 입력하세요</p>
                                         </div>
 
                                         <div className="space-y-4">
                                             <div>
                                                 <label className="block text-[10px] font-mono text-cyan-400/60 mb-2 uppercase tracking-widest">
-                                                    User_ID
+                                                    이메일
                                                 </label>
                                                 <input
                                                     type="text"
                                                     value={loginId}
                                                     onChange={(e) => setLoginId(e.target.value)}
                                                     className="w-full bg-black/50 border border-cyan-500/30 rounded px-4 py-3 text-white font-mono text-sm focus:border-cyan-400 focus:outline-none transition-colors"
-                                                    placeholder="Username"
+                                                    placeholder="이메일을 입력하세요"
                                                 />
                                             </div>
                                             <div>
                                                 <label className="block text-[10px] font-mono text-cyan-400/60 mb-2 uppercase tracking-widest">
-                                                    Access_Key
+                                                    비밀번호
                                                 </label>
                                                 <input
                                                     type="password"
                                                     value={loginKey}
                                                     onChange={(e) => setLoginKey(e.target.value)}
                                                     className="w-full bg-black/50 border border-cyan-500/30 rounded px-4 py-3 text-white font-mono text-sm focus:border-cyan-400 focus:outline-none transition-colors"
-                                                    placeholder="Password"
+                                                    placeholder="비밀번호를 입력하세요"
                                                 />
                                             </div>
 
@@ -331,7 +331,7 @@ export default function IntroPage() {
                                                 containerClassName="w-full rounded"
                                                 className="w-full bg-cyan-500/10 text-cyan-400 py-3 font-mono text-sm tracking-widest uppercase"
                                             >
-                                                AUTHENTICATE
+                                                로그인
                                             </HoverBorderGradient>
 
                                             <div className="flex gap-2">
@@ -340,7 +340,7 @@ export default function IntroPage() {
                                                     onClick={() => router.push('/signup')}
                                                     className="flex-1 py-3 text-white/40 hover:text-white font-mono text-xs tracking-widest uppercase transition-colors border border-white/5 rounded hover:bg-white/5"
                                                 >
-                                                    REQUEST_NEW_ACCESS
+                                                    회원가입
                                                 </button>
                                             </div>
 
