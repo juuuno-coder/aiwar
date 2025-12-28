@@ -91,7 +91,7 @@ export default function StageBattlePage() {
     const getBattleModeDescription = (mode: string) => {
         switch (mode) {
             case 'ONE_CARD': return '카드 1장으로 빠른 승부! 운과 직감이 중요합니다.';
-            case 'TRIPLE_THREAT': return '카드 3장으로 전략적 대결! 히든 카드가 승부를 결정합니다.';
+            case 'TRIPLE_THREAT': return '카드 5장 + 히든 2장 전략 대결! 라운드 2, 4의 히든 카드가 승부를 결정합니다.';
             case 'STANDARD_5': return '카드 5장 풀 배틀! 덱 구성과 배치가 핵심입니다.';
             default: return '';
         }
@@ -108,7 +108,7 @@ export default function StageBattlePage() {
             // 모든 모드에서 5장 선택 후 순서 결정
             // battleCardCount는 승리 조건 결정용 (1=1승 필요, 3=2승 필요, 5=3승 필요)
             const battleCount = stage.battleMode === 'ONE_CARD' ? 1 :
-                stage.battleMode === 'TRIPLE_THREAT' ? 3 : 5;
+                5; // 모든 모드가 5장 기반
 
             const config: StageConfig = {
                 stageId: stage.step,
@@ -878,6 +878,7 @@ export default function StageBattlePage() {
                                         stats: { totalPower: enemy.power },
                                         rarity: 'common' as const,
                                     }))}
+                                    battleType={storyStage?.battleMode === 'TRIPLE_THREAT' ? 'strategic' : 'tactical'}
                                     onBattleEnd={(victory: boolean) => {
                                         // 전투 종료 처리
                                         const result: StageBattleResult = {
