@@ -72,6 +72,29 @@ export default function StageBattlePage() {
     const battleSpeedRef = useRef(battleSpeed);
     useEffect(() => { battleSpeedRef.current = battleSpeed; }, [battleSpeed]);
 
+    // 튜토리얼 상태 (스테이지 1-1 첫 진입 시)
+    const [showTutorial, setShowTutorial] = useState(false);
+    const [tutorialStep, setTutorialStep] = useState(0);
+
+    // 배틀 모드 한글 이름
+    const getBattleModeName = (mode: string) => {
+        switch (mode) {
+            case 'ONE_CARD': return '⚡ 단판 승부';
+            case 'TRIPLE_THREAT': return '🎭 전략 승부';
+            case 'STANDARD_5': return '⚔️ 전술 승부';
+            default: return mode;
+        }
+    };
+
+    const getBattleModeDescription = (mode: string) => {
+        switch (mode) {
+            case 'ONE_CARD': return '카드 1장으로 빠른 승부! 운과 직감이 중요합니다.';
+            case 'TRIPLE_THREAT': return '카드 3장으로 전략적 대결! 히든 카드가 승부를 결정합니다.';
+            case 'STANDARD_5': return '카드 5장 풀 배틀! 덱 구성과 배치가 핵심입니다.';
+            default: return '';
+        }
+    };
+
     // Data Load
     useEffect(() => {
         loadCards();
@@ -80,14 +103,16 @@ export default function StageBattlePage() {
             setStoryStage(stage);
 
             // Map StoryStage to StageConfig
-            const cardCount = stage.battleMode === 'ONE_CARD' ? 1 :
+            // 모든 모드에서 5장 선택 후 순서 결정
+            // battleCardCount는 승리 조건 결정용 (1=1승 필요, 3=2승 필요, 5=3승 필요)
+            const battleCount = stage.battleMode === 'ONE_CARD' ? 1 :
                 stage.battleMode === 'TRIPLE_THREAT' ? 3 : 5;
 
             const config: StageConfig = {
                 stageId: stage.step,
                 chapter: 1, // Defaulting to 1 for now
-                playerHandSize: cardCount === 5 ? 5 : cardCount,
-                battleCardCount: cardCount,
+                playerHandSize: 5, // 항상 5장 선택
+                battleCardCount: battleCount as 1 | 3 | 5,
                 isBoss: stage.difficulty === 'BOSS',
                 enemyPowerBonus: 0,
                 rewardMultiplier: 1,
@@ -96,6 +121,14 @@ export default function StageBattlePage() {
                 description: stage.description
             };
             setStageConfig(config);
+
+            // 스테이지 1-1 첫 진입 시 튜토리얼 표시
+            if (stage.id === 'stage-1-1') {
+                const tutorialDone = localStorage.getItem('tutorial_stage_1_1_done');
+                if (!tutorialDone) {
+                    setShowTutorial(true);
+                }
+            }
         } else {
             // Fallback: try numeric ID for legacy support or redirect
             const numericId = parseInt(stageIdStr);
@@ -185,9 +218,24 @@ export default function StageBattlePage() {
     }, [footer.state.selectionSlots, phase, stageConfig]);
 
     const loadCards = async () => {
-        const cards = await gameStorage.getCards();
+        // 1. 게임 스토리지에서 로드 시도
+        let cards = await gameStorage.getCards();
+        console.log('[BattlePage] gameStorage.getCards() 결과:', cards.length, '장');
+
+        // 2. 카드가 없으면 인벤토리 시스템에서도 시도
+        if (cards.length === 0) {
+            try {
+                const { loadInventory } = await import('@/lib/inventory-system');
+                const inventoryCards = await loadInventory();
+                console.log('[BattlePage] loadInventory() 결과:', inventoryCards.length, '장');
+                cards = inventoryCards;
+            } catch (e) {
+                console.error('[BattlePage] 인벤토리 로드 실패:', e);
+            }
+        }
+
         // Process types if missing (Legacy logic)
-        const processedCards = cards.map(card => {
+        const processedCards = cards.map((card: any) => {
             if (!card.type) {
                 const stats = card.stats || { efficiency: 0, creativity: 0, function: 0 };
                 let type: any = 'EFFICIENCY';
@@ -197,6 +245,7 @@ export default function StageBattlePage() {
             }
             return card;
         });
+        console.log('[BattlePage] 최종 로드된 카드:', processedCards.length, '장');
         setAllCards(processedCards);
     };
 
@@ -254,8 +303,8 @@ export default function StageBattlePage() {
         const matchup = stageConfig.asymmetricMatchup;
         const enemyCardCount = matchup ? matchup.e : stageConfig.battleCardCount;
 
-        // 적 생성
-        const enemyList = generateEnemies(stageConfig, avgPower, enemyCardCount);
+        // 적 생성 (stageId 전달하여 고정 덱 패턴 사용)
+        const enemyList = generateEnemies(stageConfig, avgPower, stageIdStr);
 
         // [STORY INTEGRATION] Override enemy details
         if (storyStage) {
@@ -426,17 +475,55 @@ export default function StageBattlePage() {
                 {/* --- 1. Hand Selection --- */}
                 {phase === 'hand-selection' && (
                     <div className="pb-24">
+                        {/* 배틀 모드 표시 */}
                         <div className="text-center mb-8">
-                            <h2 className="text-xl font-bold text-white mb-2">DEPLOY YOUR SQUAD</h2>
-                            <p className="text-gray-400">Select {stageConfig.playerHandSize} cards for this mission</p>
+                            <div className="inline-block px-6 py-3 bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/40 rounded-xl mb-4">
+                                <span className="text-2xl font-black text-amber-400">
+                                    {getBattleModeName(storyStage?.battleMode || 'STANDARD_5')}
+                                </span>
+                            </div>
+                            <p className="text-gray-400 text-sm mb-2">
+                                {getBattleModeDescription(storyStage?.battleMode || 'STANDARD_5')}
+                            </p>
+                            <h2 className="text-xl font-bold text-white mb-2">카드를 선택하세요</h2>
+                            <p className="text-gray-500">
+                                {stageConfig.playerHandSize}장의 카드를 선택하여 전투에 참가합니다
+                            </p>
                         </div>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                            {allCards.map(card => (
-                                <motion.div key={card.id} onClick={() => toggleHandSelection(card)} whileTap={{ scale: 0.95 }}>
-                                    <GameCard card={card} isSelected={selectedHand.some(c => c.id === card.id)} />
-                                </motion.div>
-                            ))}
-                        </div>
+
+                        {/* 카드가 없을 때 안내 */}
+                        {allCards.length === 0 ? (
+                            <div className="flex flex-col items-center justify-center py-16">
+                                <div className="text-6xl mb-4">📦</div>
+                                <h3 className="text-xl font-bold text-white mb-2">카드가 없습니다!</h3>
+                                <p className="text-gray-400 mb-6 text-center max-w-md">
+                                    전투에 참가하려면 먼저 카드가 필요합니다.<br />
+                                    AI 군단을 배치하여 카드를 생성하세요.
+                                </p>
+                                <div className="flex gap-4">
+                                    <Button
+                                        color="primary"
+                                        onPress={() => router.push('/generation')}
+                                    >
+                                        🎲 카드 생성하기
+                                    </Button>
+                                    <Button
+                                        color="default"
+                                        onPress={() => router.push('/factions')}
+                                    >
+                                        🤖 AI 군단 배치
+                                    </Button>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                                {allCards.map(card => (
+                                    <motion.div key={card.id} onClick={() => toggleHandSelection(card)} whileTap={{ scale: 0.95 }}>
+                                        <GameCard card={card} isSelected={footer.state.selectionSlots.some(c => c.id === card.id)} />
+                                    </motion.div>
+                                ))}
+                            </div>
+                        )}
                     </div>
                 )}
 
@@ -456,7 +543,7 @@ export default function StageBattlePage() {
                     </div>
                 )}
 
-                {/* --- 3. Battle Execution (Simplified View) --- */}
+                {/* --- 3. Battle Execution (5-Card Assignment or Battle View) --- */}
                 {(phase === 'viewing' || phase === 'battle' || phase === 'main-assignment' || phase === 'hidden-assignment') && (
                     <div className="flex flex-col items-center">
                         <div className="flex justify-between w-full max-w-4xl mb-8">
@@ -471,41 +558,176 @@ export default function StageBattlePage() {
                             </div>
                         </div>
 
-                        {/* Card Slots / Battle Area */}
-                        <div className="w-full max-w-5xl h-96 bg-white/5 rounded-3xl border border-white/10 flex items-center justify-center relative overflow-hidden">
-                            {/* Placeholder for complex battle animation */}
-                            <AnimatePresence mode="wait">
-                                {roundAnimState === 'clash' ? (
-                                    <motion.div
-                                        key="clash"
-                                        initial={{ scale: 2, opacity: 0 }}
-                                        animate={{ scale: 1, opacity: 1 }}
-                                        exit={{ scale: 0, opacity: 0 }}
-                                        className="text-6xl"
-                                    >
-                                        ⚔️
-                                    </motion.div>
-                                ) : (
-                                    <div className="text-white/30 font-mono">
-                                        {phase === 'battle' ? `ROUND ${currentBattleRound + 1} ENGAGED` : 'ANALYZING STRATEGY...'}
-                                    </div>
-                                )}
-                            </AnimatePresence>
+                        {/* 5장 전투: 라운드별 카드 배치 UI */}
+                        {phase === 'main-assignment' && (
+                            <div className="w-full max-w-5xl bg-zinc-900/80 rounded-2xl border border-white/10 p-8">
+                                <h3 className="text-2xl font-black text-white text-center mb-6">
+                                    🎯 라운드별 카드 배치
+                                </h3>
+                                <p className="text-gray-400 text-center mb-8">
+                                    각 라운드에 출전할 카드를 배치하세요. 순서가 승패를 결정합니다!
+                                </p>
 
-                            {/* Phase specific UI for assignments would go here */}
-                            {phase === 'main-assignment' && (
-                                <div className="absolute inset-0 bg-black/80 flex flex-col items-center justify-center z-20">
-                                    <h3 className="text-white mb-4">Assign Cards to Rounds</h3>
-                                    <Button onPress={confirmMainAssignment}>Confirm Assignments</Button>
+                                {/* 5개 라운드 슬롯 */}
+                                <div className="grid grid-cols-5 gap-4 mb-8">
+                                    {[1, 2, 3, 4, 5].map(round => {
+                                        const assignedCard = mainAssignments[round - 1];
+                                        const isHiddenRound = round === 2 || round === 4;
+                                        return (
+                                            <div key={round} className="flex flex-col items-center">
+                                                <div className={`text-xs font-bold mb-2 ${isHiddenRound ? 'text-purple-400' : 'text-gray-400'}`}>
+                                                    R{round} {isHiddenRound && '(히든)'}
+                                                </div>
+                                                <div
+                                                    className={`w-full aspect-[3/4] rounded-xl border-2 border-dashed flex items-center justify-center transition-all ${assignedCard
+                                                        ? 'border-cyan-500 bg-cyan-500/10'
+                                                        : 'border-white/20 bg-white/5 hover:border-white/40'
+                                                        }`}
+                                                >
+                                                    {assignedCard ? (
+                                                        <div className="text-center p-2">
+                                                            <div className="text-2xl mb-1">⚔️</div>
+                                                            <div className="text-xs text-white truncate">{assignedCard.name}</div>
+                                                            <div className="text-xs text-cyan-400">{assignedCard.stats?.totalPower || 0}</div>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="text-white/30 text-3xl">+</div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
                                 </div>
-                            )}
-                            {phase === 'hidden-assignment' && (
-                                <div className="absolute inset-0 bg-black/80 flex flex-col items-center justify-center z-20">
-                                    <h3 className="text-white mb-4">Assign Hidden Card (Round {currentHiddenRound})</h3>
-                                    <Button onPress={confirmHiddenSelection}>Confirm Hidden</Button>
+
+                                {/* 선택한 5장 카드 목록 */}
+                                <div className="mb-6">
+                                    <h4 className="text-sm font-bold text-gray-400 mb-3">선택한 카드 (클릭하여 라운드에 배치)</h4>
+                                    <div className="flex gap-3 justify-center flex-wrap">
+                                        {selectedHand.map((card, idx) => {
+                                            const isAssigned = mainAssignments.some(a => a?.id === card.id);
+                                            const assignedRound = mainAssignments.findIndex(a => a?.id === card.id) + 1;
+                                            return (
+                                                <motion.div
+                                                    key={card.id}
+                                                    whileHover={{ scale: 1.05 }}
+                                                    whileTap={{ scale: 0.95 }}
+                                                    onClick={() => {
+                                                        // 클릭 시 다음 빈 슬롯에 배치
+                                                        const nextEmptyIdx = mainAssignments.findIndex(a => a === null);
+                                                        if (!isAssigned && nextEmptyIdx !== -1) {
+                                                            assignToRound(card, nextEmptyIdx);
+                                                        } else if (isAssigned) {
+                                                            // 이미 배치된 카드 클릭 시 해제
+                                                            const newAssignments = mainAssignments.map(a => a?.id === card.id ? null : a);
+                                                            setMainAssignments(newAssignments);
+                                                        }
+                                                    }}
+                                                    className={`w-20 h-28 rounded-lg border-2 flex flex-col items-center justify-center cursor-pointer transition-all ${isAssigned
+                                                        ? 'border-green-500 bg-green-500/20'
+                                                        : 'border-white/20 bg-white/5 hover:border-cyan-500'
+                                                        }`}
+                                                >
+                                                    <div className="text-lg">⚔️</div>
+                                                    <div className="text-[10px] text-white truncate px-1">{card.name}</div>
+                                                    <div className="text-[10px] text-cyan-400">{card.stats?.totalPower || 0}</div>
+                                                    {isAssigned && (
+                                                        <div className="text-[9px] text-green-400 mt-1">R{assignedRound}</div>
+                                                    )}
+                                                </motion.div>
+                                            );
+                                        })}
+                                    </div>
                                 </div>
-                            )}
-                        </div>
+
+                                <div className="flex justify-center">
+                                    <Button
+                                        color="success"
+                                        size="lg"
+                                        isDisabled={mainAssignments.some(a => a === null)}
+                                        onPress={confirmMainAssignment}
+                                    >
+                                        배치 완료 → 히든카드 선택
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* 히든카드 선택 UI */}
+                        {phase === 'hidden-assignment' && (
+                            <div className="w-full max-w-4xl bg-zinc-900/80 rounded-2xl border border-purple-500/30 p-8">
+                                <h3 className="text-2xl font-black text-white text-center mb-4">
+                                    🎭 히든카드 선택 (라운드 {currentHiddenRound})
+                                </h3>
+                                <p className="text-gray-400 text-center mb-6">
+                                    라운드 {currentHiddenRound}에서 사용할 히든카드를 선택하세요.<br />
+                                    히든카드는 메인 카드와 함께 전투력을 발휘합니다!
+                                </p>
+
+                                {/* 현재 배치된 카드 중에서 히든카드 선택 */}
+                                <div className="flex gap-4 justify-center flex-wrap mb-8">
+                                    {mainAssignments.filter(c => c !== null).map((card) => {
+                                        const isSelected = (currentHiddenRound === 2 && hiddenR2?.id === card!.id) ||
+                                            (currentHiddenRound === 4 && hiddenR4?.id === card!.id);
+                                        const alreadyUsed = (currentHiddenRound === 4 && hiddenR2?.id === card!.id);
+
+                                        return (
+                                            <motion.div
+                                                key={card!.id}
+                                                whileHover={{ scale: alreadyUsed ? 1 : 1.05 }}
+                                                whileTap={{ scale: alreadyUsed ? 1 : 0.95 }}
+                                                onClick={() => !alreadyUsed && selectHiddenCard(card!)}
+                                                className={`w-24 h-32 rounded-xl border-2 flex flex-col items-center justify-center cursor-pointer transition-all ${isSelected
+                                                    ? 'border-purple-500 bg-purple-500/30 shadow-[0_0_20px_rgba(168,85,247,0.4)]'
+                                                    : alreadyUsed
+                                                        ? 'border-gray-600 bg-gray-800/50 opacity-50 cursor-not-allowed'
+                                                        : 'border-white/20 bg-white/5 hover:border-purple-400'
+                                                    }`}
+                                            >
+                                                <div className="text-2xl mb-1">🎭</div>
+                                                <div className="text-xs text-white truncate px-2">{card!.name}</div>
+                                                <div className="text-xs text-purple-400">{card!.stats?.totalPower || 0}</div>
+                                                {isSelected && <div className="text-[10px] text-purple-300 mt-1">선택됨</div>}
+                                                {alreadyUsed && <div className="text-[10px] text-gray-500 mt-1">R2 사용</div>}
+                                            </motion.div>
+                                        );
+                                    })}
+                                </div>
+
+                                <div className="flex justify-center gap-4">
+                                    <Button
+                                        color="primary"
+                                        size="lg"
+                                        isDisabled={currentHiddenRound === 2 ? !hiddenR2 : !hiddenR4}
+                                        onPress={confirmHiddenSelection}
+                                    >
+                                        {currentHiddenRound === 2 ? '다음 → 라운드 4 히든카드' : '전투 시작!'}
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Battle View (Viewing / Battle phase) */}
+                        {(phase === 'viewing' || phase === 'battle') && (
+                            <div className="w-full max-w-5xl h-96 bg-white/5 rounded-3xl border border-white/10 flex items-center justify-center relative overflow-hidden">
+                                <AnimatePresence mode="wait">
+                                    {roundAnimState === 'clash' ? (
+                                        <motion.div
+                                            key="clash"
+                                            initial={{ scale: 2, opacity: 0 }}
+                                            animate={{ scale: 1, opacity: 1 }}
+                                            exit={{ scale: 0, opacity: 0 }}
+                                            className="text-6xl"
+                                        >
+                                            ⚔️
+                                        </motion.div>
+                                    ) : (
+                                        <div className="text-white/30 font-mono">
+                                            {phase === 'battle' ? `ROUND ${currentBattleRound + 1} ENGAGED` : 'ANALYZING STRATEGY...'}
+                                        </div>
+                                    )}
+                                </AnimatePresence>
+                            </div>
+                        )}
                     </div>
                 )}
 
@@ -538,6 +760,127 @@ export default function StageBattlePage() {
                     </div>
                 )}
             </div>
+
+            {/* 튜토리얼 오버레이 (스테이지 1-1) */}
+            <AnimatePresence>
+                {showTutorial && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center p-4"
+                    >
+                        <motion.div
+                            initial={{ scale: 0.9, y: 20 }}
+                            animate={{ scale: 1, y: 0 }}
+                            className="bg-gradient-to-br from-zinc-900 to-black border border-cyan-500/30 rounded-2xl p-8 max-w-xl w-full shadow-[0_0_50px_rgba(34,211,238,0.2)]"
+                        >
+                            {tutorialStep === 0 && (
+                                <>
+                                    <div className="text-6xl text-center mb-6">⚔️</div>
+                                    <h2 className="text-3xl font-black text-white text-center mb-4">전투 시스템 기초</h2>
+                                    <p className="text-gray-400 text-center mb-6">
+                                        AI 전쟁에 오신 것을 환영합니다, 지휘관님!<br />
+                                        기본적인 전투 방식을 알려드리겠습니다.
+                                    </p>
+                                    <div className="bg-cyan-500/10 border border-cyan-500/30 rounded-xl p-4 mb-6">
+                                        <h3 className="text-cyan-400 font-bold mb-2">📋 전투 모드</h3>
+                                        <ul className="text-white/80 text-sm space-y-2">
+                                            <li>⚡ <span className="text-amber-400">단판 승부</span>: 카드 1장으로 빠른 결정</li>
+                                            <li>🎭 <span className="text-purple-400">전략 승부</span>: 카드 3장, 히든 카드 전략</li>
+                                            <li>⚔️ <span className="text-red-400">전술 승부</span>: 카드 5장 풀 배틀</li>
+                                        </ul>
+                                    </div>
+                                </>
+                            )}
+                            {tutorialStep === 1 && (
+                                <>
+                                    <div className="text-6xl text-center mb-6">🔄</div>
+                                    <h2 className="text-3xl font-black text-white text-center mb-4">타입 상성</h2>
+                                    <p className="text-gray-400 text-center mb-6">
+                                        카드에는 3가지 타입이 있으며, 서로 상성 관계가 있습니다.
+                                    </p>
+                                    <div className="flex justify-center gap-4 mb-6">
+                                        <div className="text-center">
+                                            <div className="text-4xl mb-2">⚙️</div>
+                                            <div className="text-blue-400 font-bold">효율</div>
+                                            <div className="text-xs text-gray-500">기능에 강함</div>
+                                        </div>
+                                        <div className="text-2xl text-white/30 pt-6">→</div>
+                                        <div className="text-center">
+                                            <div className="text-4xl mb-2">💡</div>
+                                            <div className="text-yellow-400 font-bold">창의</div>
+                                            <div className="text-xs text-gray-500">효율에 강함</div>
+                                        </div>
+                                        <div className="text-2xl text-white/30 pt-6">→</div>
+                                        <div className="text-center">
+                                            <div className="text-4xl mb-2">🔧</div>
+                                            <div className="text-green-400 font-bold">기능</div>
+                                            <div className="text-xs text-gray-500">창의에 강함</div>
+                                        </div>
+                                    </div>
+                                    <p className="text-center text-white/60 text-sm">
+                                        가위바위보처럼 생각하세요: 효율 → 기능 → 창의 → 효율
+                                    </p>
+                                </>
+                            )}
+                            {tutorialStep === 2 && (
+                                <>
+                                    <div className="text-6xl text-center mb-6">🎯</div>
+                                    <h2 className="text-3xl font-black text-white text-center mb-4">첫 번째 전투!</h2>
+                                    <p className="text-gray-400 text-center mb-6">
+                                        이번 스테이지는 <span className="text-amber-400 font-bold">단판 승부</span>입니다.<br />
+                                        카드 1장만 선택하면 됩니다. 가장 강한 카드를 골라보세요!
+                                    </p>
+                                    <div className="bg-green-500/10 border border-green-500/30 rounded-xl p-4 mb-6">
+                                        <p className="text-green-400 text-center font-bold">💡 팁: 카드의 전투력과 타입을 확인하세요!</p>
+                                    </div>
+                                </>
+                            )}
+
+                            <div className="flex justify-center gap-4">
+                                {tutorialStep > 0 && (
+                                    <Button
+                                        color="default"
+                                        onPress={() => setTutorialStep(tutorialStep - 1)}
+                                    >
+                                        이전
+                                    </Button>
+                                )}
+                                {tutorialStep < 2 ? (
+                                    <Button
+                                        color="primary"
+                                        onPress={() => setTutorialStep(tutorialStep + 1)}
+                                    >
+                                        다음
+                                    </Button>
+                                ) : (
+                                    <Button
+                                        color="success"
+                                        onPress={() => {
+                                            setShowTutorial(false);
+                                            localStorage.setItem('tutorial_stage_1_1_done', 'true');
+                                        }}
+                                    >
+                                        전투 시작!
+                                    </Button>
+                                )}
+                            </div>
+
+                            {/* Progress dots */}
+                            <div className="flex justify-center gap-2 mt-6">
+                                {[0, 1, 2].map(i => (
+                                    <div
+                                        key={i}
+                                        className={`w-2 h-2 rounded-full transition-all ${i === tutorialStep ? 'bg-cyan-400 w-6' : 'bg-white/20'
+                                            }`}
+                                    />
+                                ))}
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 }

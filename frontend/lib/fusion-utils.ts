@@ -47,12 +47,23 @@ export function canFuse(
         return { canFuse: false, reason: '재료 카드가 3장 필요합니다.' };
     }
 
+    // 강화되지 않은 카드만 합성 가능 (레벨 1)
+    const hasEnhancedCard = materialCards.some(card => card.level && card.level > 1);
+    if (hasEnhancedCard) {
+        return { canFuse: false, reason: '강화되지 않은 카드(레벨 1)만 합성할 수 있습니다.' };
+    }
+
     // 모두 같은 등급인지 확인
     const firstRarity = materialCards[0].rarity;
     const allSameRarity = materialCards.every(card => card.rarity === firstRarity);
 
     if (!allSameRarity) {
         return { canFuse: false, reason: '같은 등급의 카드만 합성할 수 있습니다.' };
+    }
+
+    // 유니크/군단장 등급은 합성 불가
+    if (firstRarity === 'unique' || firstRarity === 'commander') {
+        return { canFuse: false, reason: '유니크/군단장 등급은 합성 재료로 사용할 수 없습니다.' };
     }
 
     // 다음 등급 확인
@@ -127,46 +138,75 @@ export function calculateFusedStats(materialCards: Card[]): Card['stats'] {
 
 /**
  * 카드 합성 실행
+ * - 스탯은 등급 상한선 내에서 랜덤 생성
+ * - 타입(효율/창의/기능)은 랜덤 변경 가능
  */
 export function fuseCards(
     materialCards: Card[],
     userId: string
 ): Card {
     const nextRarity = getNextRarity(materialCards[0].rarity!)!;
-    const newStats = calculateFusedStats(materialCards);
 
-    // 타입 결정 (다수결)
-    const typeCounts: Record<string, number> = { EFFICIENCY: 0, CREATIVITY: 0, FUNCTION: 0 };
-    materialCards.forEach(c => {
-        if (c.type) typeCounts[c.type as string] = (typeCounts[c.type as string] || 0) + 1;
-    });
+    // 등급별 스탯 상한선
+    const rarityStatLimits: Record<Rarity, { min: number; max: number }> = {
+        common: { min: 5, max: 20 },
+        rare: { min: 15, max: 35 },
+        epic: { min: 30, max: 55 },
+        legendary: { min: 50, max: 80 },
+        unique: { min: 70, max: 100 },
+        commander: { min: 90, max: 120 }
+    };
 
-    // 가장 많은 타입 찾기
-    let winnerType: any = Object.keys(typeCounts).reduce((a, b) => typeCounts[a] > typeCounts[b] ? a : b);
+    const limits = rarityStatLimits[nextRarity];
+    const randomStat = () => Math.floor(Math.random() * (limits.max - limits.min + 1)) + limits.min;
 
-    // 타입이 없거나 레거시인 경우 첫번째 카드 기준
-    if (!materialCards.some(c => c.type)) {
-        // Fallback logic if types are undefined
-        // Actually reroll logic sets type. If undefined, we can default to one based on stats or random.
-        winnerType = 'EFFICIENCY';
+    // 랜덤 스탯 생성
+    const efficiency = randomStat();
+    const creativity = randomStat();
+    const functionStat = randomStat();
+
+    const newStats: Card['stats'] = {
+        efficiency,
+        creativity,
+        function: functionStat,
+        accuracy: 0,
+        speed: 0,
+        stability: 0,
+        ethics: 0,
+        totalPower: efficiency + creativity + functionStat
+    };
+
+    // 타입 랜덤 결정 (스탯 기반 50% + 완전 랜덤 50%)
+    const types = ['EFFICIENCY', 'CREATIVITY', 'FUNCTION'] as const;
+    let newType: 'EFFICIENCY' | 'CREATIVITY' | 'FUNCTION';
+
+    if (Math.random() < 0.5) {
+        // 50% 확률로 가장 높은 스탯의 타입
+        if (efficiency >= creativity && efficiency >= functionStat) {
+            newType = 'EFFICIENCY';
+        } else if (creativity >= efficiency && creativity >= functionStat) {
+            newType = 'CREATIVITY';
+        } else {
+            newType = 'FUNCTION';
+        }
+    } else {
+        // 50% 확률로 완전 랜덤
+        newType = types[Math.floor(Math.random() * types.length)];
     }
 
-    // 재료 카드 중 가장 높은 레벨 선택
-    const maxLevel = Math.max(...materialCards.map(c => c.level));
-
-    // 새 카드 생성
+    // 새 카드 생성 (레벨 1로 리셋)
     const fusedCard: Card = {
         id: generateId(),
         templateId: materialCards[0].templateId, // 첫 번째 카드의 템플릿 사용
         name: materialCards[0].name,
         ownerId: userId,
-        level: Math.max(1, maxLevel - 1), // 레벨은 재료 중 최고 -1 (최소 1)
+        level: 1, // 합성 결과는 항상 레벨 1
         experience: 0,
         stats: newStats,
         rarity: nextRarity,
         acquiredAt: new Date(),
         isLocked: false,
-        type: winnerType as 'EFFICIENCY' | 'CREATIVITY' | 'FUNCTION',
+        type: newType,
         specialSkill: materialCards[0].specialSkill // 스킬 계승
     };
 

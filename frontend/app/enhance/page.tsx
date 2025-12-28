@@ -7,14 +7,21 @@ import { enhanceCard, getEnhanceCost, getEnhancePreview } from '@/lib/enhance-ut
 import CyberPageLayout from '@/components/CyberPageLayout';
 import EnhanceFooter from '@/components/Footer/EnhanceFooter';
 import GameCard from '@/components/GameCard';
+import CardRewardModal from '@/components/CardRewardModal';
+import { useAlert } from '@/context/AlertContext';
 import { cn } from '@/lib/utils';
 
 export default function EnhancePage() {
+    const { showAlert } = useAlert();
     const [allCards, setAllCards] = useState<InventoryCard[]>([]);
     const [targetCard, setTargetCard] = useState<InventoryCard | null>(null);
     const [materialSlots, setMaterialSlots] = useState<(InventoryCard | null)[]>(Array(10).fill(null));
     const [userTokens, setUserTokens] = useState(0);
     const [discount, setDiscount] = useState(0);
+
+    // 강화 완료 모달
+    const [rewardModalOpen, setRewardModalOpen] = useState(false);
+    const [enhancedResult, setEnhancedResult] = useState<CardType | null>(null);
 
     useEffect(() => {
         loadCards();
@@ -47,7 +54,8 @@ export default function EnhancePage() {
     const handleCardClick = (card: InventoryCard) => {
         if (!targetCard) {
             setTargetCard(card);
-        } else if (card.name === targetCard.name && card.id !== targetCard.id) {
+        } else if (card.instanceId !== targetCard.instanceId) {
+            // 타겟이 아닌 다른 카드면 재료로 추가
             const emptyIndex = materialSlots.findIndex(s => s === null);
             if (emptyIndex !== -1) {
                 const newSlots = [...materialSlots];
@@ -69,7 +77,7 @@ export default function EnhancePage() {
             return;
         }
 
-        if (card.name === targetCard.name && card.id !== targetCard.id) {
+        if (card.instanceId !== targetCard.instanceId) {
             const newSlots = [...materialSlots];
             newSlots[index] = card;
             setMaterialSlots(newSlots);
@@ -94,14 +102,13 @@ export default function EnhancePage() {
         setMaterialSlots(Array(10).fill(null));
     };
 
-    // 자동 선택
+    // 자동 선택 (아무 카드 10장)
     const handleAutoSelect = () => {
         if (!targetCard) return;
 
-        const sameName = allCards.filter(c =>
-            c.name === targetCard.name && c.id !== targetCard.id
-        );
-        const sorted = sameName.sort((a, b) => (a.level || 1) - (b.level || 1));
+        // 타겟 제외한 카드 중 레벨이 낮은 순으로 10장 선택
+        const available = allCards.filter(c => c.instanceId !== targetCard.instanceId);
+        const sorted = available.sort((a, b) => (a.level || 1) - (b.level || 1));
         const selected = sorted.slice(0, 10);
 
         setMaterialSlots([...selected, ...Array(10 - selected.length).fill(null)]);
@@ -113,46 +120,62 @@ export default function EnhancePage() {
 
         const filledMaterials = materialSlots.filter((c): c is InventoryCard => c !== null);
         if (filledMaterials.length !== 10) {
-            alert('재료 카드 10장이 필요합니다.');
+            showAlert({ title: '재료 부족', message: '재료 카드 10장이 필요합니다.', type: 'warning' });
             return;
         }
 
         const cost = getEnhanceCost(targetCard.level || 1, discount);
 
         if (userTokens < cost) {
-            alert(`토큰이 부족합니다. (필요: ${cost})`);
+            showAlert({ title: '토큰 부족', message: `토큰이 부족합니다. (필요: ${cost})`, type: 'error' });
             return;
         }
 
-        const { gameStorage } = await import('@/lib/game-storage');
-        // InventoryCard를 Card로 캐스팅
-        const enhancedCard = enhanceCard(targetCard as any, filledMaterials as any);
+        try {
+            const { removeCardFromInventory, addCardToInventory } = await import('@/lib/inventory-system');
+            const { gameStorage } = await import('@/lib/game-storage');
 
-        for (const mat of filledMaterials) {
-            await gameStorage.deleteCard(mat.id);
+            // 강화 실행
+            const enhancedCard = enhanceCard(targetCard as any, filledMaterials as any);
+
+            // 1. 재료 카드 10장 삭제
+            for (const mat of filledMaterials) {
+                await removeCardFromInventory(mat.instanceId);
+            }
+
+            // 2. 대상 카드 삭제 후 강화된 카드 추가
+            await removeCardFromInventory(targetCard.instanceId);
+            await addCardToInventory(enhancedCard);
+
+            // 3. 토큰 차감
+            await gameStorage.addTokens(-cost);
+
+            // 4. 강화 성공 모달 표시
+            setEnhancedResult(enhancedCard);
+            setRewardModalOpen(true);
+
+            handleClear();
+            await loadCards();
+        } catch (error) {
+            console.error('강화 오류:', error);
+            showAlert({ title: '강화 실패', message: '강화 중 문제가 발생했습니다.', type: 'error' });
         }
-        await gameStorage.updateCard(enhancedCard.id, enhancedCard as any);
-        await gameStorage.addTokens(-cost);
-
-        alert(`강화 성공! 레벨 ${enhancedCard.level}로 상승! (비용: ${cost}T)`);
-
-        handleClear();
-        await loadCards();
     };
 
     const filledCount = materialSlots.filter(c => c !== null).length;
     const canEnhance = targetCard !== null && filledCount === 10;
 
-    // 필터링: 타겟이 선택되면 같은 이름의 카드만 표시
-    const displayCards = targetCard
-        ? allCards.filter(c => c.name === targetCard.name && c.id !== targetCard.id)
-        : allCards;
+    // 모든 카드 표시 (재료로 아무 카드나 사용 가능)
+    const displayCards = allCards.filter(c =>
+        c.instanceId !== targetCard?.instanceId &&
+        !materialSlots.some(s => s?.instanceId === c.instanceId)
+    );
 
     return (
         <CyberPageLayout
             title="강화 프로토콜"
             englishTitle="UNIT UPGRADE"
-            description="같은 유닛 카드 10장을 소모하여 레벨업합니다."
+            description="아무 카드 10장을 소모하여 선택한 카드를 강화합니다. 스탯 +1~+3 상승!"
             color="amber"
         >
             {/* 메인 영역: 카드 목록 */}
@@ -210,6 +233,14 @@ export default function EnhancePage() {
                 onAutoSelect={handleAutoSelect}
                 onEnhance={handleEnhance}
                 canEnhance={canEnhance}
+            />
+
+            {/* 강화 성공 모달 */}
+            <CardRewardModal
+                isOpen={rewardModalOpen}
+                onClose={() => setRewardModalOpen(false)}
+                cards={enhancedResult ? [enhancedResult] : []}
+                title="강화 성공!"
             />
         </CyberPageLayout>
     );

@@ -79,13 +79,13 @@ export default function NicknameModal({ onComplete }: NicknameModalProps) {
                             <Shield size={40} className="animate-pulse" />
                         </div>
                         <h2 className="text-3xl font-black orbitron mb-2 uppercase tracking-tight text-white">
-                            호칭 설정
+                            닉네임 설정
                         </h2>
                         <p className="font-mono text-[10px] text-purple-400/60 tracking-[0.3em] uppercase mb-4">
-                            신경망 연결을 위한 식별 필요
+                            지휘관 등록 절차
                         </p>
                         <p className="text-gray-400 text-sm leading-relaxed max-w-xs">
-                            고유한 전술 식별자를 입력해 주세요. 이 이름은 모든 지휘관에게 표시됩니다.
+                            지휘관님의 닉네임을 입력해 주세요. 이 이름은 모든 지휘관에게 표시됩니다.
                         </p>
                     </div>
 
@@ -98,7 +98,7 @@ export default function NicknameModal({ onComplete }: NicknameModalProps) {
                                     onChange={(e) => setNickname(e.target.value)}
                                     autoFocus
                                     className="w-full px-6 py-4 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/10 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all font-mono text-center text-xl tracking-wider"
-                                    placeholder="호칭 입력"
+                                    placeholder="닉네임 입력"
                                     required
                                 />
                                 <div className="absolute inset-0 rounded-xl bg-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />

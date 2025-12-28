@@ -38,7 +38,7 @@ export default function GameTopBar({ sidebarCollapsed = false }: GameTopBarProps
 
     const navLinks = [
         { name: t('menu.story'), path: '/story', color: 'cyan' },
-        { name: t('menu.battle'), path: '/battle', color: 'red' },
+        // { name: t('menu.battle'), path: '/battle', color: 'red' }, // 스토리 모드에 집중 - 숨김
         { name: t('menu.aiFaction'), path: '/factions', color: 'green' },
         { name: t('menu.shop'), path: '/shop', color: 'yellow' },
         { name: 'LAB', path: '/lab', color: 'amber' },

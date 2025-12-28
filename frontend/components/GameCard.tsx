@@ -8,6 +8,8 @@ import { InventoryCard } from '@/lib/inventory-system';
 import { getCardCharacterImage, getFactionIcon, getCardCharacterVideo } from '@/lib/card-images';
 import { getTypeIcon, getTypeColor } from '@/lib/type-system';
 import { cn } from '@/lib/utils';
+import { useTranslation } from '@/context/LanguageContext';
+import { getCardName } from '@/data/card-translations';
 
 interface GameCardProps {
     card: CardType | InventoryCard;
@@ -64,14 +66,21 @@ const RARITY_CONFIG: Record<Rarity, { border: string; glow: string; badge: strin
     }
 };
 
-// 등급 한글 이름
-const RARITY_NAMES: Record<Rarity, string> = {
-    common: '일반',
-    rare: '희귀',
-    epic: '영웅',
-    legendary: '전설',
-    unique: '유니크',
-    commander: '군단장'
+// 등급 한글/영어 이름
+const RARITY_NAMES: Record<Rarity, Record<'ko' | 'en', string>> = {
+    common: { ko: '일반', en: 'Common' },
+    rare: { ko: '희귀', en: 'Rare' },
+    epic: { ko: '영웅', en: 'Epic' },
+    legendary: { ko: '전설', en: 'Legendary' },
+    unique: { ko: '유니크', en: 'Unique' },
+    commander: { ko: '군단장', en: 'Commander' }
+};
+
+// 스탯 라벨 다국어
+const STAT_LABELS: Record<'efficiency' | 'creativity' | 'function', Record<'ko' | 'en', string>> = {
+    efficiency: { ko: '효율', en: 'EFF' },
+    creativity: { ko: '창의', en: 'CRE' },
+    function: { ko: '기능', en: 'FUN' }
 };
 
 // 등급별 별 개수
@@ -92,6 +101,8 @@ export default function GameCard({
     isHolographic = false,
     showDetails = true
 }: GameCardProps) {
+    const { language } = useTranslation();
+    const lang = (language as 'ko' | 'en') || 'ko';
     const [imageError, setImageError] = useState(false);
     const [isHovered, setIsHovered] = useState(false);
     const [videoLoaded, setVideoLoaded] = useState(false);
@@ -258,7 +269,7 @@ export default function GameCard({
                     animate={isHighRarity ? { scale: [1, 1.05, 1] } : undefined}
                     transition={isHighRarity ? { repeat: Infinity, duration: 2 } : undefined}
                 >
-                    {RARITY_NAMES[rarity]}
+                    {RARITY_NAMES[rarity][lang]}
                 </motion.div>
 
                 {/* 영상 재생 인디케이터 */}
@@ -276,9 +287,8 @@ export default function GameCard({
             {/* 카드 정보 영역 */}
             {showDetails && (
                 <div className="relative h-[45%] p-2.5 flex flex-col bg-black/60 z-10">
-                    {/* 카드 이름 */}
                     <h3 className="text-xs font-bold text-white truncate orbitron mb-1">
-                        {card.name || `AI 유닛 #${card.id?.slice(0, 5) || '???'}`}
+                        {getCardName(card.templateId || card.id || "", card.name || "", lang) || `AI 유닛 #${card.id?.slice(0, 5) || '???'}`}
                     </h3>
 
                     {/* 등급 별 표시 */}
@@ -297,9 +307,9 @@ export default function GameCard({
 
                     {/* 스탯 - 올바른 이름으로 표시 */}
                     <div className="flex-1 space-y-1 text-[10px]">
-                        <StatBar label="효율" value={card.stats?.efficiency || 0} color="cyan" />
-                        <StatBar label="창의" value={card.stats?.creativity || 0} color="purple" />
-                        <StatBar label="기능" value={card.stats?.function || 0} color="green" />
+                        <StatBar label={STAT_LABELS.efficiency[lang]} value={card.stats?.efficiency || 0} color="cyan" />
+                        <StatBar label={STAT_LABELS.creativity[lang]} value={card.stats?.creativity || 0} color="purple" />
+                        <StatBar label={STAT_LABELS.function[lang]} value={card.stats?.function || 0} color="green" />
                     </div>
 
                     {/* 총 전투력 */}

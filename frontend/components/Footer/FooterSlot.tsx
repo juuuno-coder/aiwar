@@ -38,12 +38,14 @@ export default function FooterSlot({
         }
     };
 
-    const sizeClasses = {
-        small: 'w-16 h-24',
-        medium: 'w-20 h-28',
-        large: 'w-28 h-40',
+    // 슬롯 크기 - GameCard 크기(160x240)의 비율 유지 (2:3)
+    const sizeConfig = {
+        small: { width: 53, height: 80, scale: 0.33 },
+        medium: { width: 64, height: 96, scale: 0.4 },
+        large: { width: 80, height: 120, scale: 0.5 },
     };
 
+    const config = sizeConfig[size];
     const isTarget = type === 'target';
 
     return (
@@ -51,26 +53,32 @@ export default function FooterSlot({
             onDragOver={handleDragOver}
             onDrop={handleDrop}
             className={cn(
-                "relative rounded-lg border-2 transition-all flex items-center justify-center",
-                sizeClasses[size],
+                "relative rounded-lg border-2 transition-all flex items-center justify-center overflow-hidden",
                 card
                     ? isTarget
                         ? "border-cyan-500 bg-cyan-500/20 shadow-lg shadow-cyan-500/50"
-                        : "border-amber-500 bg-amber-500/10 shadow-md shadow-amber-500/30"
+                        : "border-amber-500/50 bg-amber-500/10"
                     : "border-dashed border-white/20 bg-black/40 hover:border-cyan-500/50 hover:bg-cyan-500/5"
             )}
+            style={{ width: config.width, height: config.height }}
         >
             {card ? (
                 <>
-                    <div className="relative w-full h-full p-1">
-                        <GameCard card={card} />
+                    {/* 카드를 정확한 비율로 축소 */}
+                    <div
+                        style={{
+                            transform: `scale(${config.scale})`,
+                            transformOrigin: 'center center'
+                        }}
+                    >
+                        <GameCard card={card} showDetails={false} />
                     </div>
                     {onRemove && (
                         <button
                             onClick={onRemove}
-                            className="absolute -top-2 -right-2 p-1 bg-red-500 rounded-full hover:bg-red-400 transition-colors z-10 shadow-lg"
+                            className="absolute -top-1 -right-1 p-0.5 bg-red-500 rounded-full hover:bg-red-400 transition-colors z-10 shadow-lg"
                         >
-                            <X size={12} className="text-white" />
+                            <X size={10} className="text-white" />
                         </button>
                     )}
                 </>
@@ -80,7 +88,7 @@ export default function FooterSlot({
                         "font-mono font-bold",
                         isTarget ? "text-cyan-400/60 text-xs" : "text-white/20 text-[10px]"
                     )}>
-                        {label || (isTarget ? '🎯 TARGET' : `${index + 1}`)}
+                        {label || (isTarget ? '🎯' : `${index + 1}`)}
                     </div>
                 </div>
             )}

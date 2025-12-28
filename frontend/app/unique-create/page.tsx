@@ -14,7 +14,7 @@ import { cn } from '@/lib/utils';
 
 export default function UniqueCreatePage() {
     const [allCards, setAllCards] = useState<InventoryCard[]>([]);
-    const [materialSlots, setMaterialSlots] = useState<(InventoryCard | null)[]>(Array(3).fill(null));
+    const [materialSlots, setMaterialSlots] = useState<(InventoryCard | null)[]>(Array(5).fill(null));
     const [userTokens, setUserTokens] = useState(0);
     const [legendaryCards, setLegendaryCards] = useState<InventoryCard[]>([]);
 
@@ -47,8 +47,8 @@ export default function UniqueCreatePage() {
     };
 
     const handleCardClick = (card: InventoryCard) => {
-        // 레벨 10 미만은 선택 불가
-        if (card.level < 10) return;
+        // 강화된 카드(레벨 2 이상)는 선택 불가 - 강화되지 않은 카드만 사용 가능
+        if (card.level > 1) return;
 
         // 이미 선택된 카드면 제거
         const slotIndex = materialSlots.findIndex(s => s?.id === card.id);
@@ -69,7 +69,7 @@ export default function UniqueCreatePage() {
     };
 
     const handleDragStart = (e: React.DragEvent, card: InventoryCard) => {
-        if (card.level < 10) {
+        if (card.level > 1) {
             e.preventDefault();
             return;
         }
@@ -77,7 +77,7 @@ export default function UniqueCreatePage() {
     };
 
     const handleMaterialDrop = (card: InventoryCard, index: number) => {
-        if (card.level < 10 || card.rarity !== 'legendary') return;
+        if (card.level > 1 || card.rarity !== 'legendary') return;
 
         const newSlots = [...materialSlots];
         newSlots[index] = card;
@@ -91,18 +91,17 @@ export default function UniqueCreatePage() {
     };
 
     const handleClear = () => {
-        setMaterialSlots(Array(3).fill(null));
+        setMaterialSlots(Array(5).fill(null));
     };
 
     const handleAutoSelect = () => {
-        // 레벨 10 이상의 전설 카드를 레벨 순으로 정렬하여 상위 3개 선택
+        // 강화되지 않은(레벨 1) 전설 카드 5개 선택
         const eligible = legendaryCards
-            .filter(c => c.level >= 10)
-            .sort((a, b) => b.level - a.level)
-            .slice(0, 3);
+            .filter(c => c.level <= 1)
+            .slice(0, 5);
 
-        if (eligible.length < 3) {
-            alert('레벨 10 이상의 전설급 카드가 3장 이상 필요합니다.');
+        if (eligible.length < 5) {
+            alert('강화되지 않은(레벨 1) 전설급 카드가 5장 이상 필요합니다.');
             return;
         }
 
@@ -112,8 +111,8 @@ export default function UniqueCreatePage() {
     const handleSubmit = async () => {
         const filledMaterials = materialSlots.filter((c): c is InventoryCard => c !== null);
 
-        if (filledMaterials.length !== 3) {
-            alert('전설급 카드 3장을 선택해주세요.');
+        if (filledMaterials.length !== 5) {
+            alert('전설급 카드 5장을 선택해주세요.');
             return;
         }
 
@@ -132,7 +131,7 @@ export default function UniqueCreatePage() {
 
             if (result.success) {
                 alert(result.message);
-                setMaterialSlots(Array(3).fill(null));
+                setMaterialSlots(Array(5).fill(null));
                 setAppName('');
                 setAppDesc('');
                 setAppImage(null);
@@ -145,34 +144,45 @@ export default function UniqueCreatePage() {
     };
 
     const filledCount = materialSlots.filter(c => c !== null).length;
-    const canSubmit = filledCount === 3 && appName.trim() && appDesc.trim();
+    const canSubmit = filledCount === 5 && appName.trim() && appDesc.trim();
 
     return (
         <CyberPageLayout
             title="UNIQUE_CREATION"
             subtitle="Ultimate Card Synthesis"
-            description="전설급 카드 3장(레벨 10)을 소모하여 유니크 카드 생성"
+            description="강화되지 않은 전설 카드 5장을 소모하여 유니크 카드 생성"
             color="red"
         >
-            <div className="flex gap-4 mb-6">
-                <Button
+            {/* 탭 버튼 - 백 버튼 아래 배치 */}
+            <div className="flex gap-3 mb-6 -mt-4">
+                <button
                     onClick={() => setViewMode('create')}
-                    color={viewMode === 'create' ? 'primary' : 'secondary'}
+                    className={cn(
+                        "px-5 py-2 text-sm font-medium rounded-lg transition-all",
+                        viewMode === 'create'
+                            ? "bg-red-500/20 text-red-400 border border-red-500/50"
+                            : "bg-white/5 text-white/60 hover:bg-white/10 border border-transparent"
+                    )}
                 >
                     신청서 작성
-                </Button>
-                <Button
+                </button>
+                <button
                     onClick={() => setViewMode('list')}
-                    color={viewMode === 'list' ? 'primary' : 'secondary'}
+                    className={cn(
+                        "px-5 py-2 text-sm font-medium rounded-lg transition-all",
+                        viewMode === 'list'
+                            ? "bg-red-500/20 text-red-400 border border-red-500/50"
+                            : "bg-white/5 text-white/60 hover:bg-white/10 border border-transparent"
+                    )}
                 >
                     내 신청 현황 ({myApps.length})
-                </Button>
+                </button>
             </div>
 
             {viewMode === 'create' ? (
                 <>
                     {/* 메인 영역: 폼 + 카드 목록 */}
-                    <div className="pb-[220px]">
+                    <div className="pb-[160px]">
                         {/* 입력 폼 */}
                         <div className="bg-white/5 border border-white/10 rounded-lg p-6 mb-6">
                             <h3 className="text-xl font-bold mb-4 text-white">카드 정보 입력</h3>
@@ -205,7 +215,7 @@ export default function UniqueCreatePage() {
                                 </div>
                             </div>
 
-                            {filledCount === 3 && (
+                            {filledCount === 5 && (
                                 <div className="mt-4 p-4 bg-red-500/10 rounded-lg">
                                     <div className="flex justify-between items-center mb-2">
                                         <span className="text-gray-400">신청 비용</span>
@@ -226,14 +236,14 @@ export default function UniqueCreatePage() {
                                     보유 전설 카드 ({legendaryCards.length}장)
                                 </h3>
                                 <p className="text-sm text-gray-400">
-                                    레벨 10 이상의 전설 카드를 선택하세요
+                                    강화되지 않은(Lv.1) 전설 카드를 선택하세요
                                 </p>
                             </div>
 
                             <div className="grid grid-cols-5 gap-4">
                                 {legendaryCards.map(card => {
                                     const isSelected = materialSlots.some(s => s?.id === card.id);
-                                    const isEligible = card.level >= 10;
+                                    const isEligible = card.level <= 1; // 강화되지 않은 카드만
 
                                     return (
                                         <div
@@ -251,7 +261,7 @@ export default function UniqueCreatePage() {
                                             <GameCard card={card} />
                                             {!isEligible && (
                                                 <div className="absolute inset-0 flex items-center justify-center bg-black/60 rounded-xl">
-                                                    <p className="text-xs text-red-400 font-bold">Lv.10 필요</p>
+                                                    <p className="text-xs text-red-400 font-bold">강화됨</p>
                                                 </div>
                                             )}
                                             {isSelected && (
@@ -295,8 +305,8 @@ export default function UniqueCreatePage() {
                             <div key={app.id} className="bg-white/5 border border-white/10 rounded-lg p-6 relative group overflow-hidden">
                                 <div className="absolute top-4 right-4 z-10">
                                     <span className={`px-3 py-1 rounded-full text-xs font-bold ${app.status === 'pending' ? 'bg-yellow-500/20 text-yellow-400' :
-                                            app.status === 'approved' ? 'bg-green-500/20 text-green-400' :
-                                                'bg-red-500/20 text-red-400'
+                                        app.status === 'approved' ? 'bg-green-500/20 text-green-400' :
+                                            'bg-red-500/20 text-red-400'
                                         }`}>
                                         {app.status === 'pending' ? '심사 중 (약 36시간)' :
                                             app.status === 'approved' ? '승인됨' : '거절됨'}

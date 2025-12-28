@@ -15,7 +15,7 @@ export interface UniqueApplication {
 }
 
 export function canApplyForUnique(materials: CardType[]): boolean {
-    if (materials.length !== 3) return false;
+    if (materials.length !== 5) return false;
     // 전설 등급, 레벨 10 이상 (임시로 레벨 제한 해제하거나 낮출 수 있음. 요구사항은 10)
     return materials.every(c => c.rarity === 'legendary' && c.level >= 10);
 }
@@ -32,7 +32,7 @@ export async function submitUniqueApplication(
 ): Promise<{ success: boolean; message: string; applicationId?: string }> {
 
     if (!canApplyForUnique(materialCards)) {
-        return { success: false, message: '자격 요건 불충분: 10레벨 전설 카드 3장이 필요합니다.' };
+        return { success: false, message: '자격 요건 불충분: 10레벨 전설 카드 5장이 필요합니다.' };
     }
 
     const { coins: costCoins, tokens: costTokens } = getApplicationCost();

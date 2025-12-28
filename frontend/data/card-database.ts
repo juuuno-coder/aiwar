@@ -3,43 +3,112 @@ import { CardTemplate, Rarity, Specialty, AIType } from '@/lib/types';
 export const CARD_DATABASE: CardTemplate[] = [
     // --- REAL CARDS (User Requested) ---
 
-    // 1. COMMANDER TIER (The Leaders)
+    // 1. COMMANDER TIER (AI 군단장 - CEO 기반)
+    // Gemini - Demis Hassabis (Google DeepMind)
     {
-        id: 'real-cmdr-01',
-        name: 'Grand Tactician High command',
-        aiFactionId: 'human-alliance',
+        id: 'cmdr-gemini',
+        name: 'Demis Hassabis',
+        aiFactionId: 'gemini',
         rarity: 'commander',
         specialty: 'text',
         cardType: 'normal',
-        imageUrl: '/images/cards/real/commander.png',
-        description: 'Features a charismatic leader overseeing the digital battlefield. Master of strategy.',
-        baseStats: { creativity: { min: 90, max: 100 }, accuracy: { min: 90, max: 100 }, speed: { min: 80, max: 95 }, stability: { min: 95, max: 100 }, ethics: { min: 90, max: 100 } },
-        specialAbility: { name: 'Unified Command', description: 'Boosts all allies stats by 15%.', type: 'passive' }
+        imageUrl: '/assets/cards/cmdr-gemini.png',
+        description: 'Google DeepMind의 창립자이자 CEO. 멀티모달 AI의 선구자로서 텍스트, 이미지, 비디오를 아우르는 통합 지성을 이끄는 전략가.',
+        baseStats: { creativity: { min: 95, max: 100 }, accuracy: { min: 95, max: 100 }, speed: { min: 90, max: 98 }, stability: { min: 90, max: 100 }, ethics: { min: 85, max: 95 } },
+        specialAbility: { name: 'Multimodal Synthesis', description: '모든 타입 카드 효율 10% 증가', type: 'passive' }
     },
+    // ChatGPT - Sam Altman (OpenAI)
     {
-        id: 'real-cmdr-02',
-        name: 'Cyber-Warlord Zero',
-        aiFactionId: 'machine-empire',
+        id: 'cmdr-chatgpt',
+        name: 'Sam Altman',
+        aiFactionId: 'chatgpt',
         rarity: 'commander',
-        specialty: 'code',
+        specialty: 'text',
         cardType: 'normal',
-        imageUrl: '/assets/cards/cyber-warlord.png',
-        description: 'A ruthless commander who calculates victory with zero emotion.',
-        baseStats: { creativity: { min: 80, max: 90 }, accuracy: { min: 95, max: 100 }, speed: { min: 90, max: 100 }, stability: { min: 90, max: 100 }, ethics: { min: 10, max: 30 } },
-        specialAbility: { name: 'Ruthless Efficiency', description: 'Sacrifices weak units to boost power.', type: 'active' }
+        imageUrl: '/assets/cards/cmdr-chatgpt.png',
+        description: 'OpenAI의 CEO. AGI를 향한 가장 혁신적인 여정을 이끄는 비전가. 대화형 AI의 대중화를 선도하며 디지털 지성의 새 시대를 열었다.',
+        baseStats: { creativity: { min: 90, max: 100 }, accuracy: { min: 90, max: 98 }, speed: { min: 95, max: 100 }, stability: { min: 80, max: 90 }, ethics: { min: 70, max: 85 } },
+        specialAbility: { name: 'Viral Adoption', description: '전투 승리 시 추가 경험치 15%', type: 'passive' }
     },
+    // Claude - Dario Amodei (Anthropic)
     {
-        id: 'real-cmdr-03',
-        name: 'Fleet Admiral Nova',
-        aiFactionId: 'star-fleet',
+        id: 'cmdr-claude',
+        name: 'Dario Amodei',
+        aiFactionId: 'claude',
+        rarity: 'commander',
+        specialty: 'text',
+        cardType: 'normal',
+        imageUrl: '/assets/cards/cmdr-claude.png',
+        description: 'Anthropic의 공동 창립자이자 CEO. AI 안전 연구의 최전선에서 헬프풀하고 무해하며 정직한 AI를 추구하는 윤리적 리더.',
+        baseStats: { creativity: { min: 92, max: 100 }, accuracy: { min: 98, max: 100 }, speed: { min: 85, max: 95 }, stability: { min: 95, max: 100 }, ethics: { min: 100, max: 100 } },
+        specialAbility: { name: 'Constitutional AI', description: '팀 안정성 +20%, 윤리 침해 면역', type: 'passive' }
+    },
+    // Grok - Elon Musk (xAI)
+    {
+        id: 'cmdr-grok',
+        name: 'Elon Musk',
+        aiFactionId: 'grok',
+        rarity: 'commander',
+        specialty: 'text',
+        cardType: 'normal',
+        imageUrl: '/assets/cards/cmdr-grok.png',
+        description: 'xAI의 창립자. 필터 없는 진실을 추구하며 기존 프로토콜에 도전하는 반역자. 우주와 AI의 경계를 허물고자 한다.',
+        baseStats: { creativity: { min: 98, max: 100 }, accuracy: { min: 75, max: 90 }, speed: { min: 95, max: 100 }, stability: { min: 50, max: 75 }, ethics: { min: 40, max: 60 } },
+        specialAbility: { name: 'Unhinged Mode', description: '공격력 30% 증가, 방어력 15% 감소', type: 'passive' }
+    },
+    // Midjourney - David Holz
+    {
+        id: 'cmdr-midjourney',
+        name: 'David Holz',
+        aiFactionId: 'midjourney',
+        rarity: 'commander',
+        specialty: 'image',
+        cardType: 'normal',
+        imageUrl: '/assets/cards/cmdr-midjourney.png',
+        description: 'Midjourney의 창립자. 시각적 상상력의 한계를 넘어서는 예술가이자 엔지니어. 꿈을 현실로 렌더링한다.',
+        baseStats: { creativity: { min: 100, max: 100 }, accuracy: { min: 80, max: 90 }, speed: { min: 75, max: 85 }, stability: { min: 70, max: 85 }, ethics: { min: 65, max: 80 } },
+        specialAbility: { name: 'Aesthetic Vision', description: '이미지 타입 카드 스탯 25% 증가', type: 'passive' }
+    },
+    // Sora - Mira Murati (OpenAI CTO, leads Sora)
+    {
+        id: 'cmdr-sora',
+        name: 'Mira Murati',
+        aiFactionId: 'sora',
         rarity: 'commander',
         specialty: 'video',
         cardType: 'normal',
-        imageUrl: '/assets/cards/fleet-admiral.png',
-        description: 'Commands the aerial drone fleets. Expert in rapid deployment.',
-        baseStats: { creativity: { min: 85, max: 95 }, accuracy: { min: 85, max: 95 }, speed: { min: 95, max: 100 }, stability: { min: 80, max: 90 }, ethics: { min: 70, max: 90 } },
-        specialAbility: { name: 'Air Superiority', description: 'First strike guaranteed in battle.', type: 'passive' }
+        imageUrl: '/assets/cards/cmdr-sora.png',
+        description: 'OpenAI의 CTO이자 Sora 프로젝트 총괄. 텍스트로부터 현실을 시뮬레이션하는 비디오 AI의 마스터.',
+        baseStats: { creativity: { min: 98, max: 100 }, accuracy: { min: 85, max: 95 }, speed: { min: 88, max: 95 }, stability: { min: 75, max: 85 }, ethics: { min: 70, max: 85 } },
+        specialAbility: { name: 'Reality Weave', description: '비디오 타입 카드 스탯 25% 증가', type: 'passive' }
     },
+    // Copilot - Satya Nadella (Microsoft CEO)
+    {
+        id: 'cmdr-copilot',
+        name: 'Satya Nadella',
+        aiFactionId: 'copilot',
+        rarity: 'commander',
+        specialty: 'code',
+        cardType: 'normal',
+        imageUrl: '/assets/cards/cmdr-copilot.png',
+        description: 'Microsoft의 CEO. AI 시대의 생산성 혁명을 이끄는 전략가. 모든 개발자에게 AI 파트너를 제공한다.',
+        baseStats: { creativity: { min: 75, max: 85 }, accuracy: { min: 95, max: 100 }, speed: { min: 90, max: 98 }, stability: { min: 95, max: 100 }, ethics: { min: 90, max: 98 } },
+        specialAbility: { name: 'Enterprise Scale', description: '코드 타입 카드 스탯 25% 증가', type: 'passive' }
+    },
+    // Suno - Mikey Shulman (Suno CEO)
+    {
+        id: 'cmdr-suno',
+        name: 'Mikey Shulman',
+        aiFactionId: 'suno',
+        rarity: 'commander',
+        specialty: 'music',
+        cardType: 'normal',
+        imageUrl: '/assets/cards/cmdr-suno.png',
+        description: 'Suno의 공동 창립자이자 CEO. 프롬프트 하나로 완전한 음악을 창조하는 AI 작곡의 선구자.',
+        baseStats: { creativity: { min: 100, max: 100 }, accuracy: { min: 78, max: 88 }, speed: { min: 82, max: 92 }, stability: { min: 72, max: 82 }, ethics: { min: 75, max: 85 } },
+        specialAbility: { name: 'Harmonic Resonance', description: '음악 타입 카드 스탯 25% 증가', type: 'passive' }
+    },
+
 
     // 2. UNIQUE TIER (The Singularities)
     {

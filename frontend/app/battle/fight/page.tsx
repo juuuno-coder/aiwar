@@ -8,13 +8,19 @@ import { Card as CardType, BattleGenre } from '@/lib/types';
 import { storage, generateCard } from '@/lib/utils';
 import { analyzeDeckSynergy } from '@/lib/synergy-utils';
 import gameBalanceData from '@/data/game-balance.json';
-import { getGameState, addTokens, addExperience, recordBattleResult } from '@/lib/game-state';
+import { recordBattleResult } from '@/lib/game-state';
 import { Card } from '@/components/ui/custom/Card';
 import { Button } from '@/components/ui/custom/Button';
+import { useUser } from '@/context/UserContext';
+import LevelUpModal from '@/components/LevelUpModal';
+import { getLevelReward } from '@/lib/level-rewards';
+import { LEVEL_REWARDS } from '@/lib/faction-subscription';
 
 function BattleFightContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
+    const { addCoins, addExperience, level } = useUser();
+
     const [playerCards, setPlayerCards] = useState<any[]>([]);
     const [opponentCards, setOpponentCards] = useState<any[]>([]);
     const [battleGenre, setBattleGenre] = useState<BattleGenre | null>(null);
@@ -24,6 +30,10 @@ function BattleFightContent() {
     const [roundResult, setRoundResult] = useState<'player' | 'opponent' | null>(null);
     const [battleEnded, setBattleEnded] = useState(false);
     const [showPowers, setShowPowers] = useState(false);
+
+    // 레벨업 모달 상태
+    const [showLevelUpModal, setShowLevelUpModal] = useState(false);
+    const [levelUpData, setLevelUpData] = useState<{ newLevel: number; reward: any } | null>(null);
 
     useEffect(() => {
         const cardIds = searchParams.get('cards')?.split(',') || [];
@@ -156,28 +166,24 @@ function BattleFightContent() {
         recordBattleResult(won);
 
         if (won) {
-            const state = getGameState();
-            let coinReward = 300;
+            const coinReward = 300;
             const expReward = 50;
 
-            const winStreak = state.stats.currentStreak;
-            if (winStreak >= 3) {
-                coinReward += 100 * Math.floor(winStreak / 3);
-            }
+            // UserContext 훅 사용
+            await addCoins(coinReward);
+            const expResult = await addExperience(expReward);
 
-            // Firebase 통합 저장소 사용
-            const { gameStorage } = await import('@/lib/game-storage');
-            await gameStorage.addCoins(coinReward);
-            const expResult = await gameStorage.addExperience(expReward);
-
-            // 레벨업 알림
+            // 레벨업 시 모달 표시
             if (expResult.leveledUp) {
-                console.log(`🎉 레벨업! Lv.${expResult.level}`);
+                const reward = LEVEL_REWARDS[expResult.level] || null;
+                setLevelUpData({ newLevel: expResult.level, reward });
+                setShowLevelUpModal(true);
             }
 
             let bonusCard = null;
             if (Math.random() < 0.1) {
                 bonusCard = generateCard();
+                const { gameStorage } = await import('@/lib/game-storage');
                 await gameStorage.addCardToInventory(bonusCard);
             }
 
@@ -188,18 +194,14 @@ function BattleFightContent() {
             import('@/lib/achievement-utils').then(({ updateAchievementStats }) => {
                 updateAchievementStats('totalBattles', 1);
                 updateAchievementStats('totalWins', 1);
-                if (winStreak >= 3) {
-                    updateAchievementStats('winStreak', winStreak);
-                }
             });
         } else {
             const coinReward = 90;
             const expReward = 15;
 
             // Firebase 통합 저장소 사용
-            const { gameStorage } = await import('@/lib/game-storage');
-            await gameStorage.addCoins(coinReward);
-            await gameStorage.addExperience(expReward);
+            await addCoins(coinReward);
+            await addExperience(expReward);
 
             import('@/lib/achievement-utils').then(({ updateAchievementStats }) => {
                 updateAchievementStats('totalBattles', 1);
@@ -383,6 +385,16 @@ function BattleFightContent() {
                         </Button>
                     </div>
                 </Card>
+            )}
+
+            {/* 레벨업 모달 */}
+            {levelUpData && (
+                <LevelUpModal
+                    isOpen={showLevelUpModal}
+                    onClose={() => setShowLevelUpModal(false)}
+                    newLevel={levelUpData.newLevel}
+                    reward={levelUpData.reward}
+                />
             )}
         </div>
     );

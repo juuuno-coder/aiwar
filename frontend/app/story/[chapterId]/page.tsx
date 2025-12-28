@@ -311,7 +311,7 @@ export default function ChapterDetailPage() {
                                     variant="shadow"
                                     onClick={() => {
                                         if (modalConfig.onConfirm) modalConfig.onConfirm();
-                                        else onClose();
+                                        else onClose?.();
                                     }}
                                 >
                                     FIGHT!

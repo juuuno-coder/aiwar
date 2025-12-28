@@ -212,7 +212,7 @@ export default function LorePage() {
                 faction={selectedFaction}
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
-                allFactions={factions}
+                allFactions={factions as any}
             />
         </div>
     );

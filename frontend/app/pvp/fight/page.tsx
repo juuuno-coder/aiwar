@@ -16,6 +16,7 @@ import { useUser } from '@/context/UserContext';
 import { BackgroundBeams } from '@/components/ui/aceternity/background-beams';
 import { useTranslation } from '@/context/LanguageContext';
 import { hasTypeAdvantage, TYPE_ADVANTAGE_MULTIPLIER } from '@/lib/type-system';
+import { getCardName } from '@/data/card-translations';
 
 export const dynamic = 'force-dynamic';
 
@@ -42,7 +43,8 @@ function PvPFightContent() {
     const searchParams = useSearchParams();
     const opponentId = searchParams.get('opponentId');
     const { addCoins, addExperience } = useUser();
-    const { t } = useTranslation();
+    const { t, language } = useTranslation();
+    const lang = (language as 'ko' | 'en') || 'ko';
 
     // Game State
     const [status, setStatus] = useState<'loading' | 'strategy' | 'battling' | 'finished'>('loading');
@@ -389,7 +391,7 @@ function PvPFightContent() {
                                         )}
                                     >
                                         <div className="text-lg mb-0.5 filter drop-shadow-md">{getTypeIcon(card.type)}</div>
-                                        <div className="text-[8px] font-bold text-gray-400 truncate mb-0.5">{card.name}</div>
+                                        <div className="text-[8px] font-bold text-gray-400 truncate mb-0.5">{getCardName(card.templateId || card.id || '', card.name || '', lang)}</div>
                                         <div className="text-base font-black text-red-500 orbitron leading-none">{(card.stats?.totalPower || 0)}</div>
                                     </motion.div>
                                 );
@@ -441,7 +443,7 @@ function PvPFightContent() {
                                             </button>
                                         </div>
                                         <div className="text-lg mb-0.5 filter drop-shadow-md">{getTypeIcon(card.type)}</div>
-                                        <div className="text-[8px] font-bold text-gray-400 truncate mb-0.5">{card.name}</div>
+                                        <div className="text-[8px] font-bold text-gray-400 truncate mb-0.5">{getCardName(card.templateId || card.id || '', card.name || '', lang)}</div>
                                         <div className="text-base font-black text-blue-500 orbitron leading-none">{(card.stats?.totalPower || 0)}</div>
                                         <div className="absolute bottom-0.5 right-1 text-[7px] font-black orbitron text-white/20">#{position + 1}</div>
                                     </motion.div>
@@ -547,7 +549,7 @@ function PvPFightContent() {
                                         )}
                                     >
                                         <div className="text-4xl mb-3 filter drop-shadow-xl">{getTypeIcon(orderedPlayerDeck[currentBattleCards.player].type)}</div>
-                                        <div className="text-[10px] font-bold text-gray-400 mb-0.5 truncate max-w-[120px] mx-auto">{orderedPlayerDeck[currentBattleCards.player].name}</div>
+                                        <div className="text-[10px] font-bold text-gray-400 mb-0.5 truncate max-w-[120px] mx-auto">{getCardName(orderedPlayerDeck[currentBattleCards.player].templateId || orderedPlayerDeck[currentBattleCards.player].id || '', orderedPlayerDeck[currentBattleCards.player].name || '', lang)}</div>
                                         <div className="text-2xl font-black text-blue-500 orbitron">
                                             {rounds[currentBattleCards.player]?.playerPower || 0}
                                         </div>
@@ -580,7 +582,7 @@ function PvPFightContent() {
                                         )}
                                     >
                                         <div className="text-4xl mb-3 filter drop-shadow-xl">{getTypeIcon(enemyDeck[currentBattleCards.enemy].type)}</div>
-                                        <div className="text-[10px] font-bold text-gray-400 mb-0.5 truncate max-w-[120px] mx-auto">{enemyDeck[currentBattleCards.enemy].name}</div>
+                                        <div className="text-[10px] font-bold text-gray-400 mb-0.5 truncate max-w-[120px] mx-auto">{getCardName(enemyDeck[currentBattleCards.enemy].templateId || enemyDeck[currentBattleCards.enemy].id || '', enemyDeck[currentBattleCards.enemy].name || '', lang)}</div>
                                         <div className="text-2xl font-black text-red-500 orbitron">
                                             {rounds[currentBattleCards.enemy]?.enemyPower || 0}
                                         </div>

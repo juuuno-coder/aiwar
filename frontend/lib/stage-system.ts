@@ -11,6 +11,61 @@ export type EnemyPattern = 'predictable' | 'semi-predictable' | 'random';
 // 적 타입
 export type EnemyType = 'bad-ai' | 'bug' | 'hallucination';
 
+// ============================================
+// 스테이지별 고정 적 덱 패턴
+// rock(보)을 scissors(가위)가 이김, scissors를 paper(주먹)가 이김, paper를 rock이 이김
+// 게임 타입: EFFICIENCY(rock), CREATIVITY(paper), FUNCTION(scissors)
+// ============================================
+type EnemyAttribute = 'rock' | 'paper' | 'scissors';
+
+/**
+ * 스테이지별 고정 적 덱 패턴 반환
+ * 스테이지 1-1: 보보보보보 (rock x5) - 가위 하나만 있어도 승리
+ * 스테이지 1-4: 보보보보가위 - 전술승부도 쉬움
+ * 점진적으로 난이도 상승
+ */
+export function getStageEnemyDeck(stageId: string): EnemyAttribute[] {
+    const deckPatterns: Record<string, EnemyAttribute[]> = {
+        // 챕터 1: 기초 훈련
+        'stage-1-1': ['rock', 'rock', 'rock', 'rock', 'rock'],           // 전부 보 - 가위만 있으면 승리
+        'stage-1-2': ['rock', 'rock', 'rock', 'rock', 'scissors'],       // 보4 가위1 - 여전히 쉬움
+        'stage-1-3': ['rock', 'rock', 'rock', 'paper', 'scissors'],      // 보3 바위1 가위1
+        'stage-1-4': ['rock', 'rock', 'rock', 'rock', 'scissors'],       // 보4 가위1 (3장 모드 시작)
+        'stage-1-5': ['rock', 'rock', 'rock', 'paper', 'scissors'],      // 보3 바위1 가위1
+        'stage-1-6': ['rock', 'rock', 'paper', 'paper', 'scissors'],     // 보2 바위2 가위1
+        'stage-1-7': ['rock', 'rock', 'paper', 'scissors', 'scissors'],  // 보2 바위1 가위2
+        'stage-1-8': ['rock', 'paper', 'paper', 'scissors', 'scissors'], // 보1 바위2 가위2
+        'stage-1-9': ['rock', 'paper', 'paper', 'scissors', 'scissors'], // 보1 바위2 가위2
+        'stage-1-10': ['rock', 'paper', 'paper', 'scissors', 'scissors'], // 보스: 균형
+
+        // 챕터 2: 침투
+        'stage-2-1': ['rock', 'rock', 'paper', 'paper', 'scissors'],
+        'stage-2-2': ['rock', 'paper', 'paper', 'scissors', 'scissors'],
+        'stage-2-3': ['rock', 'paper', 'scissors', 'scissors', 'scissors'],
+        'stage-2-4': ['rock', 'rock', 'paper', 'scissors', 'scissors'],
+        'stage-2-5': ['paper', 'paper', 'scissors', 'scissors', 'rock'],
+        'stage-2-6': ['rock', 'paper', 'paper', 'scissors', 'scissors'],
+        'stage-2-7': ['paper', 'paper', 'paper', 'scissors', 'scissors'],
+        'stage-2-8': ['rock', 'paper', 'scissors', 'scissors', 'scissors'],
+        'stage-2-9': ['paper', 'paper', 'scissors', 'scissors', 'scissors'],
+        'stage-2-10': ['rock', 'paper', 'paper', 'scissors', 'scissors'], // 보스
+
+        // 챕터 3: 반격
+        'stage-3-1': ['paper', 'paper', 'scissors', 'scissors', 'rock'],
+        'stage-3-2': ['rock', 'paper', 'paper', 'scissors', 'scissors'],
+        'stage-3-3': ['rock', 'rock', 'paper', 'scissors', 'scissors'],
+        'stage-3-4': ['paper', 'paper', 'paper', 'scissors', 'scissors'],
+        'stage-3-5': ['rock', 'paper', 'scissors', 'scissors', 'scissors'],
+        'stage-3-6': ['rock', 'paper', 'paper', 'scissors', 'scissors'],
+        'stage-3-7': ['paper', 'scissors', 'scissors', 'scissors', 'rock'],
+        'stage-3-8': ['rock', 'paper', 'paper', 'scissors', 'scissors'],
+        'stage-3-9': ['paper', 'paper', 'scissors', 'scissors', 'scissors'],
+        'stage-3-10': ['rock', 'paper', 'paper', 'scissors', 'scissors'], // 최종보스
+    };
+
+    return deckPatterns[stageId] || ['rock', 'paper', 'paper', 'scissors', 'scissors'];
+}
+
 export interface Enemy {
     id: string;
     name: string;
@@ -191,12 +246,20 @@ const ENEMY_NAMES = [
 
 /**
  * 스테이지에 맞는 적 생성
+ * @param stageConfig 스테이지 설정
+ * @param playerAvgPower 플레이어 평균 전투력
+ * @param stageId 스테이지 ID (예: 'stage-1-1') - 고정 덱 패턴 사용시
  */
-export function generateEnemies(stageConfig: StageConfig, playerAvgPower: number, overrideCount?: number): Enemy[] {
+export function generateEnemies(stageConfig: StageConfig, playerAvgPower: number, stageId?: string): Enemy[] {
     const enemies: Enemy[] = [];
-    const basePower = playerAvgPower * (1 + stageConfig.enemyPowerBonus / 100);
-    const attributes: ('rock' | 'paper' | 'scissors')[] = ['rock', 'paper', 'scissors'];
-    // 사용자 요청: 적은 무조건 5기
+    // 초반 스테이지는 적 파워를 낮게 설정
+    const chapterMultiplier = stageConfig.chapter === 1 ? 0.5 : 1;
+    const basePower = playerAvgPower * (1 + stageConfig.enemyPowerBonus / 100) * chapterMultiplier;
+
+    // 스테이지별 고정 덱 패턴 사용
+    const fixedDeck = stageId ? getStageEnemyDeck(stageId) : null;
+
+    // 적은 무조건 5기
     const count = 5;
 
     for (let i = 0; i < count; i++) {
@@ -204,7 +267,7 @@ export function generateEnemies(stageConfig: StageConfig, playerAvgPower: number
         const powerVariance = 0.9 + Math.random() * 0.2;
         const powerValue = Math.round(basePower * powerVariance);
 
-        // 적 타입 결정 (스테이지당 1-2개는 특수 타입)
+        // 적 타입 결정 (챕터 1은 모두 일반)
         let type: EnemyType = 'bad-ai';
         if (stageConfig.chapter >= 2) {
             const rand = Math.random();
@@ -212,8 +275,11 @@ export function generateEnemies(stageConfig: StageConfig, playerAvgPower: number
             else if (rand > 0.6) type = 'hallucination';
         }
         if (stageConfig.isBoss) {
-            type = i === 0 ? 'hallucination' : 'bug'; // 보스는 항상 특수 타입 포함
+            type = i === 0 ? 'hallucination' : 'bug';
         }
+
+        // 속성: 고정 덱이 있으면 사용, 없으면 랜덤
+        const attribute = fixedDeck ? fixedDeck[i] : (['rock', 'paper', 'scissors'] as const)[Math.floor(Math.random() * 3)];
 
         enemies.push({
             id: `enemy-${stageConfig.stageId}-${i}`,
@@ -221,7 +287,7 @@ export function generateEnemies(stageConfig: StageConfig, playerAvgPower: number
                 ? `보스: ${ENEMY_NAMES[stageConfig.stageInChapter % ENEMY_NAMES.length]}`
                 : ENEMY_NAMES[Math.floor(Math.random() * ENEMY_NAMES.length)],
             power: powerValue,
-            attribute: attributes[Math.floor(Math.random() * 3)], // 패턴은 위에서 별도로 처리 가능하겠으나 여기서는 랜덤으로 일단 단순화
+            attribute,
             type,
             isGlitchy: type === 'bug',
             isHidden: type === 'hallucination'

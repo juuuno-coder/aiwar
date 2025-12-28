@@ -76,6 +76,14 @@ export default function FactionsPage() {
             return;
         }
 
+        // 프로필 코인이 로컬 상태와 다르면 동기화
+        if (profile?.coins !== undefined) {
+            const gameState = require('@/lib/game-state').getGameState();
+            if (gameState.coins !== profile.coins) {
+                require('@/lib/game-state').updateGameState({ coins: profile.coins });
+            }
+        }
+
         showConfirm({
             title: `${config.name} 티어 구독`,
             message: `${factionId} 군단을 ${config.name} 티어로 구독하시겠습니까?\n\n비용: ${costMsg}\n생성 주기: ${config.generationInterval}분\n일일 제한: ${config.dailyLimit === 999999 ? '무제한' : config.dailyLimit + '회'}`,

@@ -277,7 +277,7 @@ export function addExperience(amount: number): {
             cards: newLevel % 5 === 0 ? 1 : 0
         };
 
-        state.tokens += rewards.coins;
+        state.coins += rewards.coins;  // 코인 보상을 코인에 추가
         emitGameStateChange('LEVEL_UP', state);
     } else {
         emitGameStateChange('STATE_UPDATED', state); // 경험치 변경 알림

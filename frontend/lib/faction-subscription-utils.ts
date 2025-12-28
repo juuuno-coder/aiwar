@@ -91,7 +91,7 @@ function saveSubscriptions(subscriptions: FactionSubscription[]): void {
 }
 
 /**
- * 군단 구독하기 (티어 선택)
+ * 군단 구독하기 (티어 선택 및 변경 지원)
  */
 export function subscribeFaction(
     factionId: string,
@@ -102,12 +102,61 @@ export function subscribeFaction(
 
     // 이미 구독 중인지 확인
     const subscriptions = getSubscribedFactions();
-    const existing = subscriptions.find(sub => sub.factionId === factionId);
+    const existingIndex = subscriptions.findIndex(sub => sub.factionId === factionId);
+    const existing = existingIndex !== -1 ? subscriptions[existingIndex] : null;
 
-    if (existing) {
-        return { success: false, message: '이미 구독 중인 군단입니다. 티어 변경을 원하시면 먼저 구독을 취소하세요.' };
+    // 동일 티어면 변경 필요 없음
+    if (existing && existing.tier === tier) {
+        return { success: false, message: '이미 동일한 티어로 구독 중입니다.' };
     }
 
+    // 기존 구독이 있으면 티어 변경 로직
+    if (existing) {
+        const oldConfig = TIER_CONFIG[existing.tier];
+        const costDiff = config.cost - oldConfig.cost;
+
+        // 업그레이드: 차액 지불
+        if (costDiff > 0) {
+            if (state.coins < costDiff) {
+                return { success: false, message: `티어 업그레이드 비용이 부족합니다. (필요: ${costDiff.toLocaleString()} 코인)` };
+            }
+            updateGameState({ coins: state.coins - costDiff });
+        }
+        // 다운그레이드: 차액 일부 환불 (50%)
+        else if (costDiff < 0) {
+            const refund = Math.floor(Math.abs(costDiff) * 0.5);
+            updateGameState({ coins: state.coins + refund });
+        }
+
+        // 기존 구독 업데이트 (친밀도, 생성 횟수 유지)
+        const today = new Date().toISOString().split('T')[0];
+        subscriptions[existingIndex] = {
+            ...existing,
+            tier,
+            dailyCost: config.cost,
+            dailyGenerationLimit: config.dailyLimit,
+            generationInterval: config.generationInterval,
+            // 날짜가 바뀌면 생성 횟수 리셋
+            generationsToday: existing.lastResetDate === today ? existing.generationsToday : 0,
+            lastResetDate: today
+        };
+
+        saveSubscriptions(subscriptions);
+
+        const changeType = costDiff > 0 ? '업그레이드' : '다운그레이드';
+        const costMsg = costDiff > 0
+            ? ` (${costDiff.toLocaleString()} 코인 추가 지불)`
+            : costDiff < 0
+                ? ` (${Math.floor(Math.abs(costDiff) * 0.5).toLocaleString()} 코인 환불)`
+                : '';
+
+        return {
+            success: true,
+            message: `${config.name} 티어로 ${changeType}되었습니다!${costMsg}`
+        };
+    }
+
+    // 신규 구독
     // 코인 확인 (Free는 무료)
     if (config.cost > 0 && state.coins < config.cost) {
         return { success: false, message: `코인이 부족합니다. (필요: ${config.cost.toLocaleString()} 코인)` };
@@ -141,6 +190,7 @@ export function subscribeFaction(
         message: `${factionId} 군단을 ${config.name} 티어로 구독했습니다!${costMsg}`
     };
 }
+
 
 /**
  * 구독 취소 이력 관리

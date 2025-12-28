@@ -146,7 +146,7 @@ export default function FactionLoreModal({ faction, isOpen, onClose, allFactions
                                         <section>
                                             <h3 className="flex items-center gap-2 text-sm font-bold text-cyan-400 mb-3 uppercase tracking-widest font-mono">
                                                 <Sparkles size={14} />
-                                                Background Story
+                                                배경 스토리
                                             </h3>
                                             <p className="text-gray-300 leading-relaxed text-lg font-light">
                                                 {faction.description}
@@ -161,7 +161,7 @@ export default function FactionLoreModal({ faction, isOpen, onClose, allFactions
                                             <section className="bg-white/5 rounded-xl p-5 border border-white/10">
                                                 <h3 className="flex items-center gap-2 text-sm font-bold text-purple-400 mb-3 uppercase tracking-widest font-mono">
                                                     <Shield size={14} />
-                                                    Leader
+                                                    지휘관
                                                 </h3>
                                                 {/* Note: FactionLore defines leader as string not object in lib/faction-lore.ts 
                                                    Checking lib definition: 
@@ -193,7 +193,7 @@ export default function FactionLoreModal({ faction, isOpen, onClose, allFactions
                                             <section className="bg-white/5 rounded-xl p-5 border border-white/10">
                                                 <h3 className="flex items-center gap-2 text-sm font-bold text-yellow-400 mb-3 uppercase tracking-widest font-mono">
                                                     <Target size={14} />
-                                                    Philosophy
+                                                    철학
                                                 </h3>
                                                 <p className="text-white/80">
                                                     {faction.personality}
@@ -205,7 +205,7 @@ export default function FactionLoreModal({ faction, isOpen, onClose, allFactions
                                         <section className="p-5 bg-gradient-to-r from-purple-900/40 to-blue-900/20 rounded-xl border border-purple-500/30">
                                             <h3 className="flex items-center gap-2 text-sm font-bold text-pink-400 mb-2 uppercase tracking-widest font-mono">
                                                 <Swords size={14} />
-                                                Special Ability
+                                                특수 능력
                                             </h3>
                                             <p className="text-white font-medium text-lg">
                                                 {faction.specialAbility}
@@ -216,11 +216,11 @@ export default function FactionLoreModal({ faction, isOpen, onClose, allFactions
                                         <section>
                                             <h3 className="flex items-center gap-2 text-sm font-bold text-green-400 mb-3 uppercase tracking-widest font-mono">
                                                 <Users size={14} />
-                                                Diplomacy
+                                                외교 관계
                                             </h3>
                                             <div className="flex flex-col gap-3">
                                                 <div className="flex items-center gap-3">
-                                                    <span className="text-xs font-bold text-white/40 w-12">ALLIES</span>
+                                                    <span className="text-xs font-bold text-white/40 w-12">동맹</span>
                                                     <div className="flex flex-wrap gap-2">
                                                         {getAllyNames().length > 0 ? getAllyNames().map(name => (
                                                             <span key={name} className="px-2.5 py-1 bg-green-900/20 text-green-400 border border-green-500/20 rounded text-xs font-bold">
@@ -230,7 +230,7 @@ export default function FactionLoreModal({ faction, isOpen, onClose, allFactions
                                                     </div>
                                                 </div>
                                                 <div className="flex items-center gap-3">
-                                                    <span className="text-xs font-bold text-white/40 w-12">RIVALS</span>
+                                                    <span className="text-xs font-bold text-white/40 w-12">경쟁</span>
                                                     <div className="flex flex-wrap gap-2">
                                                         {getRivalNames().length > 0 ? getRivalNames().map(name => (
                                                             <span key={name} className="px-2.5 py-1 bg-red-900/20 text-red-400 border border-red-500/20 rounded text-xs font-bold">
@@ -247,7 +247,7 @@ export default function FactionLoreModal({ faction, isOpen, onClose, allFactions
                                             <section className="mt-8 pt-6 border-t border-white/10">
                                                 <h3 className="flex items-center gap-2 text-sm font-bold text-blue-400 mb-4 uppercase tracking-widest font-mono">
                                                     <TrendingUp size={14} />
-                                                    Faction Updates
+                                                    최근 업데이트
                                                 </h3>
                                                 <div className={cn(
                                                     "p-4 rounded-xl border relative overflow-hidden group",

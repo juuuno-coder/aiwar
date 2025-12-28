@@ -68,14 +68,14 @@ export const FACTION_ICONS: Record<string, string> = {
     'codeium': '/assets/factions/codeium.png',
 };
 
-// 등급별 기본 이미지 (군단 정보가 없는 카드용)
+// 등급별 기본 이미지 (군단 정보가 없는 카드용) - 고품질 이미지 사용
 export const RARITY_FALLBACK_IMAGES: Record<Rarity, string> = {
-    common: '/cards/card_design_common_1765812994475.png',
-    rare: '/cards/card_design_rare_1765813078584.png',
-    epic: '/cards/card_design_hero_1765813158240.png',
-    legendary: '/cards/card_design_legend_1765813235960.png',
-    unique: '/cards/card_design_unique.png',
-    commander: '/cards/card_design_commander.png'
+    common: '/images/cards/real/common.png',
+    rare: '/images/cards/real/rare.png',
+    epic: '/images/cards/real/epic.png',
+    legendary: '/images/cards/real/legendary.png',
+    unique: '/images/cards/real/unique.png',
+    commander: '/images/cards/real/commander.png'
 };
 
 /**

@@ -31,6 +31,7 @@ import {
     Shuffle, Play
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import RealtimeMatchingModal from '@/components/RealtimeMatchingModal';
 
 type Phase =
     | 'stats'
@@ -61,6 +62,9 @@ export default function PVPArenaPage() {
 
     // 카드 선택 (푸터 대신 로컬 state)
     const [selectedCards, setSelectedCards] = useState<Card[]>([]);
+
+    // 실시간 매칭 모달
+    const [showMatchingModal, setShowMatchingModal] = useState(false);
 
     const stats = getPVPStats();
     const state = getGameState();
@@ -188,6 +192,12 @@ export default function PVPArenaPage() {
     const handleMatchTypeSelect = (type: MatchType) => {
         setSelectedMatchType(type);
 
+        if (type === 'realtime') {
+            // 실시간 매칭 모달 표시
+            setShowMatchingModal(true);
+            return;
+        }
+
         if (type === 'ai-training') {
             // AI 상대 생성
             const aiOpponent = generateAIOpponent(state.level);
@@ -197,6 +207,18 @@ export default function PVPArenaPage() {
         // 덱 공개 단계로
         setRevealTimer(20);
         setPhase('deck-reveal');
+    };
+
+    // 매칭 성공 콜백
+    const handleMatchFound = (roomId: string, opponentName: string) => {
+        setShowMatchingModal(false);
+        showAlert({
+            title: '매칭 성공!',
+            message: `${opponentName}님과 연결되었습니다. 전투방으로 이동합니다.`,
+            type: 'success'
+        });
+        // 실시간 전투방으로 이동
+        router.push(`/pvp/room/${roomId}`);
     };
 
     // 카드 순서 확정
@@ -261,7 +283,7 @@ export default function PVPArenaPage() {
             description="실시간 플레이어 대전 - 최강자를 가리자!"
             color="red"
         >
-            <div className="max-w-6xl mx-auto">
+            <div className="max-w-7xl mx-auto">
                 <AnimatePresence mode="wait">
                     {/* 1단계: 성적 확인 */}
                     {phase === 'stats' && (
@@ -449,40 +471,130 @@ export default function PVPArenaPage() {
                                     ))}
                             </div>
 
-                            {/* 버튼 영역 - 하단 고정 */}
-                            <div className="fixed bottom-0 left-0 right-0 bg-black/90 border-t border-white/10 p-4 z-50">
-                                <div className="max-w-4xl mx-auto flex items-center justify-between gap-4">
-                                    <button
-                                        onClick={() => {
-                                            // 자동 선택 - 전투력 높은 순으로 5장
-                                            const topCards = [...inventory]
-                                                .sort((a, b) => b.stats.totalPower - a.stats.totalPower)
-                                                .slice(0, 5);
-                                            setSelectedCards(topCards);
-                                        }}
-                                        className="px-6 py-3 bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-400 font-bold rounded-xl transition-all flex items-center gap-2"
-                                    >
-                                        <Shuffle size={20} />
-                                        자동 선택
-                                    </button>
+                            {/* 버튼 영역 - 하단 고정 (덱 슬롯 포함) */}
+                            <div className="fixed bottom-0 left-0 right-0 bg-gradient-to-t from-black via-black/95 to-transparent pt-8 pb-4 z-50">
+                                <div className="max-w-5xl mx-auto px-4">
+                                    {/* 덱 슬롯 5개 (크게) */}
+                                    <div className="flex justify-center gap-4 mb-4">
+                                        {Array.from({ length: 5 }).map((_, i) => {
+                                            const card = selectedCards[i];
+                                            // 가위바위보 타입 결정
+                                            const getTypeInfo = (c: Card) => {
+                                                const type = c.type || 'EFFICIENCY';
+                                                if (type === 'EFFICIENCY') return { emoji: '✊', name: '바위', color: 'text-amber-400', bg: 'bg-amber-500/20' };
+                                                if (type === 'CREATIVITY') return { emoji: '✌️', name: '가위', color: 'text-red-400', bg: 'bg-red-500/20' };
+                                                return { emoji: '🖐️', name: '보', color: 'text-blue-400', bg: 'bg-blue-500/20' };
+                                            };
+                                            const typeInfo = card ? getTypeInfo(card) : null;
 
-                                    <div className="flex-1 text-center text-white/60">
-                                        {selectedCards.length}/5 선택됨
+                                            return (
+                                                <motion.div
+                                                    key={i}
+                                                    initial={{ scale: 0.9, opacity: 0 }}
+                                                    animate={{ scale: 1, opacity: 1 }}
+                                                    transition={{ delay: i * 0.05 }}
+                                                    className={cn(
+                                                        "relative w-24 h-36 rounded-xl border-2 transition-all overflow-hidden cursor-pointer",
+                                                        card
+                                                            ? "border-cyan-500 bg-cyan-500/10 shadow-xl shadow-cyan-500/30"
+                                                            : "border-white/20 bg-white/5 border-dashed"
+                                                    )}
+                                                    onClick={() => {
+                                                        if (card) {
+                                                            setSelectedCards(prev => prev.filter(c => c.id !== card.id));
+                                                        }
+                                                    }}
+                                                >
+                                                    {card ? (
+                                                        <>
+                                                            {/* 카드 이미지 */}
+                                                            <div
+                                                                className="absolute inset-0 bg-cover bg-center"
+                                                                style={{ backgroundImage: `url(${(card as any).imageUrl || '/assets/cards/default-card.png'})` }}
+                                                            />
+                                                            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
+
+                                                            {/* 슬롯 번호 */}
+                                                            <div className="absolute top-1.5 left-1.5 w-6 h-6 bg-cyan-500 rounded-full flex items-center justify-center text-xs font-bold text-white shadow-lg">
+                                                                {i + 1}
+                                                            </div>
+
+                                                            {/* 가위바위보 타입 */}
+                                                            {typeInfo && (
+                                                                <div className={cn(
+                                                                    "absolute top-1.5 right-1.5 px-2 py-1 rounded-full text-lg shadow-lg",
+                                                                    typeInfo.bg
+                                                                )}>
+                                                                    {typeInfo.emoji}
+                                                                </div>
+                                                            )}
+
+                                                            {/* 하단 정보 */}
+                                                            <div className="absolute bottom-0 left-0 right-0 p-2 text-center">
+                                                                <div className={cn("text-sm font-bold mb-0.5", typeInfo?.color)}>
+                                                                    {typeInfo?.name}
+                                                                </div>
+                                                                <div className="text-[11px] font-bold text-white/80">
+                                                                    ⚡{Math.floor(card.stats.totalPower)}
+                                                                </div>
+                                                            </div>
+
+                                                            {/* 제거 버튼 (호버 시) */}
+                                                            <div className="absolute inset-0 bg-red-500/0 hover:bg-red-500/60 transition-colors flex items-center justify-center opacity-0 hover:opacity-100">
+                                                                <span className="text-white font-bold text-2xl drop-shadow-lg">✕</span>
+                                                            </div>
+                                                        </>
+                                                    ) : (
+                                                        <div className="flex flex-col items-center justify-center h-full text-white/30">
+                                                            <span className="text-2xl font-bold mb-1">{i + 1}</span>
+                                                            <span className="text-[10px]">빈 슬롯</span>
+                                                        </div>
+                                                    )}
+                                                </motion.div>
+                                            );
+                                        })}
                                     </div>
 
-                                    <button
-                                        onClick={handleDeckConfirm}
-                                        disabled={selectedCards.length !== 5}
-                                        className={cn(
-                                            "px-8 py-3 font-bold rounded-xl transition-all flex items-center gap-2",
-                                            selectedCards.length === 5
-                                                ? "bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white"
-                                                : "bg-white/10 text-white/40 cursor-not-allowed"
-                                        )}
-                                    >
-                                        <CheckCircle size={20} />
-                                        선택 완료
-                                    </button>
+                                    {/* 액션 버튼 */}
+                                    <div className="flex items-center justify-between gap-4">
+                                        <button
+                                            onClick={() => {
+                                                // 자동 선택 - 전투력 높은 순으로 5장
+                                                const topCards = [...inventory]
+                                                    .sort((a, b) => b.stats.totalPower - a.stats.totalPower)
+                                                    .slice(0, 5);
+                                                setSelectedCards(topCards);
+                                            }}
+                                            className="px-6 py-3 bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-400 font-bold rounded-xl transition-all flex items-center gap-2"
+                                        >
+                                            <Shuffle size={20} />
+                                            자동 선택
+                                        </button>
+
+                                        <div className="flex-1 text-center">
+                                            <span className="text-2xl font-black orbitron">
+                                                <span className={cn(
+                                                    selectedCards.length === 5 ? "text-green-400" : "text-white/60"
+                                                )}>{selectedCards.length}</span>
+                                                <span className="text-white/40">/5</span>
+                                            </span>
+                                            <span className="text-white/40 ml-2">선택됨</span>
+                                        </div>
+
+                                        <button
+                                            onClick={handleDeckConfirm}
+                                            disabled={selectedCards.length !== 5}
+                                            className={cn(
+                                                "px-8 py-3 font-bold rounded-xl transition-all flex items-center gap-2",
+                                                selectedCards.length === 5
+                                                    ? "bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white shadow-lg shadow-green-500/30"
+                                                    : "bg-white/10 text-white/40 cursor-not-allowed"
+                                            )}
+                                        >
+                                            <CheckCircle size={20} />
+                                            선택 완료
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </motion.div>
@@ -543,17 +655,17 @@ export default function PVPArenaPage() {
                             <motion.div
                                 initial={{ y: -50, opacity: 0 }}
                                 animate={{ y: 0, opacity: 1 }}
-                                className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 mb-4"
+                                className="bg-red-500/10 border border-red-500/30 rounded-xl p-6 mb-4"
                             >
-                                <h3 className="text-lg font-bold text-red-400 mb-3 text-center">👹 상대 덱</h3>
-                                <div className="flex justify-center gap-4 flex-wrap">
+                                <h3 className="text-lg font-bold text-red-400 mb-4 text-center">👹 상대 덱</h3>
+                                <div className="flex justify-center gap-6">
                                     {opponentDeck.map((card, i) => (
                                         <motion.div
                                             key={i}
                                             initial={{ rotateY: 180, opacity: 0 }}
                                             animate={{ rotateY: 0, opacity: 1 }}
                                             transition={{ delay: i * 0.1 }}
-                                            className="w-32"
+                                            className="w-36 flex-shrink-0"
                                         >
                                             <GameCard card={card} />
                                         </motion.div>
@@ -587,17 +699,17 @@ export default function PVPArenaPage() {
                             <motion.div
                                 initial={{ y: 50, opacity: 0 }}
                                 animate={{ y: 0, opacity: 1 }}
-                                className="bg-cyan-500/10 border border-cyan-500/30 rounded-xl p-4"
+                                className="bg-cyan-500/10 border border-cyan-500/30 rounded-xl p-6"
                             >
-                                <h3 className="text-lg font-bold text-cyan-400 mb-3 text-center">🤖 내 덱</h3>
-                                <div className="flex justify-center gap-4 flex-wrap">
+                                <h3 className="text-lg font-bold text-cyan-400 mb-4 text-center">🤖 내 덱</h3>
+                                <div className="flex justify-center gap-6">
                                     {playerDeck.map((card, i) => (
                                         <motion.div
                                             key={i}
                                             initial={{ rotateY: 180, opacity: 0 }}
                                             animate={{ rotateY: 0, opacity: 1 }}
                                             transition={{ delay: 0.5 + i * 0.1 }}
-                                            className="w-32"
+                                            className="w-36 flex-shrink-0"
                                         >
                                             <GameCard card={card} />
                                         </motion.div>
@@ -929,6 +1041,16 @@ export default function PVPArenaPage() {
                     )}
                 </AnimatePresence>
             </div>
+
+            {/* 실시간 매칭 모달 */}
+            <RealtimeMatchingModal
+                isOpen={showMatchingModal}
+                onClose={() => setShowMatchingModal(false)}
+                onMatchFound={handleMatchFound}
+                battleMode={selectedMode as 'sudden-death' | 'tactics' | 'ambush'}
+                playerName={state.nickname || `Player_${state.level}`}
+                playerLevel={state.level}
+            />
         </CyberPageLayout>
     );
 }

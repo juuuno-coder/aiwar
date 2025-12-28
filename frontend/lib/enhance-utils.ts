@@ -19,6 +19,7 @@ export function getEnhanceCost(level: number, discountMultiplier: number = 0): n
 
 /**
  * 강화 가능 여부 확인
+ * - 아무 카드 10장을 재료로 사용 가능
  */
 export function canEnhance(
     targetCard: Card,
@@ -35,12 +36,9 @@ export function canEnhance(
         return { canEnhance: false, reason: '재료 카드가 10장 필요합니다.' };
     }
 
-    // 같은 카드인지 확인 (templateId 기준)
-    const targetTemplateId = targetCard.templateId;
-    const allSameCard = materialCards.every(card => card.templateId === targetTemplateId);
-
-    if (!allSameCard) {
-        return { canEnhance: false, reason: '같은 종류의 카드만 재료로 사용할 수 있습니다.' };
+    // 대상 카드가 재료에 포함되어 있는지 확인
+    if (materialCards.some(card => card.id === targetCard.id)) {
+        return { canEnhance: false, reason: '강화 대상 카드는 재료로 사용할 수 없습니다.' };
     }
 
     // 토큰 체크

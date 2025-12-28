@@ -11,6 +11,9 @@ export type BattlePhase =
     | 'reveal'       // 카드 공개 (타이머)
     | 'ordering'     // 순서 배치
     | 'combat'       // 전투 진행
+    | 'deck-select'  // 덱 선택
+    | 'battle'       // 전투 진행
+    | 'result'       // 결과 화면
     | 'finished';    // 전투 종료
 
 export type BattleActionType =

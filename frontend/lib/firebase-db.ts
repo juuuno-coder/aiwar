@@ -146,7 +146,16 @@ export async function updateNickname(nickname: string, uid?: string): Promise<vo
         }
 
         const userRef = doc(db, 'users', userId, 'profile', 'data');
-        await updateDoc(userRef, { nickname });
+
+        // setDoc with merge: 프로필이 없으면 생성, 있으면 업데이트
+        await setDoc(userRef, {
+            nickname,
+            lastLogin: serverTimestamp()
+        }, { merge: true });
+
+        // localStorage에도 저장 (백업 및 빠른 접근)
+        localStorage.setItem('nickname', nickname);
+
         console.log('✅ 닉네임 업데이트 성공:', nickname);
     } catch (error) {
         console.error('❌ 닉네임 업데이트 실패:', error);

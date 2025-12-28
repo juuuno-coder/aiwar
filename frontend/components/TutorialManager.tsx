@@ -69,7 +69,7 @@ export default function TutorialManager() {
         if (user) {
             localStorage.setItem(`tutorial_completed_${user.uid}`, 'true');
         }
-        showFooter();
+        // showFooter() 제거 - 각 페이지가 필요할 때 직접 호출
     };
 
     if (showNicknameModal) {

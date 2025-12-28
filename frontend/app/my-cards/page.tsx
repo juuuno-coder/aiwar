@@ -15,6 +15,7 @@ import { useTranslation } from '@/context/LanguageContext';
 import { rerollCardStats } from '@/lib/card-generation-system'; // Import reroll function
 import { useFirebase } from '@/components/FirebaseProvider';
 import { gameStorage } from '@/lib/game-storage';
+import { getCardName } from '@/data/card-translations';
 
 type SortOption = 'power' | 'rarity' | 'name' | 'acquiredAt';
 type FilterOption = 'all' | 'common' | 'rare' | 'epic' | 'legendary' | 'unique' | 'commander';
@@ -117,7 +118,59 @@ export default function MyCardsPage() {
         setLoading(true);
         try {
             const inventory = await loadInventory(uid);
-            setCards(inventory);
+
+            // Ultra 티어 구독 시 군단장 카드 추가
+            try {
+                const { getSubscribedFactions } = await import('@/lib/faction-subscription-utils');
+                const { COMMANDERS } = await import('@/data/card-database');
+
+                const subscriptions = getSubscribedFactions();
+                const ultraCommanders: InventoryCard[] = [];
+
+                for (const sub of subscriptions) {
+                    if (sub.tier === 'ultra') {
+                        // 해당 팩션의 군단장 카드 찾기
+                        const commander = COMMANDERS.find(c => c.aiFactionId === sub.factionId);
+                        if (commander) {
+                            // 이미 인벤토리에 있는지 확인
+                            const alreadyExists = inventory.some(c => c.templateId === commander.id || c.id === commander.id);
+                            if (!alreadyExists) {
+                                // 군단장 카드를 InventoryCard로 변환하여 추가
+                                ultraCommanders.push({
+                                    id: `commander-${commander.id}`,
+                                    instanceId: `commander-${commander.id}-${Date.now()}`,
+                                    templateId: commander.id,
+                                    name: commander.name,
+                                    rarity: 'commander',
+                                    type: 'EFFICIENCY', // 기본 타입
+                                    level: 1,
+                                    experience: 0,
+                                    imageUrl: commander.imageUrl,
+                                    aiFactionId: commander.aiFactionId,
+                                    description: commander.description,
+                                    stats: {
+                                        efficiency: 95,
+                                        creativity: 95,
+                                        function: 95,
+                                        totalPower: 285
+                                    },
+                                    acquiredAt: new Date(),
+                                    isCommanderCard: true, // 특수 플래그
+                                    specialty: commander.specialty
+                                } as any);
+                            }
+                        }
+                    }
+                }
+
+                // 인벤토리에 군단장 카드 추가
+                const combinedInventory = [...inventory, ...ultraCommanders];
+                setCards(combinedInventory);
+                console.log(`[MyCards] 로드 완료: 인벤토리 ${inventory.length}장 + Ultra 군단장 ${ultraCommanders.length}장`);
+            } catch (e) {
+                console.warn('군단장 카드 로드 중 오류:', e);
+                setCards(inventory);
+            }
         } catch (error) {
             console.error('Failed to load inventory:', error);
             showAlert({ title: '오류', message: '인벤토리 로드에 실패했습니다.', type: 'error' });
@@ -150,10 +203,10 @@ export default function MyCardsPage() {
 
     return (
         <CyberPageLayout
-            title="보유 카드 목록"
+            title={language === 'ko' ? '보유 카드 목록' : 'Card Inventory'}
             englishTitle="MY INVENTORY"
-            subtitle="Card Inventory"
-            description="Manage your generated units. Cards are sorted by rarity tier from Common to Commander."
+            subtitle={language === 'ko' ? '카드 인벤토리' : 'Card Inventory'}
+            description={language === 'ko' ? '생성된 유닛을 관리하세요.' : 'Manage your generated units.'}
             color="purple"
         >
             {/* Stats Overview */}
@@ -291,7 +344,9 @@ export default function MyCardsPage() {
                             <div className="w-16 h-20 bg-white/5 rounded border border-white/10 flex-none hidden md:block" />
 
                             <div className="flex-1 min-w-0">
-                                <p className="font-bold text-white text-lg truncate font-orbitron">{selectedCard.name}</p>
+                                <p className="font-bold text-white text-lg truncate font-orbitron">
+                                    {getCardName(selectedCard.templateId || selectedCard.id || '', selectedCard.name || '', language as 'ko' | 'en')}
+                                </p>
                                 <div className="flex gap-2 mt-1">
                                     <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded bg-white/10 uppercase",
                                         selectedCard.rarity === 'legendary' ? 'text-amber-400' :
@@ -308,13 +363,13 @@ export default function MyCardsPage() {
                                     onClick={() => router.push(`/enhance?cardId=${selectedCard.id}`)}
                                     className="px-4 py-3 bg-amber-500/10 border border-amber-500/40 text-amber-400 rounded-lg text-xs font-mono uppercase font-bold hover:bg-amber-500/20 transition-all"
                                 >
-                                    Enhance
+                                    {language === 'ko' ? '강화' : 'Enhance'}
                                 </button>
                                 <button
                                     onClick={() => router.push(`/fusion?cardId=${selectedCard.id}`)}
                                     className="px-4 py-3 bg-purple-500/10 border border-purple-500/40 text-purple-400 rounded-lg text-xs font-mono uppercase font-bold hover:bg-purple-500/20 transition-all"
                                 >
-                                    Fuse
+                                    {language === 'ko' ? '합성' : 'Fuse'}
                                 </button>
                                 <button
                                     onClick={() => setSelectedCard(null)}
