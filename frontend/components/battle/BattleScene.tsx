@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import { useBattleLogic } from '@/hooks/useBattle';
 import UnitFrame from './UnitFrame';
 import { Card } from '@/lib/types';
-import { BattleMode } from '@/lib/battle-modes';
+import { BattleMode, getBattleModeConfig } from '@/lib/battle-modes';
 
 interface BattleSceneProps {
     mode: BattleMode;
@@ -17,7 +17,8 @@ interface BattleSceneProps {
 }
 
 const BattleScene: React.FC<BattleSceneProps> = ({ mode, playerDeck, enemyDeck, playerJokers, enemyJokers, onBattleEnd }) => {
-    const { gameState, playRound } = useBattleLogic(mode, playerDeck, enemyDeck, playerJokers, enemyJokers);
+    const { gameState, playRound } = useBattleLogic(mode, playerDeck, enemyDeck);
+    const config = getBattleModeConfig(mode);
 
     // Auto-play Rounds Effect
     React.useEffect(() => {
@@ -81,7 +82,7 @@ const BattleScene: React.FC<BattleSceneProps> = ({ mode, playerDeck, enemyDeck, 
             {/* Main Stage */}
             <div className="flex-1 relative z-10 flex flex-col justify-center items-center gap-12 p-8">
 
-                {mode === '1-card' ? (
+                {config.battleSize === 1 ? (
                     /* 1v1 Center Stage */
                     <div className="flex items-center gap-12">
                         {pCard && (
