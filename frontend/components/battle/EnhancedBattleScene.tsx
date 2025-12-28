@@ -2,21 +2,24 @@
 
 import { motion, AnimatePresence } from 'framer-motion';
 import { useBattleAnimation } from '@/hooks/useBattleAnimation';
+import { BattleType } from '@/lib/battle-victory-system';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
 
 interface EnhancedBattleSceneProps {
     playerCards: any[];
     enemyCards: any[];
+    battleType?: BattleType;
     onBattleEnd: (victory: boolean) => void;
 }
 
 export default function EnhancedBattleScene({
     playerCards,
     enemyCards,
+    battleType = 'tactical',
     onBattleEnd,
 }: EnhancedBattleSceneProps) {
-    const { state } = useBattleAnimation(playerCards, enemyCards, onBattleEnd);
+    const { state } = useBattleAnimation(playerCards, enemyCards, battleType, onBattleEnd);
 
     const getCardImage = (card: any) => {
         const { getCardCharacterImage } = require('@/lib/card-images');

@@ -1,9 +1,11 @@
 /**
  * 전투 승점 시스템
  * - 일반 라운드 승리: +1점
- * - 히든 라운드(2, 4) 연속 승리: +2점
+ * - 전략 전투 한정: 히든 라운드(2, 4) 연속 승리 시 +2점
  * - 3점 먼저 획득 시 즉시 승리
  */
+
+export type BattleType = 'strategic' | 'tactical';
 
 export interface RoundResult {
     roundNumber: number;
@@ -27,6 +29,7 @@ export interface VictoryState {
  */
 export function calculateVictoryPoints(
     results: RoundResult[],
+    battleType: BattleType = 'tactical',
     targetScore: number = 3
 ): VictoryState {
     let playerScore = 0;
@@ -34,18 +37,20 @@ export function calculateVictoryPoints(
     const playerWonCards: any[] = [];
     const enemyWonCards: any[] = [];
 
-    // 히든 라운드 연속 승리 체크용
+    // 히든 라운드 연속 승리 체크용 (전략 전투에만 적용)
     let hiddenRound2Winner: 'player' | 'enemy' | 'draw' | null = null;
     let hiddenRound4Winner: 'player' | 'enemy' | 'draw' | null = null;
 
     for (const result of results) {
         if (result.winner === 'draw') continue;
 
-        // 히든 라운드 승자 기록
-        if (result.roundNumber === 2) {
-            hiddenRound2Winner = result.winner;
-        } else if (result.roundNumber === 4) {
-            hiddenRound4Winner = result.winner;
+        // 히든 라운드 승자 기록 (전략 전투에만)
+        if (battleType === 'strategic') {
+            if (result.roundNumber === 2) {
+                hiddenRound2Winner = result.winner;
+            } else if (result.roundNumber === 4) {
+                hiddenRound4Winner = result.winner;
+            }
         }
 
         // 승리 카드 추가
@@ -114,10 +119,11 @@ export function createRoundResult(
 export function getVictoryStateAtRound(
     results: RoundResult[],
     currentRound: number,
+    battleType: BattleType = 'tactical',
     targetScore: number = 3
 ): VictoryState {
     const relevantResults = results.filter(r => r.roundNumber <= currentRound);
-    return calculateVictoryPoints(relevantResults, targetScore);
+    return calculateVictoryPoints(relevantResults, battleType, targetScore);
 }
 
 /**

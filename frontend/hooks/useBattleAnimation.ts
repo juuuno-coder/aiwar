@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { RoundResult, VictoryState, calculateVictoryPoints, createRoundResult } from '@/lib/battle-victory-system';
+import { RoundResult, VictoryState, calculateVictoryPoints, createRoundResult, BattleType } from '@/lib/battle-victory-system';
 
 export type AnimationPhase = 'idle' | 'draw' | 'clash' | 'result' | 'victory';
 
@@ -15,6 +15,7 @@ export interface BattleAnimationState {
 export function useBattleAnimation(
     playerCards: any[],
     enemyCards: any[],
+    battleType: BattleType = 'tactical',
     onBattleEnd: (victory: boolean) => void
 ) {
     const [state, setState] = useState<BattleAnimationState>({
@@ -81,7 +82,7 @@ export function useBattleAnimation(
         const winner = determineWinner(playerCard, enemyCard);
         const roundResult = createRoundResult(roundNumber, playerCard, enemyCard, winner);
         const newResults = [...state.results, roundResult];
-        const newVictoryState = calculateVictoryPoints(newResults);
+        const newVictoryState = calculateVictoryPoints(newResults, battleType);
 
         setState(prev => ({
             ...prev,
