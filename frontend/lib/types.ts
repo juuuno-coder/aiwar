@@ -72,6 +72,7 @@ export interface Card {
     isLocked: boolean;
     isUnique?: boolean; // 유니크 유닛 여부
     type?: AIType; // Rock-Paper-Scissors type
+    imageUrl?: string; // Card image URL
     specialSkill?: {
         name: string;
         description: string;

@@ -30,6 +30,7 @@ export interface GameState {
     decks: any[];
     stageProgress?: any;
     lastBackup?: string;
+    username?: string; // Player username for PVP
 
     // 신규 시스템 데이터
     subscriptions: { factionId: string; nextPaymentAt: number; isActive: boolean }[];

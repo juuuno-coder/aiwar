@@ -565,7 +565,7 @@ export default function StageBattlePage() {
                                                         {/* 카드 이미지 */}
                                                         <div
                                                             className="absolute inset-0 bg-cover bg-center"
-                                                            style={{ backgroundImage: `url(${(card as any).imageUrl || '/assets/cards/default-card.png'})` }}
+                                                            style={{ backgroundImage: `url(${card.imageUrl || '/assets/cards/default-card.png'})` }}
                                                         />
                                                         <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
 

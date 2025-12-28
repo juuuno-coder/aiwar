@@ -53,8 +53,7 @@ const UnitFrame: React.FC<UnitFrameProps> = ({
             animate={{ opacity: 1, scale: isWinner ? 1.1 : (isLoser ? 0.9 : 1) }}
         >
             {/* Image Placeholder */}
-            {/* Image Placeholder */}
-            <div className="absolute inset-0 bg-cover bg-center opacity-60" style={{ backgroundImage: `url(${(card as any).imageUrl || '/assets/cards/default-card.png'})` }} />
+            <div className="absolute inset-0 bg-cover bg-center opacity-60" style={{ backgroundImage: `url(${card.imageUrl || '/assets/cards/default-card.png'})` }} />
 
             {/* Overlay Gradient */}
             <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent" />

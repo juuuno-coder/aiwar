@@ -178,7 +178,7 @@ async function createBattleRoom(
         roomId,
         battleMode,
         phase: 'waiting',
-        player1: createEmptyPlayerState(player1Id, state.username || 'Player 1', state.level),
+        player1: createEmptyPlayerState(player1Id, state.nickname || 'Player 1', state.level),
         player2: createEmptyPlayerState(player2Id, 'Player 2', 1), // 상대 정보는 나중에 업데이트
         currentRound: 0,
         maxRounds: config.maxRounds,
