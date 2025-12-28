@@ -48,7 +48,7 @@ export default function EnhanceFooter({
                             index={0}
                             type="target"
                             size="medium"
-                            onDrop={onTargetDrop}
+                            onDrop={(card) => onTargetDrop(card as InventoryCard)}
                             onRemove={targetCard ? onTargetRemove : undefined}
                         />
                     </div>
@@ -68,7 +68,7 @@ export default function EnhanceFooter({
                                     card={card}
                                     index={index}
                                     size="small"
-                                    onDrop={(droppedCard) => onMaterialDrop(droppedCard, index)}
+                                    onDrop={(droppedCard) => onMaterialDrop(droppedCard as InventoryCard, index)}
                                     onRemove={card ? () => onMaterialRemove(index) : undefined}
                                 />
                             ))}
