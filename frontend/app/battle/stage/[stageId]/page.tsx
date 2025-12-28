@@ -25,13 +25,15 @@ import {
 import { Zap, Swords, Shuffle, CheckCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import EnhancedBattleScene from '@/components/battle/EnhancedBattleScene';
+import { BattleType } from '@/lib/battle-victory-system';
+import CardPlacementBoard, { RoundPlacement } from '@/components/battle/CardPlacementBoard';
 
 /**
  * 5장 전투 2단계 시스템:
  * 1단계: 라운드 1~5에 들어갈 카드 각각 1장씩 배치 (총 5장)
  * 2단계: 라운드 2, 4에 사용할 히든카드를 이미 배치된 5장 중에서 선택
  */
-type Phase = 'hand-selection' | 'viewing' | 'enemy-presentation' | 'main-assignment' | 'hidden-assignment' | 'battle' | 'result';
+type Phase = 'hand-selection' | 'viewing' | 'enemy-presentation' | 'card-placement' | 'battle' | 'result';
 
 export default function StageBattlePage() {
     const router = useRouter();
@@ -57,6 +59,7 @@ export default function StageBattlePage() {
     // 5장 전투: 라운드 2, 4의 히든카드 (이미 배치된 카드 중에서 선택)
     const [hiddenR2, setHiddenR2] = useState<GameCardType | null>(null);
     const [hiddenR4, setHiddenR4] = useState<GameCardType | null>(null);
+    const [cardPlacement, setCardPlacement] = useState<RoundPlacement | null>(null);
     const [currentHiddenRound, setCurrentHiddenRound] = useState<2 | 4>(2);
 
     // 1장/3장 전투용
@@ -163,7 +166,7 @@ export default function StageBattlePage() {
                 { label: 'MODE', value: `${stageConfig.battleCardCount}-CARD`, color: 'text-yellow-400' }
             ]);
             footer.setLeftNav({ type: 'back' });
-        } else if (phase === 'main-assignment') {
+        } else if (phase === 'card-placement') {
             footer.hideFooter();
         } else {
             footer.exitSelectionMode();
@@ -368,7 +371,7 @@ export default function StageBattlePage() {
             setViewTimer(prev => {
                 if (prev <= 1) {
                     if (stageConfig?.battleCardCount === 5) {
-                        setPhase('main-assignment');
+                        setPhase('card-placement');
                     } else {
                         startBattle();
                     }
@@ -392,7 +395,7 @@ export default function StageBattlePage() {
 
     const confirmMainAssignment = () => {
         if (mainAssignments.some(a => a === null)) return;
-        setPhase('hidden-assignment');
+        setPhase('card-placement');
         setCurrentHiddenRound(2);
     };
 
@@ -726,7 +729,7 @@ export default function StageBattlePage() {
                 )}
 
                 {/* --- 3. Battle Execution (5-Card Assignment or Battle View) --- */}
-                {(phase === 'viewing' || phase === 'battle' || phase === 'main-assignment' || phase === 'hidden-assignment') && (
+                {(phase === 'viewing' || phase === 'battle' || phase === 'card-placement' || phase === 'card-placement') && (
                     <div className="flex flex-col items-center">
                         <div className="flex justify-between w-full max-w-4xl mb-8">
                             <div className="text-center">
@@ -741,7 +744,7 @@ export default function StageBattlePage() {
                         </div>
 
                         {/* 5장 전투: 라운드별 카드 배치 UI */}
-                        {phase === 'main-assignment' && (
+                        {phase === 'card-placement' && (
                             <div className="w-full max-w-5xl bg-zinc-900/80 rounded-2xl border border-white/10 p-8">
                                 <h3 className="text-2xl font-black text-white text-center mb-6">
                                     🎯 라운드별 카드 배치
@@ -834,57 +837,35 @@ export default function StageBattlePage() {
                             </div>
                         )}
 
-                        {/* 히든카드 선택 UI */}
-                        {phase === 'hidden-assignment' && (
-                            <div className="w-full max-w-4xl bg-zinc-900/80 rounded-2xl border border-purple-500/30 p-8">
-                                <h3 className="text-2xl font-black text-white text-center mb-4">
-                                    🎭 히든카드 선택 (라운드 {currentHiddenRound})
+                        {/* 카드 배치 UI (전략 승부 전용) */}
+                        {phase === 'card-placement' && storyStage?.battleMode === 'TRIPLE_THREAT' && (
+                            <CardPlacementBoard
+                                selectedCards={footer.state.selectionSlots.filter(Boolean)}
+                                onPlacementComplete={(placement) => {
+                                    setCardPlacement(placement);
+                                    // Extract hidden cards for backward compatibility
+                                    setHiddenR2(placement.round2.hidden || null);
+                                    setHiddenR4(placement.round4.hidden || null);
+                                    setPhase('battle');
+                                }}
+                            />
+                        )}
+
+                        {/* 전술 승부는 바로 전투 시작 */}
+                        {phase === 'card-placement' && storyStage?.battleMode !== 'TRIPLE_THREAT' && (
+                            <div className="w-full max-w-4xl bg-zinc-900/80 rounded-2xl border border-cyan-500/30 p-8 text-center">
+                                <h3 className="text-2xl font-black text-white mb-4">
+                                    ⚔️ 전술 승부
                                 </h3>
-                                <p className="text-gray-400 text-center mb-6">
-                                    라운드 {currentHiddenRound}에서 사용할 히든카드를 선택하세요.<br />
-                                    히든카드는 메인 카드와 함께 전투력을 발휘합니다!
+                                <p className="text-gray-400 mb-6">
+                                    선택한 5장의 카드로 전투를 시작합니다!
                                 </p>
-
-                                {/* 현재 배치된 카드 중에서 히든카드 선택 */}
-                                <div className="flex gap-4 justify-center flex-wrap mb-8">
-                                    {mainAssignments.filter(c => c !== null).map((card) => {
-                                        const isSelected = (currentHiddenRound === 2 && hiddenR2?.id === card!.id) ||
-                                            (currentHiddenRound === 4 && hiddenR4?.id === card!.id);
-                                        const alreadyUsed = (currentHiddenRound === 4 && hiddenR2?.id === card!.id);
-
-                                        return (
-                                            <motion.div
-                                                key={card!.id}
-                                                whileHover={{ scale: alreadyUsed ? 1 : 1.05 }}
-                                                whileTap={{ scale: alreadyUsed ? 1 : 0.95 }}
-                                                onClick={() => !alreadyUsed && selectHiddenCard(card!)}
-                                                className={`w-24 h-32 rounded-xl border-2 flex flex-col items-center justify-center cursor-pointer transition-all ${isSelected
-                                                    ? 'border-purple-500 bg-purple-500/30 shadow-[0_0_20px_rgba(168,85,247,0.4)]'
-                                                    : alreadyUsed
-                                                        ? 'border-gray-600 bg-gray-800/50 opacity-50 cursor-not-allowed'
-                                                        : 'border-white/20 bg-white/5 hover:border-purple-400'
-                                                    }`}
-                                            >
-                                                <div className="text-2xl mb-1">🎭</div>
-                                                <div className="text-xs text-white truncate px-2">{card!.name}</div>
-                                                <div className="text-xs text-purple-400">{card!.stats?.totalPower || 0}</div>
-                                                {isSelected && <div className="text-[10px] text-purple-300 mt-1">선택됨</div>}
-                                                {alreadyUsed && <div className="text-[10px] text-gray-500 mt-1">R2 사용</div>}
-                                            </motion.div>
-                                        );
-                                    })}
-                                </div>
-
-                                <div className="flex justify-center gap-4">
-                                    <Button
-                                        color="primary"
-                                        size="lg"
-                                        isDisabled={currentHiddenRound === 2 ? !hiddenR2 : !hiddenR4}
-                                        onPress={confirmHiddenSelection}
-                                    >
-                                        {currentHiddenRound === 2 ? '다음 → 라운드 4 히든카드' : '전투 시작!'}
-                                    </Button>
-                                </div>
+                                <button
+                                    onClick={() => setPhase('battle')}
+                                    className="px-8 py-3 rounded-xl font-bold text-lg bg-gradient-to-r from-cyan-500 to-blue-600 text-white hover:shadow-lg hover:shadow-cyan-500/50 transition-all"
+                                >
+                                    전투 시작!
+                                </button>
                             </div>
                         )}
 
