@@ -508,21 +508,31 @@ export default function PVPArenaPage() {
                                                     {card ? (
                                                         <>
                                                             {/* 카드 이미지 */}
-                                                            <div
-                                                                className="absolute inset-0 bg-cover bg-center"
-                                                                style={{ backgroundImage: `url(${card.imageUrl || '/assets/cards/default-card.png'})` }}
-                                                            />
-                                                            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
+                                                            {(() => {
+                                                                const { getCardCharacterImage } = require('@/lib/card-images');
+                                                                const cardImage = getCardCharacterImage(card.templateId, card.name, card.rarity);
+                                                                return (
+                                                                    <div
+                                                                        className="absolute inset-0 bg-cover bg-center"
+                                                                        style={{
+                                                                            backgroundImage: `url(${cardImage || card.imageUrl || '/assets/cards/default-card.png'})`,
+                                                                            backgroundSize: 'cover',
+                                                                            backgroundPosition: 'center'
+                                                                        }}
+                                                                    />
+                                                                );
+                                                            })()}
+                                                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
 
                                                             {/* 슬롯 번호 */}
-                                                            <div className="absolute top-1.5 left-1.5 w-6 h-6 bg-cyan-500 rounded-full flex items-center justify-center text-xs font-bold text-white shadow-lg">
+                                                            <div className="absolute top-1.5 left-1.5 w-6 h-6 bg-cyan-500 rounded-full flex items-center justify-center text-xs font-bold text-white shadow-lg z-10">
                                                                 {i + 1}
                                                             </div>
 
                                                             {/* 가위바위보 타입 아이콘 */}
                                                             {typeInfo && (
                                                                 <div className={cn(
-                                                                    "absolute top-1.5 right-1.5 px-2 py-1 rounded-full text-lg shadow-lg",
+                                                                    "absolute top-1.5 right-1.5 px-2 py-1 rounded-full text-lg shadow-lg z-10",
                                                                     typeInfo.bg
                                                                 )}>
                                                                     {typeInfo.emoji}
@@ -530,14 +540,14 @@ export default function PVPArenaPage() {
                                                             )}
 
                                                             {/* 하단 전투력 표시 */}
-                                                            <div className="absolute bottom-0 left-0 right-0 p-2 text-center bg-black/50">
+                                                            <div className="absolute bottom-0 left-0 right-0 p-2 text-center bg-black/70 z-10">
                                                                 <div className="text-sm font-bold text-white">
                                                                     ⚡{Math.floor(card.stats.totalPower)}
                                                                 </div>
                                                             </div>
 
                                                             {/* 제거 버튼 (호버 시) */}
-                                                            <div className="absolute inset-0 bg-red-500/0 hover:bg-red-500/60 transition-colors flex items-center justify-center opacity-0 hover:opacity-100">
+                                                            <div className="absolute inset-0 bg-red-500/0 hover:bg-red-500/60 transition-colors flex items-center justify-center opacity-0 hover:opacity-100 z-20">
                                                                 <span className="text-white font-bold text-2xl drop-shadow-lg">✕</span>
                                                             </div>
                                                         </>
