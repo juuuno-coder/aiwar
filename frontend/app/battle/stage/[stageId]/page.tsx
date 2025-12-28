@@ -748,7 +748,7 @@ export default function StageBattlePage() {
 
                         {/* 5장 전투: 라운드별 카드 배치 UI */}
                         {phase === 'card-placement' && (
-                            <div className="w-full max-w-5xl bg-zinc-900/80 rounded-2xl border border-white/10 p-6 max-h-[80vh] overflow-y-auto">
+                            <div className="w-full max-w-6xl bg-zinc-900/80 rounded-2xl border border-white/10 p-6 max-h-[80vh] overflow-y-auto">
                                 <h3 className="text-xl font-black text-white text-center mb-3">
                                     🎯 라운드별 카드 배치
                                 </h3>
@@ -756,12 +756,48 @@ export default function StageBattlePage() {
                                     각 라운드에 출전할 카드를 배치하세요. 순서가 승패를 결정합니다!
                                 </p>
 
+                                {/* 적 카드 미리보기 */}
+                                <div className="mb-6 p-4 bg-red-900/20 border border-red-500/30 rounded-xl">
+                                    <h4 className="text-xs font-bold text-red-400 mb-2 text-center">적 카드 (순서는 다름)</h4>
+                                    <div className="flex gap-2 justify-center flex-wrap">
+                                        {enemies.slice(0, 5).map((enemy, idx) => {
+                                            const { getCardCharacterImage } = require('@/lib/card-images');
+                                            const cardImage = getCardCharacterImage(enemy.templateId, enemy.name, enemy.rarity);
+
+                                            return (
+                                                <div key={idx} className="relative w-14 h-20 rounded-lg border border-red-500/50 overflow-hidden">
+                                                    <div
+                                                        className="absolute inset-0 bg-cover bg-center"
+                                                        style={{
+                                                            backgroundImage: `url(${cardImage || '/assets/cards/default-card.png'})`,
+                                                        }}
+                                                    />
+                                                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
+                                                    <div className="absolute bottom-0 left-0 right-0 p-0.5 text-center">
+                                                        <div className="text-[8px] text-white truncate">{enemy.name}</div>
+                                                        <div className="text-[8px] text-red-400">⚡{Math.floor(enemy.stats?.totalPower || 0)}</div>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+
                                 {/* 5개 라운드 슬롯 */}
                                 <div className="grid grid-cols-5 gap-3 mb-6">
                                     {[1, 2, 3, 4, 5].map(round => {
                                         const assignedCard = mainAssignments[round - 1];
                                         const isHiddenRound = round === 2 || round === 4;
                                         const { getCardCharacterImage } = require('@/lib/card-images');
+
+                                        // Type info
+                                        const typeInfo = assignedCard ? (() => {
+                                            const type = assignedCard.type;
+                                            if (type === 'rock') return { emoji: '✊', bg: 'bg-red-500/80', border: 'border-red-300/50' };
+                                            if (type === 'paper') return { emoji: '✋', bg: 'bg-blue-500/80', border: 'border-blue-300/50' };
+                                            if (type === 'scissors') return { emoji: '✌️', bg: 'bg-green-500/80', border: 'border-green-300/50' };
+                                            return null;
+                                        })() : null;
 
                                         return (
                                             <div key={round} className="flex flex-col items-center">
@@ -785,8 +821,40 @@ export default function StageBattlePage() {
                                                             />
                                                             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
 
+                                                            {/* 희귀도 배지 */}
+                                                            {(() => {
+                                                                const rarityInfo: Record<string, { text: string; bg: string }> = {
+                                                                    legendary: { text: '전설', bg: 'bg-gradient-to-r from-yellow-500 to-orange-500' },
+                                                                    commander: { text: '사령관', bg: 'bg-gradient-to-r from-purple-600 to-pink-600' },
+                                                                    epic: { text: '영웅', bg: 'bg-gradient-to-r from-purple-500 to-indigo-500' },
+                                                                    rare: { text: '희귀', bg: 'bg-gradient-to-r from-blue-500 to-cyan-500' },
+                                                                    unique: { text: '유니크', bg: 'bg-gradient-to-r from-green-500 to-emerald-500' },
+                                                                    common: { text: '일반', bg: 'bg-gradient-to-r from-gray-500 to-slate-500' }
+                                                                };
+                                                                const info = rarityInfo[assignedCard.rarity || 'common'] || rarityInfo.common;
+                                                                return (
+                                                                    <div className={`absolute top-1 left-1 px-1.5 py-0.5 rounded-full text-[8px] font-black text-white shadow-lg z-10 ${info.bg}`}>
+                                                                        {info.text}
+                                                                    </div>
+                                                                );
+                                                            })()}
+
+                                                            {/* 타입 아이콘 */}
+                                                            {typeInfo && (
+                                                                <div className={`absolute top-1 right-1 px-1 py-0.5 rounded-full text-sm shadow-lg z-10 ${typeInfo.bg}`}>
+                                                                    {typeInfo.emoji}
+                                                                </div>
+                                                            )}
+
+                                                            {/* 레벨 배지 */}
+                                                            <div className="absolute bottom-7 right-1 z-10">
+                                                                <div className="px-1.5 py-0.5 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-full text-[8px] font-black text-white shadow-lg">
+                                                                    LV.{assignedCard.level || 1}
+                                                                </div>
+                                                            </div>
+
                                                             {/* 카드 정보 */}
-                                                            <div className="absolute bottom-0 left-0 right-0 p-1.5 text-center">
+                                                            <div className="absolute bottom-0 left-0 right-0 p-1.5 text-center bg-black/70">
                                                                 <div className="text-[10px] font-bold text-white truncate">{assignedCard.name}</div>
                                                                 <div className="text-[10px] text-cyan-400">⚡{Math.floor(assignedCard.stats?.totalPower || 0)}</div>
                                                             </div>
@@ -808,6 +876,15 @@ export default function StageBattlePage() {
                                             const isAssigned = mainAssignments.some(a => a?.id === card.id);
                                             const assignedRound = mainAssignments.findIndex(a => a?.id === card.id) + 1;
                                             const { getCardCharacterImage } = require('@/lib/card-images');
+
+                                            // Type info
+                                            const typeInfo = (() => {
+                                                const type = card.type;
+                                                if (type === 'rock') return { emoji: '✊', bg: 'bg-red-500/80' };
+                                                if (type === 'paper') return { emoji: '✋', bg: 'bg-blue-500/80' };
+                                                if (type === 'scissors') return { emoji: '✌️', bg: 'bg-green-500/80' };
+                                                return null;
+                                            })();
 
                                             return (
                                                 <motion.div
@@ -839,6 +916,13 @@ export default function StageBattlePage() {
                                                     />
                                                     <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
 
+                                                    {/* 타입 아이콘 */}
+                                                    {typeInfo && (
+                                                        <div className={`absolute top-0.5 right-0.5 px-0.5 py-0.5 rounded-full text-xs shadow-lg z-10 ${typeInfo.bg}`}>
+                                                            {typeInfo.emoji}
+                                                        </div>
+                                                    )}
+
                                                     {/* 카드 정보 */}
                                                     <div className="absolute bottom-0 left-0 right-0 p-0.5 text-center">
                                                         <div className="text-[9px] text-white truncate px-0.5">{card.name}</div>
@@ -847,7 +931,7 @@ export default function StageBattlePage() {
 
                                                     {/* 배치 상태 표시 */}
                                                     {isAssigned && (
-                                                        <div className="absolute top-0.5 right-0.5 bg-green-500 rounded-full px-1 py-0.5 text-[8px] text-white font-bold">
+                                                        <div className="absolute top-0.5 left-0.5 bg-green-500 rounded-full px-1 py-0.5 text-[8px] text-white font-bold">
                                                             R{assignedRound}
                                                         </div>
                                                     )}
