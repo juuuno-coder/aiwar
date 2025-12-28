@@ -210,39 +210,30 @@ function getRarityRank(rarity?: string): number {
 }
 
 /**
- * 가위바위보 승부 판정 (고도화됨)
- * 순서: 상성 > 주 스탯 > 총 전투력 > 등급 > 레벨
+ * 가위바위보 승부 판정
+ * 순서: 상성 > 주 스탯 > 총 전투력 > 레벨 > 등급
  */
 export function determineRoundWinner(
     playerCard: Card,
     opponentCard: Card
 ): 'player' | 'opponent' | 'draw' {
-    // 🛡️ Null check - 카드가 없으면 draw 반환
-    if (!playerCard && !opponentCard) {
-        console.warn('⚠️ determineRoundWinner: Both cards are undefined');
-        return 'draw';
-    }
-    if (!playerCard) {
-        console.warn('⚠️ determineRoundWinner: Player card is undefined');
-        return 'opponent';
-    }
-    if (!opponentCard) {
-        console.warn('⚠️ determineRoundWinner: Opponent card is undefined');
-        return 'player';
-    }
+    // 🛡️ Null check
+    if (!playerCard && !opponentCard) return 'draw';
+    if (!playerCard) return 'opponent';
+    if (!opponentCard) return 'player';
 
     const playerType = getCardType(playerCard);
     const opponentType = getCardType(opponentCard);
 
-    // 1. 가위바위보 로직 (다르면 상성이 이김 - 절대 판정)
+    // 1. 가위바위보 상성 판정 (타입이 다르면)
     if (playerType !== opponentType) {
         if (playerType === 'efficiency' && opponentType === 'function') return 'player'; // 바위 > 가위
         if (playerType === 'function' && opponentType === 'creativity') return 'player'; // 가위 > 보
         if (playerType === 'creativity' && opponentType === 'efficiency') return 'player'; // 보 > 바위
-        return 'opponent'; // 상성 패배
+        return 'opponent';
     }
 
-    // 2. 같은 타입이면: 주 스탯(세부전투력) 비교
+    // 2. 같은 타입: 주 스탯(해당 타입의 스탯) 비교
     let playerMainStat = 0;
     let opponentMainStat = 0;
 
@@ -266,17 +257,17 @@ export function determineRoundWinner(
     if (playerTotal > opponentTotal) return 'player';
     if (opponentTotal > playerTotal) return 'opponent';
 
-    // 4. 등급 비교
-    const playerRank = getRarityRank(playerCard.rarity);
-    const opponentRank = getRarityRank(opponentCard.rarity);
-    if (playerRank > opponentRank) return 'player';
-    if (opponentRank > playerRank) return 'opponent';
-
-    // 5. 강화 레벨 비교
+    // 4. 레벨 비교
     const playerLevel = playerCard.level || 1;
     const opponentLevel = opponentCard.level || 1;
     if (playerLevel > opponentLevel) return 'player';
     if (opponentLevel > playerLevel) return 'opponent';
+
+    // 5. 등급 비교
+    const playerRank = getRarityRank(playerCard.rarity);
+    const opponentRank = getRarityRank(opponentCard.rarity);
+    if (playerRank > opponentRank) return 'player';
+    if (opponentRank > playerRank) return 'opponent';
 
     return 'draw';
 }
