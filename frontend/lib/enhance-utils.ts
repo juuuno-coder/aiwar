@@ -81,7 +81,7 @@ export function calculateEnhancedStats(card: Card): Card['stats'] {
         // Use calculated total power
         totalPower: calculatedTotalPower > 0 ? calculatedTotalPower : (card.stats.totalPower + 3), // Fallback
 
-        cost: card.stats.cost
+        cost: card.stats.cost || 0
     };
 }
 
@@ -92,7 +92,7 @@ export function enhanceCard(
     targetCard: Card,
     materialCards: Card[]
 ): Card {
-    const newLevel = targetCard.level + 1;
+    const newLevel = (targetCard.level || 1) + 1;
     const newStats = calculateEnhancedStats(targetCard);
 
     return {
@@ -142,9 +142,9 @@ export function validateMaterialCards(
         };
     }
 
-    // 같은 templateId인지 확인
+    // 같은 등급(Rarity)인지 확인 (templateId 체크 제거)
     materialCards.forEach(card => {
-        if (card.templateId !== targetCard.templateId) {
+        if (card.rarity !== targetCard.rarity) {
             invalidCards.push(card);
         }
     });
@@ -153,7 +153,7 @@ export function validateMaterialCards(
         return {
             valid: false,
             invalidCards,
-            reason: '같은 종류의 카드만 재료로 사용할 수 있습니다.'
+            reason: '같은 등급의 카드만 재료로 사용할 수 있습니다.'
         };
     }
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card as CardType, Rarity } from '@/lib/types';
@@ -94,7 +94,7 @@ const RARITY_STARS: Record<Rarity, number> = {
     commander: 5
 };
 
-export default function GameCard({
+function GameCard({
     card,
     onClick,
     isSelected = false,
@@ -389,3 +389,5 @@ function StatBar({ label, value, color }: { label: string; value: number; color:
         </div>
     );
 }
+
+export default React.memo(GameCard);

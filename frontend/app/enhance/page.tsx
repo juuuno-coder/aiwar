@@ -23,6 +23,7 @@ export default function EnhancePage() {
     // 강화 완료 모달
     const [rewardModalOpen, setRewardModalOpen] = useState(false);
     const [enhancedResult, setEnhancedResult] = useState<CardType | null>(null);
+    const [previousStats, setPreviousStats] = useState<CardType['stats'] | undefined>(undefined);
 
     useEffect(() => {
         loadCards();
@@ -106,12 +107,15 @@ export default function EnhancePage() {
         setMaterialSlots(Array(10).fill(null));
     };
 
-    // 자동 선택 (아무 카드 10장)
+    // 자동 선택 (같은 등급 10장)
     const handleAutoSelect = () => {
         if (!targetCard) return;
 
-        // 타겟 제외한 카드 중 레벨이 낮은 순으로 10장 선택
-        const available = allCards.filter(c => c.instanceId !== targetCard.instanceId);
+        // 타겟 제외, 같은 등급인 카드 중 레벨이 낮은 순으로 10장 선택
+        const available = allCards.filter(c =>
+            c.instanceId !== targetCard.instanceId &&
+            c.rarity === targetCard.rarity
+        );
         const sorted = available.sort((a, b) => (a.level || 1) - (b.level || 1));
         const selected = sorted.slice(0, 10);
 
@@ -140,6 +144,7 @@ export default function EnhancePage() {
             const { gameStorage } = await import('@/lib/game-storage');
 
             // 강화 실행
+            setPreviousStats(targetCard.stats); // 이전 스탯 저장
             const enhancedCard = enhanceCard(targetCard as any, filledMaterials as any);
 
             // 1. 재료 카드 10장 삭제
@@ -162,7 +167,7 @@ export default function EnhancePage() {
             await loadCards();
         } catch (error) {
             console.error('강화 오류:', error);
-            showAlert({ title: '강화 실패', message: '강화 중 문제가 발생했습니다.', type: 'error' });
+            showAlert({ title: '강화 실패', message: `강화 중 문제가 발생했습니다.\n${error instanceof Error ? error.message : String(error)}`, type: 'error' });
         }
     };
 
@@ -180,7 +185,7 @@ export default function EnhancePage() {
         <CyberPageLayout
             title="강화 프로토콜"
             englishTitle="UNIT UPGRADE"
-            description="아무 카드 10장을 소모하여 선택한 카드를 강화합니다. 스탯 +1~+3 상승!"
+            description="같은 등급 카드 10장을 소모하여 선택한 카드를 강화합니다. 스탯 +1~+3 상승!"
             color="amber"
         >
             {/* 메인 영역: 카드 목록 */}
@@ -252,20 +257,31 @@ export default function EnhancePage() {
 
                     {/* Rarity Filter Buttons */}
                     <div className="flex flex-wrap gap-2">
-                        {['all', 'common', 'rare', 'epic', 'legendary', 'unique'].map(rarity => (
-                            <button
-                                key={rarity}
-                                onClick={() => setSelectedRarity(rarity)}
-                                className={cn(
-                                    "px-3 py-1.5 rounded-lg text-xs font-bold uppercase transition-all border",
-                                    selectedRarity === rarity
-                                        ? "bg-cyan-500 text-black border-cyan-400 shadow-[0_0_10px_rgba(6,182,212,0.5)]"
-                                        : "bg-black/40 text-white/60 border-white/10 hover:bg-white/10 hover:border-white/30"
-                                )}
-                            >
-                                {rarity === 'all' ? '전체' : rarity}
-                            </button>
-                        ))}
+                        {['all', 'common', 'rare', 'epic', 'legendary', 'unique'].map(rarity => {
+                            const rarityMap: Record<string, string> = {
+                                all: '전체',
+                                common: '일반',
+                                rare: '희귀',
+                                epic: '영웅',
+                                legendary: '전설',
+                                unique: '유니크'
+                            };
+
+                            return (
+                                <button
+                                    key={rarity}
+                                    onClick={() => setSelectedRarity(rarity)}
+                                    className={cn(
+                                        "px-3 py-1.5 rounded-lg text-xs font-bold uppercase transition-all border",
+                                        selectedRarity === rarity
+                                            ? "bg-cyan-500 text-black border-cyan-400 shadow-[0_0_10px_rgba(6,182,212,0.5)]"
+                                            : "bg-black/40 text-white/60 border-white/10 hover:bg-white/10 hover:border-white/30"
+                                    )}
+                                >
+                                    {rarityMap[rarity] || rarity}
+                                </button>
+                            );
+                        })}
                     </div>
                 </div>
 
@@ -321,6 +337,7 @@ export default function EnhancePage() {
                 onClose={() => setRewardModalOpen(false)}
                 cards={enhancedResult ? [enhancedResult] : []}
                 title="강화 성공!"
+                previousStats={previousStats}
             />
         </CyberPageLayout>
     );

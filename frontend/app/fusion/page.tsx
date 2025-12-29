@@ -199,7 +199,7 @@ export default function FusionPage() {
 
                                     if (selectedRarity !== 'all' && (card.rarity || 'common') !== selectedRarity) return null;
 
-                                    const isSelected = materialSlots.some(s => s?.id === card.id);
+                                    const isSelected = materialSlots.some(s => s?.instanceId === card.instanceId);
 
                                     return (
                                         <div
@@ -229,26 +229,37 @@ export default function FusionPage() {
 
                     {/* Rarity Filter Buttons */}
                     <div className="flex flex-wrap gap-2">
-                        {['all', 'common', 'rare', 'epic', 'legendary', 'unique'].map(rarity => (
-                            <button
-                                key={rarity}
-                                onClick={() => setSelectedRarity(rarity)}
-                                className={cn(
-                                    "px-3 py-1.5 rounded-lg text-xs font-bold uppercase transition-all border",
-                                    selectedRarity === rarity
-                                        ? "bg-purple-500 text-black border-purple-400 shadow-[0_0_10px_rgba(168,85,247,0.5)]"
-                                        : "bg-black/40 text-white/60 border-white/10 hover:bg-white/10 hover:border-white/30"
-                                )}
-                            >
-                                {rarity === 'all' ? '전체' : rarity}
-                            </button>
-                        ))}
+                        {['all', 'common', 'rare', 'epic', 'legendary', 'unique'].map(rarity => {
+                            const rarityMap: Record<string, string> = {
+                                all: '전체',
+                                common: '일반',
+                                rare: '희귀',
+                                epic: '영웅',
+                                legendary: '전설',
+                                unique: '유니크'
+                            };
+
+                            return (
+                                <button
+                                    key={rarity}
+                                    onClick={() => setSelectedRarity(rarity)}
+                                    className={cn(
+                                        "px-3 py-1.5 rounded-lg text-xs font-bold uppercase transition-all border",
+                                        selectedRarity === rarity
+                                            ? "bg-purple-500 text-black border-purple-400 shadow-[0_0_10px_rgba(168,85,247,0.5)]"
+                                            : "bg-black/40 text-white/60 border-white/10 hover:bg-white/10 hover:border-white/30"
+                                    )}
+                                >
+                                    {rarityMap[rarity] || rarity}
+                                </button>
+                            );
+                        })}
                     </div>
                 </div>
 
                 <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
                     {displayCards.map(card => {
-                        const isSelected = materialSlots.some(s => s?.id === card.id);
+                        const isSelected = materialSlots.some(s => s?.instanceId === card.instanceId);
 
                         return (
                             <div

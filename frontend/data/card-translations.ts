@@ -129,6 +129,174 @@ export const CARD_TRANSLATIONS: Record<string, CardTranslations> = {
             abilityDescription: 'Music type card stats +25%'
         }
     },
+    'cmdr-dalle': {
+        ko: {
+            name: '아디트야 라메시',
+            description: 'DALL-E의 수석 연구원. 텍스트와 이미지의 관계를 근본적으로 재정의한 선구자.',
+            abilityName: '잠재 공간',
+            abilityDescription: '이미지 생성 속도 15% 증가'
+        },
+        en: {
+            name: 'Aditya Ramesh',
+            description: 'Lead Researcher of DALL-E. A pioneer who fundamentally redefined the relationship between text and images.',
+            abilityName: 'Latent Space',
+            abilityDescription: 'Image generation speed +15%'
+        }
+    },
+    'cmdr-stable': {
+        ko: {
+            name: '에마드 모스타크',
+            description: 'Stability AI의 설립자. AI의 민주화를 위해 오픈 소스 혁명을 주도한다.',
+            abilityName: '오픈 웨이트',
+            abilityDescription: '팀 전체 창의성 +10%'
+        },
+        en: {
+            name: 'Emad Mostaque',
+            description: 'Founder of Stability AI. Leading the open-source revolution for the democratization of AI.',
+            abilityName: 'Open Weight',
+            abilityDescription: 'Team creativity +10%'
+        }
+    },
+    'cmdr-flux': {
+        ko: {
+            name: '로빈 롬바흐',
+            description: 'Black Forest Labs의 설립자. 최고의 퀄리티와 빠른 속도를 동시에 구현하는 기술적 리더.',
+            abilityName: '하이퍼 플럭스',
+            abilityDescription: '이미지 카드 정확도 +15%'
+        },
+        en: {
+            name: 'Robin Rombach',
+            description: 'Founder of Black Forest Labs. A technical leader delivering both highest quality and speed.',
+            abilityName: 'Hyper Flux',
+            abilityDescription: 'Image card accuracy +15%'
+        }
+    },
+    'cmdr-kling': {
+        ko: {
+            name: '청 이샤오',
+            description: 'Kuaishou의 CEO. 아시아를 넘어 세계로 뻗어나가는 고화질 영상 생성 AI의 지휘자.',
+            abilityName: '고화질 스트림',
+            abilityDescription: '비디오 지속 시간 +20%'
+        },
+        en: {
+            name: 'Cheng Yixiao',
+            description: 'CEO of Kuaishou. Conductor of high-definition video generation AI expanding from Asia to the world.',
+            abilityName: 'High Def Stream',
+            abilityDescription: 'Video duration +20%'
+        }
+    },
+    'cmdr-runway': {
+        ko: {
+            name: '크리스토발 발렌주엘라',
+            description: 'Runway의 CEO. 예술가들을 위한 AI 도구를 만들며 영화 제작의 미래를 바꾼다.',
+            abilityName: 'Gen-3 알파',
+            abilityDescription: '비디오 퀄리티 대폭 상승'
+        },
+        en: {
+            name: 'Cristobal Valenzuela',
+            description: 'CEO of Runway. Building AI tools for artists and changing the future of filmmaking.',
+            abilityName: 'Gen-3 Alpha',
+            abilityDescription: 'Massive video quality boost'
+        }
+    },
+    'cmdr-pika': {
+        ko: {
+            name: '데미 구오',
+            description: 'Pika Labs의 설립자. 누구나 쉽게 영상을 만들 수 있도록 상상력을 움직임으로 바꾼다.',
+            abilityName: '유연한 움직임',
+            abilityDescription: '애니메이션 효과 2배'
+        },
+        en: {
+            name: 'Demi Guo',
+            description: 'Founder of Pika Labs. Turning imagination into motion so anyone can easily create videos.',
+            abilityName: 'Fluid Motion',
+            abilityDescription: 'Animation effects x2'
+        }
+    },
+    'cmdr-udio': {
+        ko: {
+            name: '데이비드 딩',
+            description: 'Udio의 CEO. 전 구글 딥마인드 연구원 출신으로 음악 생성의 새로운 지평을 열었다.',
+            abilityName: '하이파이 오디오',
+            abilityDescription: '음악 카드 품질 +20%'
+        },
+        en: {
+            name: 'David Ding',
+            description: 'CEO of Udio. Former Google DeepMind researcher opening new horizons in music generation.',
+            abilityName: 'High Fidelity',
+            abilityDescription: 'Music card quality +20%'
+        }
+    },
+    'cmdr-eleven': {
+        ko: {
+            name: '마티 스타니셰프스키',
+            description: 'ElevenLabs의 CEO. 감정을 담은 초현실적 음성 합성 기술의 리더.',
+            abilityName: '보이스 클론',
+            abilityDescription: '상대방 스킬 복제 확률 10%'
+        },
+        en: {
+            name: 'Mati Staniszewski',
+            description: 'CEO of ElevenLabs. Leader in surreal speech synthesis technology with emotion.',
+            abilityName: 'Voice Clone',
+            abilityDescription: '10% chance to copy opponent skill'
+        }
+    },
+    'cmdr-musicgen': {
+        ko: {
+            name: '제이드 코펫',
+            description: 'Meta AI의 오디오 연구 리드. 오픈 소스 오디오 생성의 표준을 정립.',
+            abilityName: '오디오크래프트',
+            abilityDescription: '음악 생성 안정성 +30%'
+        },
+        en: {
+            name: 'Jade Copet',
+            description: 'Audio Research Lead at Meta AI. Establishing standards for open-source audio generation.',
+            abilityName: 'Audiocraft',
+            abilityDescription: 'Music generation stability +30%'
+        }
+    },
+    'cmdr-cursor': {
+        ko: {
+            name: '마이클 트루엘',
+            description: 'Cursor의 공동 창립자. IDE와 AI의 완벽한 결합을 통해 코딩 경험을 혁신한다.',
+            abilityName: '코드베이스 RAG',
+            abilityDescription: '코드 카드 효율 20% 증가'
+        },
+        en: {
+            name: 'Michael Truell',
+            description: 'Co-founder of Cursor. Revolutionizing the coding experience through perfect union of IDE and AI.',
+            abilityName: 'Codebase RAG',
+            abilityDescription: 'Code card efficiency +20%'
+        }
+    },
+    'cmdr-replit': {
+        ko: {
+            name: '암자드 마사드',
+            description: 'Replit의 CEO. 브라우저 하나로 아이디어를 소프트웨어로 만드는 세상을 꿈꾼다.',
+            abilityName: '고스트라이터',
+            abilityDescription: '배포 속도 50% 단축'
+        },
+        en: {
+            name: 'Amjad Masad',
+            description: 'CEO of Replit. Dreaming of a world where ideas become software with just a browser.',
+            abilityName: 'Ghostwriter',
+            abilityDescription: 'Deployment speed -50%'
+        }
+    },
+    'cmdr-codeium': {
+        ko: {
+            name: '바룬 모한',
+            description: 'Codeium의 CEO. 모든 개발자에게 무료로 고성능 AI 도구를 제공하여 생산성을 극대화한다.',
+            abilityName: '컨텍스트 인식',
+            abilityDescription: '코드 정확도 10% 증가'
+        },
+        en: {
+            name: 'Varun Mohan',
+            description: 'CEO of Codeium. Maximizing productivity by providing high-performance AI tools for free.',
+            abilityName: 'Context Aware',
+            abilityDescription: 'Code accuracy +10%'
+        }
+    },
 
 
     // === UNIQUE TIER (유니크) ===

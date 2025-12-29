@@ -12,6 +12,7 @@ interface UnitFrameProps {
     score?: number;
     showScore?: boolean;
     isRevealed?: boolean; // For enemy cards
+    onClick?: () => void;
 }
 
 const UnitFrame: React.FC<UnitFrameProps> = ({
@@ -20,7 +21,8 @@ const UnitFrame: React.FC<UnitFrameProps> = ({
     isLoser,
     score,
     showScore,
-    isRevealed = true
+    isRevealed = true,
+    onClick
 }) => {
     // Type Colors and Icons
     const getTypeConfig = (type?: string) => {
@@ -44,13 +46,16 @@ const UnitFrame: React.FC<UnitFrameProps> = ({
 
     return (
         <motion.div
-            className={`relative w-32 h-44 rounded-xl border-2 bg-black/80 backdrop-blur-md overflow-hidden transition-all
+            className={`relative w-32 h-44 rounded-xl border-2 bg-black/80 backdrop-blur-md overflow-hidden transition-all cursor-pointer hover:border-white/50
                 ${typeConfig.color}
                 ${isWinner ? 'scale-110 z-10 ring-4 ring-yellow-400 shadow-[0_0_30px_rgba(250,204,21,0.5)]' : ''}
                 ${isLoser ? 'opacity-50 grayscale scale-90' : ''}
             `}
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: isWinner ? 1.1 : (isLoser ? 0.9 : 1) }}
+            onClick={onClick}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
         >
             {/* Image Placeholder */}
             <div className="absolute inset-0 bg-cover bg-center opacity-60" style={{ backgroundImage: `url(${card.imageUrl || '/assets/cards/default-card.png'})` }} />

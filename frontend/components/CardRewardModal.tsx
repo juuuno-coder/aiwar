@@ -12,9 +12,10 @@ interface CardRewardModalProps {
     onClose: () => void;
     cards: CardType[];
     title?: string;
+    previousStats?: CardType['stats'];
 }
 
-export default function CardRewardModal({ isOpen, onClose, cards, title = "카드 획득!" }: CardRewardModalProps) {
+export default function CardRewardModal({ isOpen, onClose, cards, title = "카드 획득!", previousStats }: CardRewardModalProps) {
     const [showCards, setShowCards] = useState(false);
 
     useEffect(() => {
@@ -98,16 +99,70 @@ export default function CardRewardModal({ isOpen, onClose, cards, title = "카�
                     >
                         확인
                     </motion.button>
+
+                    {/* Stat Increase Animation */}
+                    {cards.length === 1 && previousStats && (
+                        <div className="absolute top-1/2 left-full ml-8 -translate-y-1/2 w-64 pointer-events-none">
+                            <StatChanges current={cards[0].stats} previous={previousStats} />
+                        </div>
+                    )}
                 </motion.div>
 
                 {/* Close Button */}
                 <button
                     onClick={onClose}
+
                     className="absolute top-8 right-8 text-white/50 hover:text-white transition-colors"
                 >
                     <X size={32} />
                 </button>
             </motion.div>
         </AnimatePresence>
+    );
+}
+
+function StatChanges({ current, previous }: { current: CardType['stats'], previous: CardType['stats'] }) {
+    const changes = [
+        { label: '효율', key: 'efficiency', diff: (current.efficiency || 0) - (previous.efficiency || 0) },
+        { label: '창의', key: 'creativity', diff: (current.creativity || 0) - (previous.creativity || 0) },
+        { label: '기능', key: 'function', diff: (current.function || 0) - (previous.function || 0) },
+    ].filter(stat => stat.diff > 0);
+
+    if (changes.length === 0) return null;
+
+    return (
+        <div className="flex flex-col gap-2">
+            {changes.map((stat, index) => (
+                <motion.div
+                    key={stat.key}
+                    initial={{ x: -20, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    transition={{ delay: 0.5 + (index * 0.2), type: "spring" }}
+                    className="flex items-center gap-2 bg-black/60 backdrop-blur-sm px-4 py-2 rounded-lg border border-green-500/30"
+                >
+                    <span className="text-gray-300 font-bold">{stat.label}</span>
+                    <span className="text-green-400 font-black text-xl">+{stat.diff}</span>
+                    <motion.div
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        transition={{ delay: 0.7 + (index * 0.2) }}
+                    >
+                        <Sparkles size={16} className="text-yellow-400" />
+                    </motion.div>
+                </motion.div>
+            ))}
+            <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 1.2 }}
+                className="mt-2 text-center"
+            >
+                <div className="text-green-400 font-bold text-lg">TOTAL POWER</div>
+                <div className="text-3xl font-black text-white drop-shadow-[0_0_10px_rgba(74,222,128,0.8)]">
+                    {current.totalPower}
+                    <span className="text-lg text-green-500 ml-2">(+{current.totalPower - previous.totalPower})</span>
+                </div>
+            </motion.div>
+        </div>
     );
 }

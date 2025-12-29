@@ -178,8 +178,10 @@ export default function PVPArenaPage() {
     // 덱 확정
     const handleDeckConfirm = () => {
         const selected = selectedCards;
-        if (selected.length !== 5) {
-            showAlert({ title: '덱 미완성', message: '5장의 카드를 선택해주세요.', type: 'warning' });
+        const targetSize = selectedMode === 'ambush' ? 7 : 5;
+
+        if (selected.length !== targetSize) {
+            showAlert({ title: '덱 미완성', message: `${targetSize}장의 카드를 선택해주세요.`, type: 'warning' });
             return;
         }
 
@@ -226,12 +228,12 @@ export default function PVPArenaPage() {
     };
 
     // 전투 시작
-    const handleStartBattle = () => {
+    const handleStartBattle = (overrideOrder?: number[]) => {
         const player: BattleParticipant = {
             name: `Player_${state.level}`,
             level: state.level,
             deck: playerDeck,
-            cardOrder,
+            cardOrder: overrideOrder || cardOrder,
         };
 
         const opponent: BattleParticipant = {
@@ -465,10 +467,11 @@ export default function PVPArenaPage() {
                                                 whileTap={{ scale: 0.95 }}
                                                 className="cursor-pointer relative"
                                                 onClick={() => {
+                                                    const targetSize = selectedMode === 'ambush' ? 7 : 5;
                                                     const isSelected = selectedCards.find(c => c.id === card.id);
                                                     if (isSelected) {
                                                         setSelectedCards(prev => prev.filter(c => c.id !== card.id));
-                                                    } else if (selectedCards.length < 5) {
+                                                    } else if (selectedCards.length < targetSize) {
                                                         setSelectedCards(prev => [...prev, card as Card]);
                                                     }
                                                 }}
@@ -497,10 +500,11 @@ export default function PVPArenaPage() {
                                             whileTap={{ scale: 0.95 }}
                                             className="cursor-pointer"
                                             onClick={() => {
+                                                const targetSize = selectedMode === 'ambush' ? 7 : 5;
                                                 const isSelected = selectedCards.find(c => c.id === card.id);
                                                 if (isSelected) {
                                                     setSelectedCards(prev => prev.filter(c => c.id !== card.id));
-                                                } else if (selectedCards.length < 5) {
+                                                } else if (selectedCards.length < targetSize) {
                                                     setSelectedCards(prev => [...prev, card]);
                                                 }
                                             }}
@@ -516,9 +520,9 @@ export default function PVPArenaPage() {
                             {/* 버튼 영역 - 하단 고정 (덱 슬롯 포함) */}
                             <div className="fixed bottom-0 left-0 right-0 bg-gradient-to-t from-black via-black/95 to-transparent pt-8 pb-4 z-50">
                                 <div className="max-w-5xl mx-auto px-4">
-                                    {/* 덱 슬롯 5개 (크게) */}
+                                    {/* 덱 슬롯 (모드에 따라 5 or 7개) */}
                                     <div className="flex justify-center gap-4 mb-4">
-                                        {Array.from({ length: 5 }).map((_, i) => {
+                                        {Array.from({ length: selectedMode === 'ambush' ? 7 : 5 }).map((_, i) => {
                                             const card = selectedCards[i];
                                             // 가위바위보 타입 결정
                                             const getTypeInfo = (c: Card) => {
@@ -652,7 +656,8 @@ export default function PVPArenaPage() {
                                         <button
                                             onClick={() => {
                                                 // 자동 선택 - 등급별로 균형 잡힌 덱 구성 (주력카드 우선)
-                                                const balancedDeck = selectBalancedDeck(inventory, 5);
+                                                const targetSize = selectedMode === 'ambush' ? 7 : 5;
+                                                const balancedDeck = selectBalancedDeck(inventory, targetSize);
                                                 setSelectedCards(balancedDeck as Card[]);
                                             }}
                                             className="px-6 py-3 bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-400 font-bold rounded-xl transition-all flex items-center gap-2"
@@ -673,16 +678,19 @@ export default function PVPArenaPage() {
 
                                         <button
                                             onClick={handleDeckConfirm}
-                                            disabled={selectedCards.length !== 5}
+                                            disabled={selectedCards.length !== (selectedMode === 'ambush' ? 7 : 5)}
                                             className={cn(
-                                                "px-8 py-3 font-bold rounded-xl transition-all flex items-center gap-2",
-                                                selectedCards.length === 5
-                                                    ? "bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white shadow-lg shadow-green-500/30"
-                                                    : "bg-white/10 text-white/40 cursor-not-allowed"
+                                                "px-10 py-3 rounded-xl font-bold flex items-center gap-2 transition-all",
+                                                selectedCards.length === (selectedMode === 'ambush' ? 7 : 5)
+                                                    ? "bg-gradient-to-r from-cyan-600 to-blue-600 text-white hover:shadow-lg hover:shadow-cyan-500/50"
+                                                    : "bg-gray-700 text-gray-500 cursor-not-allowed"
                                             )}
                                         >
-                                            <CheckCircle size={20} />
-                                            선택 완료
+                                            <Swords size={20} />
+                                            {selectedCards.length === (selectedMode === 'ambush' ? 7 : 5)
+                                                ? "덱 확정 및 전투 참가"
+                                                : `${selectedCards.length}/${selectedMode === 'ambush' ? 7 : 5}장 선택`
+                                            }
                                         </button>
                                     </div>
                                 </div>
@@ -831,7 +839,7 @@ export default function PVPArenaPage() {
                                         playerDeck.findIndex(c => c.id === placement.round5.id),
                                     ];
                                     setCardOrder(order);
-                                    handleStartBattle();
+                                    handleStartBattle(order);
                                 }}
                             />
                         </motion.div>

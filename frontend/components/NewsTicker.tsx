@@ -26,7 +26,7 @@ export default function NewsTicker({ className }: { className?: string }) {
             <div className="absolute inset-y-0 right-0 w-20 bg-gradient-to-l from-black/80 to-transparent z-10" />
 
             <motion.div
-                className="inline-flex gap-16"
+                className="inline-flex gap-16 will-change-transform"
                 animate={{ x: [0, -1035] }} // -1035 is total width of one set of news
                 transition={{
                     duration: 30,

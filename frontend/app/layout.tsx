@@ -10,6 +10,7 @@ import { FooterProvider } from "@/context/FooterContext";
 import { UserProvider } from "@/context/UserContext";
 import { SoundProvider } from "@/context/SoundContext";
 import { NotificationProvider } from "@/context/NotificationContext";
+import { CardModalProvider } from "@/components/CardModalContext";
 import MainLayout from "@/components/MainLayout";
 import TutorialManager from "@/components/TutorialManager";
 
@@ -46,12 +47,14 @@ export default function RootLayout({
                 <AlertProvider>
                   <NotificationProvider>
                     <FooterProvider>
-                      <ThemeProvider>
-                        <MainLayout>
-                          <TutorialManager />
-                          {children}
-                        </MainLayout>
-                      </ThemeProvider>
+                      <CardModalProvider>
+                        <ThemeProvider>
+                          <MainLayout>
+                            <TutorialManager />
+                            {children}
+                          </MainLayout>
+                        </ThemeProvider>
+                      </CardModalProvider>
                     </FooterProvider>
                   </NotificationProvider>
                 </AlertProvider>

@@ -419,9 +419,30 @@ export function incrementGenerationCount(factionId: string): void {
 
     if (subscription) {
         subscription.generationsToday += 1;
-        // 카드 생성 시 친밀도 증가 (최대 100)
+
+        // 카드 생성 시 친밀도 증가 (Legacy - UI 호환성용)
         subscription.affinity = Math.min((subscription.affinity || 0) + 1, 100);
         saveSubscriptions(subscriptions);
+
+        // [NEW] 전역 지휘관 숙련도(Mastery) 증가
+        // 어떤 군단을 사용하든 지휘관의 총괄 능력이 상승하여 모든 군단에 이점 제공
+        const state = getGameState();
+
+        // 연구 보너스 적용 (리더십: 숙련도 획득 속도 증가)
+        let bonusMultiplier = 1;
+        if (state.research?.stats?.leadership) {
+            const { getResearchBonus } = require('./research-system');
+            const bonus = getResearchBonus('leadership', state.research.stats.leadership.currentLevel);
+            bonusMultiplier = 1 + (bonus / 100);
+        }
+
+        const baseGain = 1;
+        const actualGain = baseGain * bonusMultiplier;
+        const newMastery = Math.min((state.commanderMastery || 0) + actualGain, 100);
+
+        if (newMastery > (state.commanderMastery || 0)) {
+            updateGameState({ commanderMastery: newMastery });
+        }
     }
 }
 

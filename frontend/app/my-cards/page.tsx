@@ -16,7 +16,7 @@ import { rerollCardStats } from '@/lib/card-generation-system'; // Import reroll
 import { useFirebase } from '@/components/FirebaseProvider';
 import { gameStorage } from '@/lib/game-storage';
 import { getCardName } from '@/data/card-translations';
-import InventoryCardDetail from '@/components/InventoryCardDetail';
+import { useCardModal } from '@/components/CardModalContext';
 
 type SortOption = 'power' | 'rarity' | 'name' | 'acquiredAt';
 type FilterOption = 'all' | 'common' | 'rare' | 'epic' | 'legendary' | 'unique' | 'commander';
@@ -39,6 +39,7 @@ export default function MyCardsPage() {
     const footer = useFooter();
     const { addCoins, refreshData } = useUser();
     const { showAlert } = useAlert();
+    const { openCardModal } = useCardModal();
 
     const [mounted, setMounted] = useState(false);
     const [cards, setCards] = useState<InventoryCard[]>([]);
@@ -47,7 +48,6 @@ export default function MyCardsPage() {
     const [sortBy, setSortBy] = useState<SortOption>('rarity'); // Default by rarity
     const [sortAsc, setSortAsc] = useState(true); // Low to High (Common to Commander)
     const [filterRarity, setFilterRarity] = useState<FilterOption>('all');
-    const [selectedCard, setSelectedCard] = useState<InventoryCard | null>(null);
     const [isRerollConfirmOpen, setIsRerollConfirmOpen] = useState(false);
 
     // 스탯 재설정 핸들러
@@ -275,9 +275,9 @@ export default function MyCardsPage() {
                                         initial={{ opacity: 0, scale: 0.9 }}
                                         animate={{ opacity: 1, scale: 1 }}
                                         className="cursor-pointer relative"
-                                        onClick={() => setSelectedCard(card)}
+                                        onClick={() => openCardModal(card)}
                                     >
-                                        <GameCard card={card} isSelected={selectedCard?.id === card.id} />
+                                        <GameCard card={card} isSelected={false} />
                                         {/* Rarity Label */}
                                         <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 px-2 py-0.5 bg-black/80 border border-white/20 rounded text-[8px] font-bold text-white/60 whitespace-nowrap">
                                             {rarity === 'commander' ? '군단장' :
@@ -370,9 +370,9 @@ export default function MyCardsPage() {
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: i * 0.02 }}
                             className="cursor-pointer"
-                            onClick={() => setSelectedCard(card)}
+                            onClick={() => openCardModal(card)}
                         >
-                            <GameCard card={card} isSelected={selectedCard?.id === card.id} />
+                            <GameCard card={card} isSelected={false} />
                             {card.isLocked && (
                                 <div className="absolute top-2 left-2 w-6 h-6 bg-amber-500/80 rounded-full flex items-center justify-center pointer-events-none">
                                     <Lock size={12} className="text-black" />
@@ -382,18 +382,6 @@ export default function MyCardsPage() {
                     ))}
                 </div>
             )}
-
-            {/* Selected Card Rich Detail View */}
-            <AnimatePresence>
-                {selectedCard && (
-                    <InventoryCardDetail
-                        card={selectedCard}
-                        onClose={() => setSelectedCard(null)}
-                        onEnhance={(id) => router.push(`/enhance?cardId=${id}`)}
-                        onFuse={(id) => router.push(`/fusion?cardId=${id}`)}
-                    />
-                )}
-            </AnimatePresence>
 
             {/* Confirmation Modal for Reroll */}
             <AnimatePresence>

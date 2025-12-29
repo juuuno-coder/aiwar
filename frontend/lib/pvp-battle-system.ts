@@ -283,9 +283,11 @@ export function generateAIOpponent(playerLevel: number = 1, cardPool: Card[] = [
 
     let aiCards: Card[] = [];
 
-    // 0. 초보자 배려 모드 (레이팅 1100 미만)
+    // 0. 초보자 배려 모드 (레이팅 1100 미만, 레이팅 정보 없으면 기본 1000으로 간주)
     // 패턴: 보(Paper) 4개, 가위(Scissors) 1개 (보보보보가위)
-    if (playerRating < 1100) {
+    const currentRating = playerRating !== undefined ? playerRating : 1000;
+
+    if (currentRating < 1100) {
         console.log("👶 Easy Mode AI Activated (Rating < 1100)");
 
         // 보 (Paper) = CREATIVITY
@@ -382,9 +384,17 @@ export function generateAIOpponent(playerLevel: number = 1, cardPool: Card[] = [
             card.level = playerLevel || 1;
 
             // 지휘관 성향 반영하여 스탯 보정 (가상)
+            const statMultiplier = 1 + (Math.max(1, playerLevel) - 1) * 0.1; // 레벨당 10% 증가
+
             if (commander.preferredType === 'EFFICIENCY') card.stats.efficiency = (card.stats.efficiency || 0) + 10;
             if (commander.preferredType === 'CREATIVITY') card.stats.creativity = (card.stats.creativity || 0) + 10;
             if (commander.preferredType === 'FUNCTION') card.stats.function = (card.stats.function || 0) + 10;
+
+            // 레벨 스케일링 적용
+            card.stats.efficiency = Math.floor((card.stats.efficiency || 5) * statMultiplier);
+            card.stats.creativity = Math.floor((card.stats.creativity || 5) * statMultiplier);
+            card.stats.function = Math.floor((card.stats.function || 5) * statMultiplier);
+            card.stats.totalPower = card.stats.efficiency + card.stats.creativity + card.stats.function;
 
             // 타입 재설정
             const maxStat = Math.max(card.stats.efficiency || 0, card.stats.creativity || 0, card.stats.function || 0);
@@ -423,10 +433,10 @@ export function simulateBattle(
     const opponentOrder = opponent.cardOrder || [0, 1, 2, 3, 4];
 
     if (mode === 'sudden-death') {
-        // 단판승부: 순차 라운드 (R1, R2, R4, R5)
-        const roundSequence = [0, 1, 3, 4];
+        // 단판승부: R1 ~ R5 순차 진행 (기존 [0, 1, 3, 4] -> [0, 1, 2, 3, 4]로 수정하여 UI 순서와 일치시킴)
+        const roundSequence = [0, 1, 2, 3, 4];
 
-        console.log(`⚙️ Sudden Death: Sequential rounds [1,2,4,5]`);
+        console.log(`⚙️ Sudden Death: Sequential rounds [1-5]:`, roundSequence);
 
         for (const roundIndex of roundSequence) {
             const playerIndex = playerOrder[roundIndex];

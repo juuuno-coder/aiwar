@@ -157,6 +157,7 @@ export interface UserProfile {
     exp: number;
     coins: number;
     tokens: number;
+    commanderMastery: number; // Global proficiency level (0-100)
     createdAt: Date;
     lastLogin: Date;
 }

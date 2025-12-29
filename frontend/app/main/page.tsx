@@ -50,58 +50,53 @@ export default function MainPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-10 relative z-10">
-        {menuItems.map((item, idx) => (
-          <Link key={idx} href={item.path}>
-            <CardContainer className="inter-var w-full h-full">
-              <CardBody className={`
-                    bg-black/80 relative group/card dark:hover:shadow-2xl dark:hover:shadow-${item.color}-500/[0.1]
-                    dark:bg-black dark:border-white/[0.2] border-black/[0.1]
-                    w-full h-64 rounded-xl p-6 border border-white/10
-                    flex flex-col items-center justify-center gap-6 overflow-hidden
-                    hover:border-${item.color}-500/50 transition-colors duration-300
-                `}>
+        {menuItems.map((item, idx) => {
+          // Tailwind Dynamic Class Fix: Explicit mapping
+          const colorVariants: Record<string, any> = {
+            green: { border: 'border-green-500/30', hover: 'hover:border-green-500', text: 'group-hover/card:text-green-400', shadow: 'dark:hover:shadow-green-500/[0.1]', bg: 'from-green-500/5' },
+            red: { border: 'border-red-500/30', hover: 'hover:border-red-500', text: 'group-hover/card:text-red-400', shadow: 'dark:hover:shadow-red-500/[0.1]', bg: 'from-red-500/5' },
+            purple: { border: 'border-purple-500/30', hover: 'hover:border-purple-500', text: 'group-hover/card:text-purple-400', shadow: 'dark:hover:shadow-purple-500/[0.1]', bg: 'from-purple-500/5' },
+            amber: { border: 'border-amber-500/30', hover: 'hover:border-amber-500', text: 'group-hover/card:text-amber-400', shadow: 'dark:hover:shadow-amber-500/[0.1]', bg: 'from-amber-500/5' },
+            yellow: { border: 'border-yellow-500/30', hover: 'hover:border-yellow-500', text: 'group-hover/card:text-yellow-400', shadow: 'dark:hover:shadow-yellow-500/[0.1]', bg: 'from-yellow-500/5' },
+            pink: { border: 'border-pink-500/30', hover: 'hover:border-pink-500', text: 'group-hover/card:text-pink-400', shadow: 'dark:hover:shadow-pink-500/[0.1]', bg: 'from-pink-500/5' },
+            blue: { border: 'border-blue-500/30', hover: 'hover:border-blue-500', text: 'group-hover/card:text-blue-400', shadow: 'dark:hover:shadow-blue-500/[0.1]', bg: 'from-blue-500/5' },
+            rose: { border: 'border-rose-500/30', hover: 'hover:border-rose-500', text: 'group-hover/card:text-rose-400', shadow: 'dark:hover:shadow-rose-500/[0.1]', bg: 'from-rose-500/5' },
+          };
 
-                {/* Corner Brackets (The "Lines" requested) */}
-                <div className={`absolute top-0 left-0 w-8 h-8 border-t-2 border-l-2 border-${item.color}-500/30 rounded-tl-lg group-hover/card:border-${item.color}-500 group-hover/card:w-16 group-hover/card:h-16 transition-all duration-300`} />
-                <div className={`absolute top-0 right-0 w-8 h-8 border-t-2 border-r-2 border-${item.color}-500/30 rounded-tr-lg group-hover/card:border-${item.color}-500 group-hover/card:w-16 group-hover/card:h-16 transition-all duration-300`} />
-                <div className={`absolute bottom-0 left-0 w-8 h-8 border-b-2 border-l-2 border-${item.color}-500/30 rounded-bl-lg group-hover/card:border-${item.color}-500 group-hover/card:w-16 group-hover/card:h-16 transition-all duration-300`} />
-                <div className={`absolute bottom-0 right-0 w-8 h-8 border-b-2 border-r-2 border-${item.color}-500/30 rounded-br-lg group-hover/card:border-${item.color}-500 group-hover/card:w-16 group-hover/card:h-16 transition-all duration-300`} />
+          const variant = colorVariants[item.color] || colorVariants['green'];
 
-                {/* Animated Background Line */}
-                <div className={`absolute inset-0 bg-gradient-to-b from-${item.color}-500/5 to-transparent opacity-0 group-hover/card:opacity-100 transition-opacity duration-500`} />
+          return (
+            <Link key={idx} href={item.path}>
+              <CardContainer className="inter-var w-full h-full">
+                <CardBody className={`
+                        bg-black/40 relative group/card dark:hover:shadow-2xl ${variant.shadow}
+                        dark:bg-black dark:border-white/[0.2] border-black/[0.1]
+                        w-full h-64 rounded-xl p-6 border ${variant.border}
+                        flex flex-col items-center justify-center gap-4 overflow-hidden
+                        ${variant.hover} transition-colors duration-300
+                    `}>
 
-                {/* TECH NODE Icon Container */}
-                <CardItem translateZ="50" className="w-full flex justify-center items-center relative">
-                  <div className={`
-                      relative w-24 h-24 rounded-2xl 
-                      bg-gradient-to-br from-${item.color}-500/20 to-transparent 
-                      border border-${item.color}-500/30 
-                      flex items-center justify-center
-                      group-hover/card:border-${item.color}-500 group-hover/card:shadow-[0_0_20px_rgba(0,0,0,0.5)]
-                      transition-all duration-300
-                   `}>
-                    {/* Inner pulsing circle */}
-                    <div className={`absolute inset-2 rounded-xl border border-${item.color}-500/10 group-hover/card:animate-pulse`} />
+                  <div className={`absolute inset-0 bg-gradient-to-b ${variant.bg} to-transparent opacity-0 group-hover/card:opacity-100 transition-opacity`} />
 
-                    <span className="text-5xl drop-shadow-[0_0_10px_rgba(255,255,255,0.5)] transform group-hover/card:scale-110 transition-transform duration-300">
+                  <CardItem translateZ="50" className="w-full flex justify-center items-center">
+                    <span className="text-6xl drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]">
                       {item.icon}
                     </span>
-                  </div>
-                </CardItem>
+                  </CardItem>
 
-                <CardItem translateZ="60" className="text-center z-10 w-full">
-                  <h3 className={`text-xl font-black text-white mb-2 tracking-wider group-hover/card:text-${item.color}-400 transition-colors uppercase`}>
-                    {item.title}
-                  </h3>
-                  <div className={`h-[1px] w-12 bg-${item.color}-500/50 mx-auto mb-2`} />
-                  <p className="text-[10px] font-mono text-cyan-500/70 tracking-[0.2em] uppercase">
-                    {item.subtitle}
-                  </p>
-                </CardItem>
-              </CardBody>
-            </CardContainer>
-          </Link>
-        ))}
+                  <CardItem translateZ="60" className="text-center z-10 mt-4">
+                    <h3 className={`text-2xl font-bold text-white mb-1 ${variant.text} transition-colors`}>
+                      {item.title}
+                    </h3>
+                    <p className="text-xs font-mono text-white/50 tracking-widest uppercase">
+                      {item.subtitle}
+                    </p>
+                  </CardItem>
+                </CardBody>
+              </CardContainer>
+            </Link>
+          );
+        })}
       </div>
 
       <AnimatePresence>

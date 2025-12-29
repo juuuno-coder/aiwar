@@ -6,10 +6,10 @@ import { CARD_DATABASE } from '@/data/card-database';
  * 등급별 기본 확률 (가중치)
  */
 const BASE_RARITY_WEIGHTS: Record<Rarity, number> = {
-    common: 50,      // 50%
-    rare: 30,        // 30%
-    epic: 15,        // 15%
-    legendary: 5,    // 5%
+    common: 60,      // 60% (상향)
+    rare: 30,        // 30% (유지)
+    epic: 9,         // 9% (하향)
+    legendary: 1,    // 1% (대폭 하향)
     unique: 0,       // 0% (이벤트 전용)
     commander: 0     // 0% (이벤트 전용)
 };
@@ -19,8 +19,8 @@ const BASE_RARITY_WEIGHTS: Record<Rarity, number> = {
  */
 const TIER_BONUSES: Record<string, { epic: number; legendary: number }> = {
     free: { epic: 0, legendary: 0 },
-    pro: { epic: 10, legendary: 5 },      // Epic 25%, Legendary 10%
-    ultra: { epic: 15, legendary: 10 }    // Epic 30%, Legendary 15%
+    pro: { epic: 3, legendary: 0.5 },      // Epic 12%, Legendary 1.5%
+    ultra: { epic: 6, legendary: 2 }       // Epic 15%, Legendary 3%
 };
 
 /**
@@ -42,20 +42,22 @@ export interface FactionEffects {
 function calculateRarityWeights(tier: string, affinity: number = 0): Record<Rarity, number> {
     const bonus = TIER_BONUSES[tier] || TIER_BONUSES.free;
 
-    // 친밀도 보너스: 친밀도 100 달성 시 Epic +5%, Legendary +2% 추가 확률
-    const affinityEpicBonus = (affinity / 100) * 5;
-    const affinityLegendaryBonus = (affinity / 100) * 2;
+    // 지휘관 숙련도(Mastery) 보너스: 숙련도 100 달성 시 Epic +5%, Legendary +2% 추가 확률
+    // 기존 개별 친밀도(Affinity) 대신 전역 숙련도(Mastery)를 사용합니다.
+    const mastery = affinity; // 파라미터 이름은 하위 호환성을 위해 유지하되 로직은 숙련도로 취급
+    const masteryEpicBonus = (mastery / 100) * 5;
+    const masteryLegendaryBonus = (mastery / 100) * 2;
 
     // Common과 Rare에서 확률을 빼서 Epic/Legendary에 추가
-    const totalBonus = bonus.epic + bonus.legendary + affinityEpicBonus + affinityLegendaryBonus;
+    const totalBonus = bonus.epic + bonus.legendary + masteryEpicBonus + masteryLegendaryBonus;
     const commonReduction = totalBonus * 0.6; // Common에서 60% 차감
     const rareReduction = totalBonus * 0.4;   // Rare에서 40% 차감
 
     return {
         common: Math.max(0, BASE_RARITY_WEIGHTS.common - commonReduction),
         rare: Math.max(0, BASE_RARITY_WEIGHTS.rare - rareReduction),
-        epic: BASE_RARITY_WEIGHTS.epic + bonus.epic + affinityEpicBonus,
-        legendary: BASE_RARITY_WEIGHTS.legendary + bonus.legendary + affinityLegendaryBonus,
+        epic: BASE_RARITY_WEIGHTS.epic + bonus.epic + masteryEpicBonus,
+        legendary: BASE_RARITY_WEIGHTS.legendary + bonus.legendary + masteryLegendaryBonus,
         unique: BASE_RARITY_WEIGHTS.unique,
         commander: BASE_RARITY_WEIGHTS.commander
     };
@@ -119,11 +121,21 @@ export function createCardFromTemplate(template: any, factionEffects?: FactionEf
     const rarity = template.rarity || 'common';
     const powerRange = RARITY_POWER_RANGES[rarity.toLowerCase()] || RARITY_POWER_RANGES.common;
 
-    // 1. 총 전투력 결정 (군단 효과 적용)
+    // 1. 총 전투력 결정 (군단 효과 + 유행 효과 적용)
     // powerBonus가 0.2면 20% 증가
-    const bonusMultiplier = 1 + (factionEffects?.powerBonus || 0);
-    const minPower = Math.floor(powerRange.min * bonusMultiplier);
-    const maxPower = Math.floor(powerRange.max * bonusMultiplier);
+    let totalMultiplier = 1 + (factionEffects?.powerBonus || 0);
+
+    // 유행 효과 적용 (트렌드)
+    const { getCurrentTrend, TREND_EFFECTS } = require('./trend-system'); // Dynamic require to avoid cycle if any
+    const currentTrend = getCurrentTrend();
+
+    // 만약 이 템플릿의 군단이 현재 유행 중이라면?
+    if (template.aiFactionId === currentTrend.id) {
+        totalMultiplier += (TREND_EFFECTS.statMultiplier - 1); // 1.2 -> +0.2
+    }
+
+    const minPower = Math.floor(powerRange.min * totalMultiplier);
+    const maxPower = Math.floor(powerRange.max * totalMultiplier);
 
     let totalPower = Math.floor(Math.random() * (maxPower - minPower + 1)) + minPower;
 

@@ -1,4 +1,6 @@
-import { Card } from '@/lib/types';
+import { Card, AIType, Rarity } from '@/lib/types';
+import GameCard from '@/components/GameCard';
+import { motion } from 'framer-motion';
 
 interface CardDetailModalProps {
     card: Card | null;
@@ -10,22 +12,18 @@ export default function CardDetailModal({ card, isOpen, onClose }: CardDetailMod
     if (!isOpen || !card) return null;
 
     const getCardRarity = (card: Card): string => {
-        if ((card.stats.totalPower || 0) > 250) return 'LEGENDARY';
-        if ((card.stats.totalPower || 0) > 200) return 'EPIC';
-        if ((card.stats.totalPower || 0) > 150) return 'RARE';
+        if (card.rarity) return card.rarity.toUpperCase();
         return 'COMMON';
     };
 
     const getRarityColor = (rarity: string): string => {
         switch (rarity) {
-            case 'LEGENDARY':
-                return 'var(--rarity-legendary)';
-            case 'EPIC':
-                return 'var(--rarity-epic)';
-            case 'RARE':
-                return 'var(--rarity-rare)';
-            default:
-                return 'var(--rarity-common)';
+            case 'LEGENDARY': return '#fbbf24'; // amber-400
+            case 'EPIC': return '#a855f7'; // purple-500
+            case 'RARE': return '#3b82f6'; // blue-500
+            case 'UNIQUE': return '#ef4444'; // red-500
+            case 'COMMANDER': return '#10b981'; // emerald-500
+            default: return '#9ca3af'; // gray-400
         }
     };
 
@@ -34,111 +32,106 @@ export default function CardDetailModal({ card, isOpen, onClose }: CardDetailMod
 
     return (
         <div
-            className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4"
+            className="fixed inset-0 bg-black/90 backdrop-blur-md flex items-center justify-center z-[100] p-4 animate-in fade-in duration-200"
             onClick={onClose}
         >
             <div
-                className="card p-8 max-w-2xl w-full relative"
+                className="max-w-5xl w-full flex flex-col md:flex-row items-center justify-center gap-12 md:gap-16 relative pointer-events-auto"
                 onClick={(e) => e.stopPropagation()}
-                style={{ borderColor: rarityColor, borderWidth: '2px' }}
             >
                 {/* 닫기 버튼 */}
                 <button
                     onClick={onClose}
-                    className="absolute top-4 right-4 text-2xl hover:text-[var(--primary-blue)] transition-colors"
+                    className="absolute -top-12 right-0 md:-right-12 z-50 w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer border border-white/10"
                 >
                     ✕
                 </button>
 
-                {/* 헤더 */}
-                <div className="text-center mb-6">
-                    <div className="text-7xl mb-4">🤖</div>
-                    <h2 className="text-3xl font-bold mb-2" style={{ fontFamily: 'Orbitron, sans-serif' }}>
-                        AI 유닛 #{card.id.slice(0, 8)}
-                    </h2>
-                    <div className="flex items-center justify-center gap-2 mb-2">
-                        <span className="text-lg font-bold" style={{ color: rarityColor }}>
-                            {rarity}
-                        </span>
-                        <span className="text-[var(--text-secondary)]">•</span>
-                        <span className="text-lg">Lv.{card.level}</span>
-                    </div>
-                    <div className="text-sm text-[var(--text-secondary)]">
-                        획득일: {new Date(card.acquiredAt).toLocaleDateString('ko-KR')}
-                    </div>
-                </div>
+                {/* Left: Enhanced Game Card (Visual) - Maximized Scale */}
+                {/* 
+                    GameCard Base Size: 160px x 240px
+                    Mobile Scale: 1.8x -> 288px x 432px
+                    Desktop Scale: 2.2x -> 352px x 528px
+                */}
+                <div className="relative flex-shrink-0 flex items-center justify-center w-[300px] h-[450px] md:w-[360px] md:h-[540px]">
+                    {/* Glow Effect behind the card */}
+                    <div
+                        className="absolute inset-0 blur-3xl opacity-40 scale-110 pointer-events-none"
+                        style={{ backgroundColor: rarityColor }}
+                    />
 
-                {/* 총 전투력 */}
-                <div className="card p-6 mb-6 text-center glow-purple">
-                    <p className="text-sm text-[var(--text-secondary)] mb-2">총 전투력</p>
-                    <p className="text-5xl font-bold text-gradient" style={{ fontFamily: 'Orbitron, sans-serif' }}>
-                        {card.stats.totalPower || 0}
-                    </p>
-                </div>
-
-                {/* 능력치 상세 */}
-                <div className="mb-6">
-                    <h3 className="text-xl font-bold mb-4" style={{ fontFamily: 'Orbitron, sans-serif' }}>
-                        능력치
-                    </h3>
-                    <div className="space-y-3">
-                        <StatRow label="창의성" value={card.stats.creativity || 0} max={70} icon="💡" />
-                        <StatRow label="정확성" value={card.stats.accuracy || 0} max={70} icon="🎯" />
-                        <StatRow label="속도" value={card.stats.speed || 0} max={70} icon="⚡" />
-                        <StatRow label="안정성" value={card.stats.stability || 0} max={70} icon="🛡️" />
-                        <StatRow label="윤리성" value={card.stats.ethics || 0} max={70} icon="⚖️" />
-                    </div>
-                </div>
-
-                {/* 경험치 */}
-                <div className="mb-6">
-                    <h3 className="text-xl font-bold mb-4" style={{ fontFamily: 'Orbitron, sans-serif' }}>
-                        경험치
-                    </h3>
-                    <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm text-[var(--text-secondary)]">현재 경험치</span>
-                        <span className="font-bold">{card.experience} / {card.level * 100}</span>
-                    </div>
-                    <div className="w-full h-3 bg-[var(--dark-bg)] rounded-full overflow-hidden">
-                        <div
-                            className="h-full bg-gradient-to-r from-[var(--primary-blue)] to-[var(--primary-purple)]"
-                            style={{ width: `${(card.experience / (card.level * 100)) * 100}%` }}
+                    {/* Scaled GameCard */}
+                    <div className="transform scale-[1.8] md:scale-[2.2] origin-center z-10 drop-shadow-2xl">
+                        <GameCard
+                            card={card}
+                            onClick={undefined} // No click action inside modal
+                            isDisabled={false}
+                            isSelected={false}
+                        // We use the GameCard to render the exact visual
                         />
                     </div>
                 </div>
 
-                {/* 액션 버튼 */}
-                <div className="flex gap-4">
-                    <button className="btn btn-primary flex-1">
-                        강화하기
-                    </button>
-                    <button className="btn btn-secondary flex-1">
-                        합성하기
-                    </button>
+                {/* Right: Details & Actions */}
+                <div className="flex-1 w-full max-w-sm bg-black/40 backdrop-blur-md border border-white/10 rounded-2xl p-6 relative overflow-hidden">
+                    {/* Decorative Top Border */}
+                    <div className="absolute top-0 left-0 right-0 h-1" style={{ backgroundColor: rarityColor }} />
+
+                    <div className="mb-6">
+                        <h2 className="text-3xl font-black text-white mb-2 font-orbitron tracking-tighter">
+                            {card.name}
+                        </h2>
+                        <div className="flex items-center gap-2 mb-4">
+                            <span
+                                className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider text-black"
+                                style={{ backgroundColor: rarityColor }}
+                            >
+                                {rarity}
+                            </span>
+                            <span className="text-sm text-white/50 font-mono">
+                                Level {card.level}
+                            </span>
+                        </div>
+                        <p className="text-sm text-gray-300 font-light leading-relaxed">
+                            {card.description || "No description available for this unit."}
+                        </p>
+                    </div>
+
+                    {/* Stats numeric details (complementing visual bars on card) */}
+                    <div className="space-y-4 mb-6">
+                        <div className="flex justify-between items-center bg-white/5 p-2 rounded-lg">
+                            <span className="text-xs text-gray-400 uppercase tracking-widest">Total Power</span>
+                            <span className="text-xl font-bold font-orbitron text-white">{card.stats.totalPower}</span>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2">
+                            <StatDetail label="CRE" value={card.stats.creativity} />
+                            <StatDetail label="ACC" value={card.stats.accuracy} />
+                            <StatDetail label="SPD" value={card.stats.speed} />
+                            <StatDetail label="STB" value={card.stats.stability} />
+                        </div>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex gap-3 mt-auto">
+                        <button className="flex-1 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-sm font-bold text-white transition-all uppercase tracking-wider hover:border-white/30">
+                            Enhance
+                        </button>
+                        <button className="flex-1 py-3 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 rounded-lg text-sm font-bold text-white shadow-lg transition-all uppercase tracking-wider">
+                            Fusion
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
     );
 }
 
-function StatRow({ label, value, max, icon }: { label: string; value: number; max: number; icon: string }) {
-    const percentage = (value / max) * 100;
-
+function StatDetail({ label, value }: { label: string, value?: number }) {
     return (
-        <div className="flex items-center gap-3">
-            <span className="text-2xl">{icon}</span>
-            <div className="flex-1">
-                <div className="flex items-center justify-between mb-1">
-                    <span className="text-sm font-bold">{label}</span>
-                    <span className="text-sm font-bold">{value}</span>
-                </div>
-                <div className="w-full h-3 bg-[var(--dark-bg)] rounded-full overflow-hidden">
-                    <div
-                        className="h-full bg-gradient-to-r from-[var(--primary-blue)] to-[var(--primary-purple)]"
-                        style={{ width: `${percentage}%` }}
-                    />
-                </div>
-            </div>
+        <div className="flex justify-between items-center bg-white/5 px-3 py-1.5 rounded">
+            <span className="text-[10px] text-gray-500">{label}</span>
+            <span className="text-sm font-bold text-white font-mono">{value || 0}</span>
         </div>
-    );
+    )
 }

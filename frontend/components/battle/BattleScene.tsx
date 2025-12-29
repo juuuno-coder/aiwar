@@ -6,6 +6,7 @@ import { useBattleLogic } from '@/hooks/useBattle';
 import UnitFrame from './UnitFrame';
 import { Card } from '@/lib/types';
 import { BattleMode, getBattleModeConfig } from '@/lib/battle-modes';
+import { useCardModal } from '@/components/CardModalContext';
 
 interface BattleSceneProps {
     mode: BattleMode;
@@ -19,6 +20,7 @@ interface BattleSceneProps {
 const BattleScene: React.FC<BattleSceneProps> = ({ mode, playerDeck, enemyDeck, playerJokers, enemyJokers, onBattleEnd }) => {
     const { gameState, playRound } = useBattleLogic(mode, playerDeck, enemyDeck);
     const config = getBattleModeConfig(mode);
+    const { openCardModal } = useCardModal();
 
     // Auto-play Rounds Effect
     React.useEffect(() => {
@@ -44,13 +46,9 @@ const BattleScene: React.FC<BattleSceneProps> = ({ mode, playerDeck, enemyDeck, 
 
     // Result of the *just completed* round (for display)
     const lastHistory = gameState.history[gameState.history.length - 1];
-    const showResult = gameState.history.length > gameState.currentRound; // If history is ahead of currentRound index, we are showing result?
-    // Actually, useBattleLogic increments currentRound *immediately*. 
-    // So if history.length === currentRound, we just finished a round.
 
     // Let's use the currentResult from state if valid
     const displayResult = gameState.currentResult;
-    const isRoundDone = !gameState.isProcessing && displayResult !== null;
 
     return (
         <div className="relative w-full h-full min-h-[600px] bg-black/95 rounded-3xl overflow-hidden border border-white/10 shadow-2xl flex flex-col">
@@ -92,6 +90,7 @@ const BattleScene: React.FC<BattleSceneProps> = ({ mode, playerDeck, enemyDeck, 
                                 isLoser={displayResult?.winner === 'enemy'}
                                 score={displayResult?.playerScore}
                                 showScore={!!displayResult}
+                                onClick={() => openCardModal(pCard)}
                             />
                         )}
                         <div className="text-2xl font-bold italic text-white/20">VS</div>
@@ -102,7 +101,8 @@ const BattleScene: React.FC<BattleSceneProps> = ({ mode, playerDeck, enemyDeck, 
                                 isLoser={displayResult?.winner === 'player'}
                                 score={displayResult?.enemyScore}
                                 showScore={!!displayResult}
-                                isRevealed={!!displayResult} // Reveal only after processing starts? Or always reveal? Let's say reveal when processing starts.
+                                isRevealed={!!displayResult} // Reveal only after processing starts
+                                onClick={() => openCardModal(eCard)}
                             />
                         )}
                     </div>
@@ -125,6 +125,7 @@ const BattleScene: React.FC<BattleSceneProps> = ({ mode, playerDeck, enemyDeck, 
                                             isLoser={hist?.result.winner === 'player'}
                                             showScore={!!hist}
                                             score={hist?.result.enemyScore}
+                                            onClick={() => openCardModal(card)}
                                         />
                                     </div>
                                 );
@@ -146,6 +147,7 @@ const BattleScene: React.FC<BattleSceneProps> = ({ mode, playerDeck, enemyDeck, 
                                             isLoser={hist?.result.winner === 'enemy'}
                                             showScore={!!hist}
                                             score={hist?.result.playerScore}
+                                            onClick={() => openCardModal(card)}
                                         />
                                     </div>
                                 );

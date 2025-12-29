@@ -59,6 +59,7 @@ export interface GameState {
     experience: number;
     tokens: number;
     coins: number; // Added coins field
+    commanderMastery: number; // Global proficiency level (0-100)
 
     // 카드
     inventory: Card[];
@@ -135,6 +136,7 @@ export function createDefaultGameState(userId: string, nickname: string): GameSt
         experience: 0,
         tokens: 1000, // 초기 토큰 (프리미엄 재화)
         coins: 5000,  // 초기 코인 (기본 재화)
+        commanderMastery: 0, // 초기 숙련도
         inventory: [],
         cards: [], // Alias for inventory
         unlockedFactions: ['gemini'], // 기본 군단
