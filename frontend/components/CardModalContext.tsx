@@ -2,20 +2,21 @@
 
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 import { Card } from '@/lib/types';
+import { InventoryCard } from '@/lib/inventory-system';
 import CardDetailModal from './CardDetailModal';
 
 interface CardModalContextType {
-    openCardModal: (card: Card) => void;
+    openCardModal: (card: Card | InventoryCard) => void;
     closeCardModal: () => void;
 }
 
 const CardModalContext = createContext<CardModalContextType | undefined>(undefined);
 
 export function CardModalProvider({ children }: { children: ReactNode }) {
-    const [activeCard, setActiveCard] = useState<Card | null>(null);
+    const [activeCard, setActiveCard] = useState<Card | InventoryCard | null>(null);
     const [isOpen, setIsOpen] = useState(false);
 
-    const openCardModal = (card: Card) => {
+    const openCardModal = (card: Card | InventoryCard) => {
         setActiveCard(card);
         setIsOpen(true);
     };

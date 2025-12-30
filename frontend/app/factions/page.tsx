@@ -1,17 +1,17 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import CyberPageLayout from '@/components/CyberPageLayout';
 import { AIFaction } from '@/lib/types';
 import aiFactionsData from '@/data/ai-factions.json';
 import { cn } from '@/lib/utils';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useAlert } from '@/context/AlertContext';
-import { Info, X, Check, Crown, Zap, Clock, Infinity, Globe } from 'lucide-react';
-import Image from 'next/image';
+import { Info, X, Check, Crown, Zap, Clock, Infinity } from 'lucide-react';
 import FactionLoreModal from '@/components/FactionLoreModal';
 import { FACTION_LORE_DATA, FactionLore } from '@/lib/faction-lore';
 import { getCardCharacterImage } from '@/lib/card-images';
+import { useFirebase } from '@/components/FirebaseProvider';
 import {
     getSubscribedFactions,
     subscribeFaction,
@@ -21,17 +21,19 @@ import {
     TIER_CONFIG,
     SubscriptionTier
 } from '@/lib/faction-subscription-utils';
+import FactionCard from '@/components/FactionCard';
 
 export default function FactionsPage() {
     const { profile, reload: refreshProfile } = useUserProfile();
+    const { user } = useFirebase();
     const { showAlert, showConfirm } = useAlert();
 
     // Derived state for easier access
     const coins = profile?.coins || 0;
     const level = profile?.level || 1;
+    const userId = user?.uid;
 
     const [factions, setFactions] = useState<AIFaction[]>([]);
-    const [subscriptions, setSubscriptions] = useState(getSubscribedFactions());
     const [totalCost, setTotalCost] = useState(0);
     const [selectedFaction, setSelectedFaction] = useState<AIFaction | null>(null);
     const [selectedTier, setSelectedTier] = useState<SubscriptionTier>('free');
@@ -46,10 +48,13 @@ export default function FactionsPage() {
         ultra: 30
     };
 
+    // Memoize subscriptions to prevent unnecessary re-renders of the grid
+    const subscriptions = useMemo(() => getSubscribedFactions(userId), [userId]);
+
     useEffect(() => {
         // Load factions data
         try {
-            const data = (aiFactionsData as any)?.factions || [];
+            const data = (aiFactionsData as { factions: AIFaction[] })?.factions || [];
             if (Array.isArray(data)) {
                 setFactions(data);
             }
@@ -57,18 +62,11 @@ export default function FactionsPage() {
             console.error("Data Load Error", e);
         }
 
-        loadSubscriptions();
-    }, []);
-
-    const loadSubscriptions = () => {
-        const subs = getSubscribedFactions();
-        setSubscriptions(subs);
-        setTotalCost(getTotalSubscriptionCost());
-    };
+        setTotalCost(getTotalSubscriptionCost(userId));
+    }, [userId]);
 
     const handleSubscribe = (factionId: string, tier: SubscriptionTier) => {
         const config = TIER_CONFIG[tier];
-        const costMsg = config.cost > 0 ? `${config.cost.toLocaleString()} 코인` : '무료';
         const reqLevel = TIER_LEVEL_REQ[tier];
 
         if (level < reqLevel) {
@@ -86,13 +84,13 @@ export default function FactionsPage() {
 
         showConfirm({
             title: `${config.name} 티어 구독`,
-            message: `${factionId} 군단을 ${config.name} 티어로 구독하시겠습니까?\n\n⚠️ 주의: 이 티어는 매일 ${config.cost.toLocaleString()} 코인이 자동 차감되는Recurring Billing(정기 결제) 방식입니다.`,
+            message: `${factionId} 군단을 ${config.name} 티어로 구독하시겠습니까?\n\n⚠️ 주의: 이 티어는 매일 ${config.cost.toLocaleString()} 코인이 자동 차감되는 Recurring Billing(정기 결제) 방식입니다.`,
             onConfirm: () => {
-                const result = subscribeFaction(factionId, tier);
+                const result = subscribeFaction(factionId, tier, userId);
                 if (result.success) {
                     showAlert({ title: '구독 완료', message: result.message, type: 'success' });
                     refreshProfile(); // 코인 잔액 갱신
-                    loadSubscriptions();
+                    setTotalCost(getTotalSubscriptionCost(userId));
                     setSelectedFaction(null);
                 } else {
                     showAlert({ title: '구독 실패', message: result.message, type: 'error' });
@@ -102,14 +100,15 @@ export default function FactionsPage() {
     };
 
     const handleUnsubscribe = (factionId: string) => {
-        const subscription = getFactionSubscription(factionId);
+        const subscription = getFactionSubscription(factionId, userId);
         if (!subscription) return;
 
         // 환불 금액 미리 계산 (로직 복제)
         const calculateRefundPreview = () => {
             if (subscription.dailyCost === 0) return 0;
 
-            const history = JSON.parse(localStorage.getItem('cancellationHistory') || '[]');
+            const storageKey = userId ? `cancellationHistory_${userId}` : 'cancellationHistory';
+            const history = JSON.parse(localStorage.getItem(storageKey) || '[]');
             const hasEverCancelled = history.some((h: any) => h.factionId === factionId);
 
             if (!hasEverCancelled) {
@@ -136,11 +135,11 @@ export default function FactionsPage() {
             title: '구독 취소',
             message: `${factionId} 군단 구독을 취소하시겠습니까?${refundMsg}`,
             onConfirm: () => {
-                const result = unsubscribeFaction(factionId);
+                const result = unsubscribeFaction(factionId, userId);
                 if (result.success) {
                     showAlert({ title: '취소 완료', message: result.message, type: 'success' });
                     refreshProfile(); // 코인 잔액 갱신 (환불 시)
-                    loadSubscriptions();
+                    setTotalCost(getTotalSubscriptionCost(userId));
                 } else {
                     showAlert({ title: '취소 실패', message: result.message, type: 'error' });
                 }
@@ -148,13 +147,19 @@ export default function FactionsPage() {
         });
     };
 
-    const getTierBadgeColor = (tier: SubscriptionTier) => {
-        switch (tier) {
-            case 'free': return 'from-gray-500 to-gray-600';
-            case 'pro': return 'from-blue-500 to-cyan-500';
-            case 'ultra': return 'from-purple-500 to-pink-500';
+    const handleLoreClick = useCallback((factionId: string) => {
+        const loreData = FACTION_LORE_DATA[factionId];
+        if (loreData) {
+            setSelectedLoreFaction(loreData);
+            setIsLoreModalOpen(true);
+        } else {
+            showAlert({ title: '정보 없음', message: '상세 정보가 준비 중입니다.', type: 'info' });
         }
-    };
+    }, [showAlert]);
+
+    const handleSubscribeRequest = useCallback((faction: AIFaction) => {
+        setSelectedFaction(faction);
+    }, []);
 
     return (
         <CyberPageLayout
@@ -220,126 +225,21 @@ export default function FactionsPage() {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 pb-4">
                         {factions.map(faction => {
-                            const subscription = getFactionSubscription(faction.id);
+                            const subscription = getFactionSubscription(faction.id, userId);
                             const loreData = FACTION_LORE_DATA[faction.id];
                             const koreanName = loreData?.koreanName || faction.displayName;
-
-                            // Background Image Selection (Try to use character/hero image for the faction)
                             const bgImage = getCardCharacterImage(faction.id) || faction.iconUrl;
 
                             return (
-                                <div
+                                <FactionCard
                                     key={faction.id}
-                                    onClick={() => {
-                                        if (loreData) {
-                                            setSelectedLoreFaction(loreData);
-                                            setIsLoreModalOpen(true);
-                                        } else {
-                                            showAlert({ title: '정보 없음', message: '상세 정보가 준비 중입니다.', type: 'info' });
-                                        }
-                                    }}
-                                    className={cn(
-                                        "group relative border rounded-xl overflow-hidden transition-all h-[320px] flex flex-col cursor-pointer",
-                                        subscription
-                                            ? "border-green-500/50 shadow-lg shadow-green-500/20"
-                                            : "border-white/10 hover:border-white/30"
-                                    )}
-                                >
-                                    {/* Background Image Area */}
-                                    <div
-                                        className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-105"
-                                        style={{
-                                            backgroundImage: bgImage ? `url(${bgImage})` : undefined,
-                                            backgroundColor: '#111',
-                                            filter: 'brightness(0.6)'
-                                        }}
-                                    >
-                                        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/80 to-transparent" />
-                                    </div>
-
-                                    {/* Content Overlay */}
-                                    <div className="relative z-10 flex flex-col h-full p-5">
-
-                                        {/* Header: Icon & Name */}
-                                        <div className="flex items-start justify-between mb-2">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-12 h-12 bg-black/50 backdrop-blur border border-white/10 rounded-lg flex items-center justify-center text-2xl shadow-lg relative shrink-0">
-                                                    {faction.iconUrl ? (
-                                                        <Image
-                                                            src={faction.iconUrl}
-                                                            alt={faction.id}
-                                                            fill
-                                                            className="object-contain p-2"
-                                                        />
-                                                    ) : (
-                                                        <span>🤖</span>
-                                                    )}
-                                                </div>
-                                                <div>
-                                                    <h3 className="text-xl font-black text-white leading-tight">
-                                                        {koreanName}
-                                                    </h3>
-                                                    <p className="text-xs text-white/50 font-bold tracking-wider uppercase">
-                                                        {faction.displayName}
-                                                    </p>
-                                                </div>
-                                            </div>
-
-                                            {/* Subscription Badge */}
-                                            {subscription && (
-                                                <div className={cn(
-                                                    "bg-gradient-to-r text-white text-[10px] font-bold px-2 py-1 rounded-full shadow-lg flex items-center gap-1",
-                                                    getTierBadgeColor(subscription.tier)
-                                                )}>
-                                                    <Check size={10} />
-                                                    {TIER_CONFIG[subscription.tier].name}
-                                                </div>
-                                            )}
-                                        </div>
-
-                                        {/* Description Removed from Card Face */}
-                                        <div className="flex-1" />
-
-                                        {/* Subscription Stats (If Subscribed) */}
-                                        {subscription && (
-                                            <div className="mb-4 text-xs space-y-1 bg-green-900/20 p-2 rounded border border-green-500/20">
-                                                <div className="flex items-center justify-between text-green-200">
-                                                    <div className="flex items-center gap-1">
-                                                        <Clock size={12} />
-                                                        <span>생성 주기</span>
-                                                    </div>
-                                                    <span className="font-bold">{subscription.generationInterval}분</span>
-                                                </div>
-                                                <div className="flex items-center justify-between text-green-200">
-                                                    <div className="flex items-center gap-1">
-                                                        <Zap size={12} />
-                                                        <span>오늘 생성</span>
-                                                    </div>
-                                                    <span className="font-bold">{subscription.generationsToday} / {subscription.dailyGenerationLimit === 999999 ? '∞' : subscription.dailyGenerationLimit}</span>
-                                                </div>
-                                            </div>
-                                        )}
-
-                                        {/* Action Buttons */}
-                                        <div className="mt-auto">
-                                            <button
-                                                onClick={(e) => {
-                                                    e.stopPropagation(); // Prevent opening modal
-                                                    setSelectedFaction(faction);
-                                                }}
-                                                className={cn(
-                                                    "w-full py-2.5 text-white text-xs font-bold rounded flex items-center justify-center gap-1 transition-colors z-20 relative",
-                                                    subscription
-                                                        ? "bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 border border-white/20"
-                                                        : "bg-cyan-600/80 hover:bg-cyan-500/80 border border-cyan-400/30 backdrop-blur-sm"
-                                                )}
-                                            >
-                                                {subscription ? <Zap size={14} /> : <Check size={14} />}
-                                                {subscription ? '구독 관리' : '구독하기'}
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
+                                    faction={faction}
+                                    subscription={subscription}
+                                    koreanName={koreanName}
+                                    bgImage={bgImage}
+                                    onLoreClick={handleLoreClick}
+                                    onSubscribeClick={handleSubscribeRequest}
+                                />
                             );
                         })}
                     </div>
@@ -389,7 +289,6 @@ export default function FactionsPage() {
                                                     ((!canAfford && tier !== 'free') || !isLevelSufficient) && "opacity-50 cursor-not-allowed"
                                                 )}
                                             >
-                                                {/* Lock Overlay if level insufficient */}
                                                 {!isLevelSufficient && (
                                                     <div className="absolute inset-0 bg-black/80 flex flex-col items-center justify-center z-10 backdrop-blur-[1px] border border-white/5">
                                                         <span className="text-xl mb-1">🔒</span>

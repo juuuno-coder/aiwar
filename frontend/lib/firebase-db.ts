@@ -352,6 +352,58 @@ export async function loadFactionData(): Promise<FactionData | null> {
     }
 }
 
+// ==================== 구독 ====================
+
+/**
+ * 군단 구독 데이터 저장
+ */
+export async function saveSubscriptions(subscriptions: any[]): Promise<void> {
+    if (!isFirebaseConfigured || !db) {
+        console.warn('Firebase가 설정되지 않았습니다.');
+        return;
+    }
+
+    try {
+        const userId = await getUserId();
+        const subRef = doc(db, 'users', userId, 'factions', 'subscriptions');
+
+        await setDoc(subRef, {
+            data: subscriptions,
+            updatedAt: serverTimestamp()
+        });
+        console.log('✅ 구독 데이터 Firebase 저장 성공');
+    } catch (error) {
+        console.error('❌ 구독 데이터 저장 실패:', error);
+        throw error;
+    }
+}
+
+/**
+ * 군단 구독 데이터 로드
+ */
+export async function loadSubscriptions(): Promise<any[] | null> {
+    if (!isFirebaseConfigured || !db) {
+        console.warn('Firebase가 설정되지 않았습니다.');
+        return null;
+    }
+
+    try {
+        const userId = await getUserId();
+        const subRef = doc(db, 'users', userId, 'factions', 'subscriptions');
+        const docSnap = await getDoc(subRef);
+
+        if (docSnap.exists()) {
+            console.log('✅ 구독 데이터 Firebase 로드 성공');
+            return docSnap.data().data || [];
+        }
+
+        return null;
+    } catch (error) {
+        console.error('❌ 구독 데이터 로드 실패:', error);
+        return null;
+    }
+}
+
 // ==================== 미션 ====================
 
 export interface MissionData {

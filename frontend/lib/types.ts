@@ -23,7 +23,7 @@ export interface AIFaction {
     id: string;
     displayName: string;
     description: string;
-    specialty: Specialty[];
+    specialty: string[];
     generationInterval: number; // minutes
     rarityWeights: {
         common: number;

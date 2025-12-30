@@ -12,7 +12,6 @@ import { SoundProvider } from "@/context/SoundContext";
 import { NotificationProvider } from "@/context/NotificationContext";
 import { CardModalProvider } from "@/components/CardModalContext";
 import MainLayout from "@/components/MainLayout";
-import TutorialManager from "@/components/TutorialManager";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -50,7 +49,6 @@ export default function RootLayout({
                       <CardModalProvider>
                         <ThemeProvider>
                           <MainLayout>
-                            <TutorialManager />
                             {children}
                           </MainLayout>
                         </ThemeProvider>

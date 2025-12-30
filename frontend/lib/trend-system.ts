@@ -1,5 +1,5 @@
 
-import { AIFaction } from './types';
+import { AIFaction } from './faction-types';
 import { FACTIONS_DATA } from './faction-subscription';
 
 interface TrendState {

@@ -4,7 +4,15 @@ import { useState, createContext, useContext } from 'react';
 import { usePathname } from 'next/navigation';
 import GameSidebar from './GameSidebar';
 import GameTopBar from './GameTopBar';
-import DynamicFooter from '@/components/DynamicFooter';
+import dynamic from 'next/dynamic';
+
+const DynamicFooter = dynamic(() => import('@/components/DynamicFooter'), {
+    ssr: false,
+});
+
+const TutorialManager = dynamic(() => import('@/components/TutorialManager'), {
+    ssr: false,
+});
 import { useFooter } from '@/context/FooterContext';
 import { cn } from '@/lib/utils';
 
@@ -36,11 +44,16 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
 
     return (
         <SidebarContext.Provider value={{ isCollapsed, setIsCollapsed }}>
-            <div className="flex h-screen overflow-hidden bg-black">
+            <div
+                className="flex h-screen overflow-hidden bg-black"
+                style={{
+                    ['--sidebar-width' as any]: isCollapsed ? '80px' : '256px'
+                }}
+            >
                 {/* 메인 영역 */}
                 <div
                     className="flex-1 flex flex-col transition-all duration-300 ease-out"
-                    style={{ marginRight: isCollapsed ? '80px' : '256px' }}
+                    style={{ marginRight: 'var(--sidebar-width)' }}
                 >
                     {/* 상단 바 */}
                     <GameTopBar sidebarCollapsed={isCollapsed} />
@@ -53,6 +66,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
                             footerState.visible && "pb-[160px]" // 푸터가 보일 때 하단 여백 추가
                         )}
                     >
+                        <TutorialManager />
                         {children}
 
                         {/* Dynamic Footer - Only renders when FooterContext.visible is true */}

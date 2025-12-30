@@ -14,6 +14,12 @@ import type { Rarity } from '@/lib/types';
 import { useNotification } from '@/context/NotificationContext';
 import { useFirebase } from '@/components/FirebaseProvider';
 import { addNotification } from '@/components/NotificationCenter';
+import {
+    syncSubscriptionsWithFirebase,
+    migrateLegacySubscriptions
+} from '@/lib/faction-subscription-utils';
+import { migrateLegacyGameState } from '@/lib/game-state';
+import { migrateLegacySlots } from '@/lib/generation-utils';
 
 interface UserContextType {
     coins: number;
@@ -58,6 +64,33 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         setTokens(0);
         setLevel(1);
         setExperience(0);
+
+        // Sync subscriptions from Firebase if user is logged in
+        if (user?.uid) {
+            // 마이그레이션 우선 실행 (게스트 데이터 -> 유저 데이터)
+            const runMigration = async () => {
+                try {
+                    console.log(`[Auth] User logged in: ${user.uid}. Starting migration check...`);
+
+                    // 순차적으로 마이그레이션 진행
+                    migrateLegacyGameState(user.uid);
+                    migrateLegacySlots(user.uid);
+                    await migrateLegacySubscriptions(user.uid);
+
+                    console.log(`[Auth] Migration check completed for ${user.uid}`);
+
+                    // 마이그레이션 후 Firebase 동기화
+                    await syncSubscriptionsWithFirebase(user.uid);
+
+                    // 프로필 및 데이터 리프레시
+                    refreshData();
+                } catch (err) {
+                    console.error("[Auth] Migration or Sync failed:", err);
+                }
+            };
+
+            runMigration();
+        }
 
         // Data will be reloaded by the profile sync or refreshData effect
     }, [mounted, user?.uid]);

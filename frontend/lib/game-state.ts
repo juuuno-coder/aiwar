@@ -165,49 +165,118 @@ export function createDefaultGameState(userId: string, nickname: string): GameSt
 }
 
 /**
+ * 게임 상태 가져오기용 키 생성
+ */
+function getGameStateKey(userId?: string): string {
+    if (!userId || userId === 'local-user' || userId === 'guest') {
+        return 'game-state'; // Legacy/Guest key
+    }
+    return `game-state_${userId}`;
+}
+
+/**
  * 게임 상태 가져오기
  */
-export function getGameState(): GameState {
+export function getGameState(userId?: string): GameState {
     if (typeof window === 'undefined') {
-        return createDefaultGameState('guest', '게스트');
+        return createDefaultGameState(userId || 'guest', '게스트');
     }
 
-    const data = localStorage.getItem('game-state');
+    const key = getGameStateKey(userId);
+    const data = localStorage.getItem(key);
 
     if (!data) {
-        // 기존 데이터 마이그레이션
-        const coins = localStorage.getItem('userCoins');
-        const cards = localStorage.getItem('userCards');
+        // 기존 데이터 마이그레이션 (게스트/레거시용)
+        if (key === 'game-state') {
+            const coins = localStorage.getItem('userCoins');
+            const cards = localStorage.getItem('userCards');
 
-        const defaultState = createDefaultGameState('guest', '게스트');
+            const defaultState = createDefaultGameState('guest', '게스트');
 
-        if (coins) {
-            defaultState.tokens = JSON.parse(coins);
+            if (coins) {
+                defaultState.tokens = JSON.parse(coins);
+            }
+
+            if (cards) {
+                defaultState.inventory = JSON.parse(cards);
+            }
+
+            saveGameState(defaultState);
+            return defaultState;
         }
 
-        if (cards) {
-            defaultState.inventory = JSON.parse(cards);
-        }
-
-        saveGameState(defaultState);
-        return defaultState;
+        return createDefaultGameState(userId || 'guest', '플레이어');
     }
 
     return JSON.parse(data);
 }
 
 /**
+ * [MIGRATION] 레거시/게스트 게임 상태를 유저 데이터로 마이그레이션
+ */
+export function migrateLegacyGameState(userId: string): void {
+    if (typeof window === 'undefined') return;
+    if (!userId || userId === 'local-user' || userId === 'guest') return;
+
+    const legacyKey = 'game-state';
+    const userKey = `game-state_${userId}`;
+
+    const legacyData = localStorage.getItem(legacyKey);
+    if (legacyData) {
+        const legacyState = JSON.parse(legacyData);
+        const userState = getGameState(userId);
+
+        // 기본 정보(레벨, 경험치, 코인 등)는 더 높은 쪽이나 레거시 우선으로 병합
+        // 여기서는 레거시 데이터를 기반으로 유저의 초기 상태를 덮어쓰거나 선택적으로 병합
+        // 만약 유저 데이터가 이미 상당히 진행되었다면 (예: 레벨 > 1), 병합을 신중히 해야 함
+
+        if (userState.level <= 1 && userState.experience === 0 && userState.inventory.length === 0) {
+            // 유저가 신규라면 레거시로 완전히 덮어쓰기 (ID만 유지)
+            const migratedState = {
+                ...legacyState,
+                userId: userId,
+                lastSaved: Date.now()
+            };
+            saveGameState(migratedState, userId);
+            console.log(`[Migration] Overwrote new user state with legacy guest state for ${userId}`);
+        } else {
+            // 유저 데이터가 이미 있으면 중요 재화만 합산하거나 유지
+            // 여기서는 단순함을 위해 코인/토큰 합산 및 인벤토리 합치기 시도
+            const combinedState = {
+                ...userState,
+                tokens: userState.tokens + (legacyState.tokens || 0),
+                coins: userState.coins + (legacyState.coins || 0),
+                inventory: [...userState.inventory, ...(legacyState.inventory || [])],
+                experience: Math.max(userState.experience, legacyState.experience || 0),
+                level: Math.max(userState.level, legacyState.level || 1),
+                lastSaved: Date.now()
+            };
+            saveGameState(combinedState, userId);
+            console.log(`[Migration] Merged legacy guest state into existing user state for ${userId}`);
+        }
+
+        // 마이그레이션 후 레거시 데이터 삭제
+        localStorage.removeItem(legacyKey);
+        localStorage.removeItem('userCoins');
+        localStorage.removeItem('userCards');
+    }
+}
+
+/**
  * 게임 상태 저장
  */
-export function saveGameState(state: GameState): void {
+export function saveGameState(state: GameState, userId?: string): void {
     if (typeof window === 'undefined') return;
 
     state.lastSaved = Date.now();
-    localStorage.setItem('game-state', JSON.stringify(state));
+    const key = getGameStateKey(userId || state.userId);
+    localStorage.setItem(key, JSON.stringify(state));
 
-    // 하위 호환성을 위해 일부 데이터 별도 저장
-    localStorage.setItem('userCoins', JSON.stringify(state.tokens));
-    localStorage.setItem('userCards', JSON.stringify(state.inventory));
+    // 하위 호환성을 위해 레거시 키에도 저장 (유저가 지정되지 않았거나 게스트인 경우만)
+    if (key === 'game-state') {
+        localStorage.setItem('userCoins', JSON.stringify(state.tokens));
+        localStorage.setItem('userCards', JSON.stringify(state.inventory));
+    }
 
     // 이 함수에서는 이벤트를 발생시키지 않음 (순환 호출 방지 및 세부 제어)
 }
@@ -215,10 +284,10 @@ export function saveGameState(state: GameState): void {
 /**
  * 게임 상태 부분 업데이트
  */
-export function updateGameState(updates: Partial<GameState>): GameState {
-    const currentState = getGameState();
+export function updateGameState(updates: Partial<GameState>, userId?: string): GameState {
+    const currentState = getGameState(userId);
     const newState = { ...currentState, ...updates };
-    saveGameState(newState);
+    saveGameState(newState, userId);
     emitGameStateChange('STATE_UPDATED', newState);
     return newState;
 }
@@ -226,10 +295,10 @@ export function updateGameState(updates: Partial<GameState>): GameState {
 /**
  * 토큰 추가
  */
-export function addTokens(amount: number): GameState {
-    const state = getGameState();
+export function addTokens(amount: number, userId?: string): GameState {
+    const state = getGameState(userId);
     state.tokens += amount;
-    saveGameState(state);
+    saveGameState(state, userId);
     emitGameStateChange('TOKENS_UPDATED', state);
     return state;
 }
@@ -237,15 +306,15 @@ export function addTokens(amount: number): GameState {
 /**
  * 토큰 차감
  */
-export function spendTokens(amount: number): { success: boolean; state?: GameState } {
-    const state = getGameState();
+export function spendTokens(amount: number, userId?: string): { success: boolean; state?: GameState } {
+    const state = getGameState(userId);
 
     if (state.tokens < amount) {
         return { success: false };
     }
 
     state.tokens -= amount;
-    saveGameState(state);
+    saveGameState(state, userId);
     emitGameStateChange('TOKENS_UPDATED', state);
     return { success: true, state };
 }
@@ -253,13 +322,13 @@ export function spendTokens(amount: number): { success: boolean; state?: GameSta
 /**
  * 경험치 추가 및 레벨업 체크
  */
-export function addExperience(amount: number): {
+export function addExperience(amount: number, userId?: string): {
     state: GameState;
     leveledUp: boolean;
     newLevel?: number;
     rewards?: { coins: number; cards: number };
 } {
-    const state = getGameState();
+    const state = getGameState(userId);
     const oldLevel = state.level;
 
     state.experience += amount;
@@ -285,7 +354,7 @@ export function addExperience(amount: number): {
         emitGameStateChange('STATE_UPDATED', state); // 경험치 변경 알림
     }
 
-    saveGameState(state);
+    saveGameState(state, userId);
 
     return { state, leveledUp, newLevel: leveledUp ? newLevel : undefined, rewards };
 }
@@ -293,10 +362,10 @@ export function addExperience(amount: number): {
 /**
  * 카드 추가
  */
-export function addCard(card: Card): GameState {
-    const state = getGameState();
+export function addCard(card: Card, userId?: string): GameState {
+    const state = getGameState(userId);
     state.inventory.push(card);
-    saveGameState(state);
+    saveGameState(state, userId);
     emitGameStateChange('INVENTORY_UPDATED', state);
     return state;
 }
@@ -304,10 +373,10 @@ export function addCard(card: Card): GameState {
 /**
  * 카드 제거
  */
-export function removeCard(cardId: string): GameState {
-    const state = getGameState();
+export function removeCard(cardId: string, userId?: string): GameState {
+    const state = getGameState(userId);
     state.inventory = state.inventory.filter(c => c.id !== cardId);
-    saveGameState(state);
+    saveGameState(state, userId);
     emitGameStateChange('INVENTORY_UPDATED', state);
     return state;
 }
@@ -315,13 +384,13 @@ export function removeCard(cardId: string): GameState {
 /**
  * 카드 업데이트
  */
-export function updateCard(cardId: string, updates: Partial<Card>): GameState {
-    const state = getGameState();
+export function updateCard(cardId: string, updates: Partial<Card>, userId?: string): GameState {
+    const state = getGameState(userId);
     const cardIndex = state.inventory.findIndex(c => c.id === cardId);
 
     if (cardIndex !== -1) {
         state.inventory[cardIndex] = { ...state.inventory[cardIndex], ...updates };
-        saveGameState(state);
+        saveGameState(state, userId);
         emitGameStateChange('INVENTORY_UPDATED', state);
     }
 
@@ -331,8 +400,8 @@ export function updateCard(cardId: string, updates: Partial<Card>): GameState {
 /**
  * 대전 결과 기록
  */
-export function recordBattleResult(won: boolean): GameState {
-    const state = getGameState();
+export function recordBattleResult(won: boolean, userId?: string): GameState {
+    const state = getGameState(userId);
 
     state.stats.totalBattles++;
 
@@ -348,7 +417,7 @@ export function recordBattleResult(won: boolean): GameState {
         state.stats.currentStreak = 0;
     }
 
-    saveGameState(state);
+    saveGameState(state, userId);
     emitGameStateChange('STATE_UPDATED', state);
     return state;
 }
@@ -356,12 +425,12 @@ export function recordBattleResult(won: boolean): GameState {
 /**
  * 군단 활성화
  */
-export function unlockFaction(factionId: string): GameState {
-    const state = getGameState();
+export function unlockFaction(factionId: string, userId?: string): GameState {
+    const state = getGameState(userId);
 
     if (!state.unlockedFactions.includes(factionId)) {
         state.unlockedFactions.push(factionId);
-        saveGameState(state);
+        saveGameState(state, userId);
         emitGameStateChange('FACTION_UNLOCKED', state);
     }
     return state;
@@ -370,12 +439,12 @@ export function unlockFaction(factionId: string): GameState {
 /**
  * 미션 완료 체크
  */
-export function completeMission(missionId: string): GameState {
-    const state = getGameState();
+export function completeMission(missionId: string, userId?: string): GameState {
+    const state = getGameState(userId);
 
     if (!state.storyProgress.completedMissions.includes(missionId)) {
         state.storyProgress.completedMissions.push(missionId);
-        saveGameState(state);
+        saveGameState(state, userId);
         emitGameStateChange('MISSION_UPDATED', state);
     }
 
@@ -385,12 +454,12 @@ export function completeMission(missionId: string): GameState {
 /**
  * 업적 달성
  */
-export function completeAchievement(achievementId: string): GameState {
-    const state = getGameState();
+export function completeAchievement(achievementId: string, userId?: string): GameState {
+    const state = getGameState(userId);
 
     if (!state.completedAchievements.includes(achievementId)) {
         state.completedAchievements.push(achievementId);
-        saveGameState(state);
+        saveGameState(state, userId);
         emitGameStateChange('STATE_UPDATED', state);
     }
 
@@ -400,8 +469,8 @@ export function completeAchievement(achievementId: string): GameState {
 /**
  * 일일 미션 리셋 체크
  */
-export function checkDailyReset(): GameState {
-    const state = getGameState();
+export function checkDailyReset(userId?: string): GameState {
+    const state = getGameState(userId);
     const now = Date.now();
     const lastReset = new Date(state.lastDailyReset);
     const today = new Date(now);
@@ -410,7 +479,7 @@ export function checkDailyReset(): GameState {
     if (lastReset.getDate() !== today.getDate()) {
         state.dailyMissions = [];
         state.lastDailyReset = now;
-        saveGameState(state);
+        saveGameState(state, userId);
         emitGameStateChange('STATE_UPDATED', state);
     }
 
@@ -420,12 +489,16 @@ export function checkDailyReset(): GameState {
 /**
  * 게임 리셋
  */
-export function resetGame(): void {
+export function resetGame(userId?: string): void {
     if (typeof window === 'undefined') return;
 
-    localStorage.removeItem('game-state');
-    localStorage.removeItem('userCoins');
-    localStorage.removeItem('userCards');
+    const key = getGameStateKey(userId);
+    localStorage.removeItem(key);
+
+    if (key === 'game-state') {
+        localStorage.removeItem('userCoins');
+        localStorage.removeItem('userCards');
+    }
 
     // 초기화 이벤트는 별도로 처리하거나 페이지 새로고침 권장
 }

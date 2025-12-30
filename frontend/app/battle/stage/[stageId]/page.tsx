@@ -367,20 +367,22 @@ export default function StageBattlePage() {
 
     // 공개 타이머
     useEffect(() => {
-        if (phase !== 'viewing' || viewTimer <= 0) return;
+        if (phase !== 'viewing') return;
+
+        // 타이머가 0 이하가 되면 자동으로 페이즈 전환 (스킵 및 자연 종료 대응)
+        if (viewTimer <= 0) {
+            if (stageConfig?.battleCardCount === 5) {
+                setPhase('card-placement');
+            } else {
+                startBattle();
+            }
+            return;
+        }
+
         const timer = setInterval(() => {
-            setViewTimer(prev => {
-                if (prev <= 1) {
-                    if (stageConfig?.battleCardCount === 5) {
-                        setPhase('card-placement');
-                    } else {
-                        startBattle();
-                    }
-                    return 0;
-                }
-                return prev - 1;
-            });
+            setViewTimer(prev => prev - 1);
         }, 1000);
+
         return () => clearInterval(timer);
     }, [phase, viewTimer, stageConfig]);
 

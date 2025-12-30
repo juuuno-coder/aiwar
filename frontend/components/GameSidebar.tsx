@@ -68,7 +68,8 @@ export default function GameSidebar({ isCollapsed, onToggle }: GameSidebarProps)
 
     return (
         <aside
-            className={`fixed right-0 top-16 bottom-[200px] bg-black/95 backdrop-blur-2xl border-l border-white/5 z-50 transition-all duration-300 ease-out overflow-hidden flex flex-col ${isCollapsed ? 'w-20' : 'w-64'}`}
+            className="fixed right-0 top-16 bottom-[200px] bg-black/95 backdrop-blur-2xl border-l border-white/5 z-50 transition-all duration-300 ease-out overflow-hidden flex flex-col"
+            style={{ width: 'var(--sidebar-width)' }}
             onWheel={handleWheel}
         >
             {/* Top Border Gradient */}

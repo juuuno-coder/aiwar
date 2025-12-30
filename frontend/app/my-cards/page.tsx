@@ -125,7 +125,7 @@ export default function MyCardsPage() {
                 const { getSubscribedFactions } = await import('@/lib/faction-subscription-utils');
                 const { COMMANDERS } = await import('@/data/card-database');
 
-                const subscriptions = getSubscribedFactions();
+                const subscriptions = getSubscribedFactions(user?.uid);
                 const ultraCommanders: InventoryCard[] = [];
 
                 for (const sub of subscriptions) {

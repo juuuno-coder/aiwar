@@ -1,9 +1,10 @@
 import { Card, AIType, Rarity } from '@/lib/types';
+import { InventoryCard } from '@/lib/inventory-system';
 import GameCard from '@/components/GameCard';
 import { motion } from 'framer-motion';
 
 interface CardDetailModalProps {
-    card: Card | null;
+    card: Card | InventoryCard | null;
     isOpen: boolean;
     onClose: () => void;
 }
@@ -11,7 +12,7 @@ interface CardDetailModalProps {
 export default function CardDetailModal({ card, isOpen, onClose }: CardDetailModalProps) {
     if (!isOpen || !card) return null;
 
-    const getCardRarity = (card: Card): string => {
+    const getCardRarity = (card: Card | InventoryCard): string => {
         if (card.rarity) return card.rarity.toUpperCase();
         return 'COMMON';
     };

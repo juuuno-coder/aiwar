@@ -49,10 +49,21 @@ export const TIER_CONFIG = {
 };
 
 /**
+ * 구독 저장 키 생성
+ */
+function getSubscriptionKey(userId?: string): string {
+    if (!userId || userId === 'local-user' || userId === 'guest') {
+        return 'factionSubscriptions'; // Legacy/Guest key
+    }
+    return `factionSubscriptions_${userId}`;
+}
+
+/**
  * 구독 중인 군단 목록 가져오기
  */
-export function getSubscribedFactions(): FactionSubscription[] {
-    const subscriptions = storage.get<FactionSubscription[]>('factionSubscriptions', []);
+export function getSubscribedFactions(userId?: string): FactionSubscription[] {
+    const key = getSubscriptionKey(userId);
+    const subscriptions = storage.get<FactionSubscription[]>(key, []);
 
     // 날짜 변환 및 일일 카운터 리셋
     const today = new Date().toISOString().split('T')[0];
@@ -92,9 +103,9 @@ export function getSubscribedFactions(): FactionSubscription[] {
     });
 
     // 일일 구독료 정산 (마켓 이코노미: 접속 시 정산)
-    const { billedSubs, updatedCoins } = processRecurringBilling(currentSubs);
+    const { billedSubs, updatedCoins } = processRecurringBilling(currentSubs, userId);
     if (updatedCoins !== undefined) {
-        saveSubscriptions(billedSubs);
+        saveSubscriptions(billedSubs, userId);
         return billedSubs;
     }
 
@@ -104,8 +115,8 @@ export function getSubscribedFactions(): FactionSubscription[] {
 /**
  * 일간 반복 청구 프로세스 (Option 2)
  */
-function processRecurringBilling(subscriptions: FactionSubscription[]): { billedSubs: FactionSubscription[], updatedCoins?: number } {
-    const state = getGameState();
+function processRecurringBilling(subscriptions: FactionSubscription[], userId?: string): { billedSubs: FactionSubscription[], updatedCoins?: number } {
+    const state = getGameState(userId);
     let totalDeduction = 0;
     const now = new Date();
     let changed = false;
@@ -145,7 +156,7 @@ function processRecurringBilling(subscriptions: FactionSubscription[]): { billed
         // 코인이 부족할 경우? 일단 차감 (마이너스 허용 혹은 0으로 수렴)
         // 여기서는 마이너스를 허용하여 사용자가 '빚'을 지게 하여 구독 취소를 유도 (마켓 이코노미)
         const newCoins = state.coins - totalDeduction;
-        updateGameState({ coins: newCoins });
+        updateGameState({ coins: newCoins }, userId);
         return { billedSubs, updatedCoins: newCoins };
     }
 
@@ -155,8 +166,85 @@ function processRecurringBilling(subscriptions: FactionSubscription[]): { billed
 /**
  * 구독 저장
  */
-function saveSubscriptions(subscriptions: FactionSubscription[]): void {
-    storage.set('factionSubscriptions', subscriptions);
+function saveSubscriptions(subscriptions: FactionSubscription[], userId?: string): void {
+    const key = getSubscriptionKey(userId);
+    storage.set(key, subscriptions);
+
+    // Firebase 동기화 (userId가 있을 때만)
+    if (userId && userId !== 'local-user' && userId !== 'guest') {
+        const { saveSubscriptions: firebaseSave } = require('./firebase-db');
+        firebaseSave(subscriptions).catch((err: any) => console.error('Firebase Subscription Sync Error:', err));
+    }
+}
+
+/**
+ * Firebase에서 구독 데이터 가져와서 로컬 동기화
+ */
+export async function syncSubscriptionsWithFirebase(userId: string): Promise<FactionSubscription[]> {
+    if (!userId || userId === 'local-user' || userId === 'guest') return [];
+
+    try {
+        const { loadSubscriptions: firebaseLoad } = require('./firebase-db');
+        const remoteSubscriptions = await firebaseLoad();
+
+        if (remoteSubscriptions) {
+            // 로컬에 저장
+            const key = getSubscriptionKey(userId);
+            storage.set(key, remoteSubscriptions);
+            return remoteSubscriptions;
+        }
+    } catch (err) {
+        console.error('Firebase Subscription Load Error:', err);
+    }
+
+    return getSubscribedFactions(userId);
+}
+
+/**
+ * [MIGRATION] 레거시/게스트 구독 데이터를 유저 데이터로 마이그레이션
+ */
+export async function migrateLegacySubscriptions(userId: string): Promise<void> {
+    if (!userId || userId === 'local-user' || userId === 'guest') return;
+
+    const legacyKey = 'factionSubscriptions';
+    const legacyCancelKey = 'cancellationHistory';
+    const userKey = `factionSubscriptions_${userId}`;
+    const userCancelKey = `cancellationHistory_${userId}`;
+
+    // 1. 구독 정보 마이그레이션
+    const legacySubs = storage.get<FactionSubscription[]>(legacyKey, []);
+    if (legacySubs.length > 0) {
+        const userSubs = storage.get<FactionSubscription[]>(userKey, []);
+
+        // 병합 (중복 제거: factionId 기준)
+        const combinedSubs = [...userSubs];
+        legacySubs.forEach(legacySub => {
+            if (!combinedSubs.find(s => s.factionId === legacySub.factionId)) {
+                combinedSubs.push(legacySub);
+            }
+        });
+
+        storage.set(userKey, combinedSubs);
+        storage.remove(legacyKey);
+
+        // Firebase 동기화 트리거
+        const { saveSubscriptions: firebaseSave } = require('./firebase-db');
+        firebaseSave(combinedSubs).catch((err: any) => console.error('Firebase Migration Sync Error:', err));
+
+        console.log(`[Migration] Migrated ${legacySubs.length} subscriptions to user ${userId}`);
+    }
+
+    // 2. 취소 이력 마이그레이션
+    const legacyHistory = storage.get<any[]>(legacyCancelKey, []);
+    if (legacyHistory.length > 0) {
+        const userHistory = storage.get<any[]>(userCancelKey, []);
+        const combinedHistory = [...userHistory, ...legacyHistory];
+
+        storage.set(userCancelKey, combinedHistory);
+        storage.remove(legacyCancelKey);
+
+        console.log(`[Migration] Migrated ${legacyHistory.length} cancellation history items to user ${userId}`);
+    }
 }
 
 /**
@@ -164,13 +252,14 @@ function saveSubscriptions(subscriptions: FactionSubscription[]): void {
  */
 export function subscribeFaction(
     factionId: string,
-    tier: SubscriptionTier
+    tier: SubscriptionTier,
+    userId?: string
 ): { success: boolean; message: string } {
-    const state = getGameState();
+    const state = getGameState(userId);
     const config = TIER_CONFIG[tier];
 
     // 이미 구독 중인지 확인
-    const subscriptions = getSubscribedFactions();
+    const subscriptions = getSubscribedFactions(userId);
     const existingIndex = subscriptions.findIndex(sub => sub.factionId === factionId);
     const existing = existingIndex !== -1 ? subscriptions[existingIndex] : null;
 
@@ -189,12 +278,12 @@ export function subscribeFaction(
             if (state.coins < costDiff) {
                 return { success: false, message: `티어 업그레이드 비용이 부족합니다. (필요: ${costDiff.toLocaleString()} 코인)` };
             }
-            updateGameState({ coins: state.coins - costDiff });
+            updateGameState({ coins: state.coins - costDiff }, userId);
         }
         // 다운그레이드: 차액 일부 환불 (50%)
         else if (costDiff < 0) {
             const refund = Math.floor(Math.abs(costDiff) * 0.5);
-            updateGameState({ coins: state.coins + refund });
+            updateGameState({ coins: state.coins + refund }, userId);
         }
 
         // 기존 구독 업데이트 (친밀도, 생성 횟수 유지)
@@ -211,7 +300,7 @@ export function subscribeFaction(
             lastResetDate: today
         };
 
-        saveSubscriptions(subscriptions);
+        saveSubscriptions(subscriptions, userId);
 
         const changeType = costDiff > 0 ? '업그레이드' : '다운그레이드';
         const costMsg = costDiff > 0
@@ -234,7 +323,7 @@ export function subscribeFaction(
 
     // 코인 차감
     if (config.cost > 0) {
-        updateGameState({ coins: state.coins - config.cost });
+        updateGameState({ coins: state.coins - config.cost }, userId);
     }
 
     // 구독 추가
@@ -254,7 +343,7 @@ export function subscribeFaction(
     };
 
     subscriptions.push(newSubscription);
-    saveSubscriptions(subscriptions);
+    saveSubscriptions(subscriptions, userId);
 
     const costMsg = config.cost > 0 ? ` (${config.cost.toLocaleString()} 코인 소모)` : ' (무료)';
     return {
@@ -273,19 +362,28 @@ interface CancellationHistory {
     refundAmount: number;
 }
 
-function getCancellationHistory(): CancellationHistory[] {
-    return storage.get<CancellationHistory[]>('cancellationHistory', []).map(h => ({
+function getCancellationKey(userId?: string): string {
+    if (!userId || userId === 'local-user' || userId === 'guest') {
+        return 'cancellationHistory';
+    }
+    return `cancellationHistory_${userId}`;
+}
+
+function getCancellationHistory(userId?: string): CancellationHistory[] {
+    const key = getCancellationKey(userId);
+    return storage.get<CancellationHistory[]>(key, []).map(h => ({
         ...h,
         cancelledAt: new Date(h.cancelledAt)
     }));
 }
 
-function saveCancellationHistory(history: CancellationHistory[]): void {
-    storage.set('cancellationHistory', history);
+function saveCancellationHistory(history: CancellationHistory[], userId?: string): void {
+    const key = getCancellationKey(userId);
+    storage.set(key, history);
 }
 
-function hasEverCancelled(factionId: string): boolean {
-    const history = getCancellationHistory();
+function hasEverCancelled(factionId: string, userId?: string): boolean {
+    const history = getCancellationHistory(userId);
     return history.some(h => h.factionId === factionId);
 }
 
@@ -294,7 +392,7 @@ function hasEverCancelled(factionId: string): boolean {
  * - 첫 구독 취소: 50% 환불
  * - 이후 취소: 사용 시간에 비례하여 환불 (30일 기준)
  */
-function calculateRefund(subscription: FactionSubscription): number {
+function calculateRefund(subscription: FactionSubscription, userId?: string): number {
     const { dailyCost, subscribedAt, factionId } = subscription;
 
     // Free 티어는 환불 없음
@@ -302,7 +400,7 @@ function calculateRefund(subscription: FactionSubscription): number {
         return 0;
     }
 
-    const isFirstCancellation = !hasEverCancelled(factionId);
+    const isFirstCancellation = !hasEverCancelled(factionId, userId);
 
     if (isFirstCancellation) {
         // 첫 취소: 50% 환불
@@ -326,8 +424,8 @@ function calculateRefund(subscription: FactionSubscription): number {
 /**
  * 군단 구독 취소 (환불 포함)
  */
-export function unsubscribeFaction(factionId: string): { success: boolean; message: string; refund?: number } {
-    const subscriptions = getSubscribedFactions();
+export function unsubscribeFaction(factionId: string, userId?: string): { success: boolean; message: string; refund?: number } {
+    const subscriptions = getSubscribedFactions(userId);
     const subscription = subscriptions.find(sub => sub.factionId === factionId);
 
     if (!subscription) {
@@ -335,25 +433,25 @@ export function unsubscribeFaction(factionId: string): { success: boolean; messa
     }
 
     // 환불 금액 계산
-    const refundAmount = calculateRefund(subscription);
+    const refundAmount = calculateRefund(subscription, userId);
 
     // 구독 제거
     const filtered = subscriptions.filter(sub => sub.factionId !== factionId);
-    saveSubscriptions(filtered);
+    saveSubscriptions(filtered, userId);
 
     // 취소 이력 저장
-    const history = getCancellationHistory();
+    const history = getCancellationHistory(userId);
     history.push({
         factionId,
         cancelledAt: new Date(),
         refundAmount
     });
-    saveCancellationHistory(history);
+    saveCancellationHistory(history, userId);
 
     // 코인 환불
     if (refundAmount > 0) {
-        const state = getGameState();
-        updateGameState({ coins: state.coins + refundAmount });
+        const state = getGameState(userId);
+        updateGameState({ coins: state.coins + refundAmount }, userId);
     }
 
     const isFirstCancellation = history.filter(h => h.factionId === factionId).length === 1;
@@ -371,31 +469,31 @@ export function unsubscribeFaction(factionId: string): { success: boolean; messa
 /**
  * 총 일간 구독 비용 계산
  */
-export function getTotalSubscriptionCost(): number {
-    const subscriptions = getSubscribedFactions();
+export function getTotalSubscriptionCost(userId?: string): number {
+    const subscriptions = getSubscribedFactions(userId);
     return subscriptions.reduce((total, sub) => total + sub.dailyCost, 0);
 }
 
 /**
  * 특정 군단의 구독 정보 가져오기
  */
-export function getFactionSubscription(factionId: string): FactionSubscription | null {
-    const subscriptions = getSubscribedFactions();
+export function getFactionSubscription(factionId: string, userId?: string): FactionSubscription | null {
+    const subscriptions = getSubscribedFactions(userId);
     return subscriptions.find(sub => sub.factionId === factionId) || null;
 }
 
 /**
  * 군단 구독 여부 확인
  */
-export function hasActiveFactionSubscription(factionId: string): boolean {
-    return getFactionSubscription(factionId) !== null;
+export function hasActiveFactionSubscription(factionId: string, userId?: string): boolean {
+    return getFactionSubscription(factionId, userId) !== null;
 }
 
 /**
  * 일일 생성 가능 여부 확인
  */
-export function canGenerateToday(factionId: string): { canGenerate: boolean; reason?: string; remaining?: number } {
-    const subscription = getFactionSubscription(factionId);
+export function canGenerateToday(factionId: string, userId?: string): { canGenerate: boolean; reason?: string; remaining?: number } {
+    const subscription = getFactionSubscription(factionId, userId);
 
     if (!subscription) {
         return { canGenerate: false, reason: '구독 중이 아닌 군단입니다.' };
@@ -413,8 +511,8 @@ export function canGenerateToday(factionId: string): { canGenerate: boolean; rea
 /**
  * 생성 카운터 증가
  */
-export function incrementGenerationCount(factionId: string): void {
-    const subscriptions = getSubscribedFactions();
+export function incrementGenerationCount(factionId: string, userId?: string): void {
+    const subscriptions = getSubscribedFactions(userId);
     const subscription = subscriptions.find(sub => sub.factionId === factionId);
 
     if (subscription) {
@@ -422,11 +520,11 @@ export function incrementGenerationCount(factionId: string): void {
 
         // 카드 생성 시 친밀도 증가 (Legacy - UI 호환성용)
         subscription.affinity = Math.min((subscription.affinity || 0) + 1, 100);
-        saveSubscriptions(subscriptions);
+        saveSubscriptions(subscriptions, userId);
 
         // [NEW] 전역 지휘관 숙련도(Mastery) 증가
         // 어떤 군단을 사용하든 지휘관의 총괄 능력이 상승하여 모든 군단에 이점 제공
-        const state = getGameState();
+        const state = getGameState(userId);
 
         // 연구 보너스 적용 (리더십: 숙련도 획득 속도 증가)
         let bonusMultiplier = 1;
@@ -441,7 +539,7 @@ export function incrementGenerationCount(factionId: string): void {
         const newMastery = Math.min((state.commanderMastery || 0) + actualGain, 100);
 
         if (newMastery > (state.commanderMastery || 0)) {
-            updateGameState({ commanderMastery: newMastery });
+            updateGameState({ commanderMastery: newMastery }, userId);
         }
     }
 }
@@ -449,12 +547,12 @@ export function incrementGenerationCount(factionId: string): void {
 /**
  * 티어별 통계
  */
-export function getSubscriptionStats(): {
+export function getSubscriptionStats(userId?: string): {
     total: number;
     byTier: Record<SubscriptionTier, number>;
     totalCost: number;
 } {
-    const subscriptions = getSubscribedFactions();
+    const subscriptions = getSubscribedFactions(userId);
 
     return {
         total: subscriptions.length,
@@ -463,6 +561,6 @@ export function getSubscriptionStats(): {
             pro: subscriptions.filter(s => s.tier === 'pro').length,
             ultra: subscriptions.filter(s => s.tier === 'ultra').length
         },
-        totalCost: getTotalSubscriptionCost()
+        totalCost: getTotalSubscriptionCost(userId)
     };
 }

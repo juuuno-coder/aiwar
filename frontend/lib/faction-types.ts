@@ -1,4 +1,5 @@
 // AI 군단 타입 정의
+import { Specialty } from './types';
 
 export type AICategory = 'super' | 'image' | 'video' | 'audio' | 'coding';
 
