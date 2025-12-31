@@ -7,7 +7,9 @@ import {
     updateCoins as firebaseUpdateCoins,
     updateTokens as firebaseUpdateTokens,
     updateExpAndLevel as firebaseUpdateExpAndLevel,
-    saveUserProfile
+    updateExpAndLevel as firebaseUpdateExpAndLevel,
+    saveUserProfile,
+    checkAndRechargeTokens // [NEW]
 } from '@/lib/firebase-db';
 import { generateCardByRarity } from '@/lib/card-generation-system';
 import { addCardToInventory, loadInventory, distributeStarterPack } from '@/lib/inventory-system';
@@ -248,7 +250,20 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
                 ...c,
                 acquiredAt: (c.acquiredAt && 'toDate' in c.acquiredAt) ? (c.acquiredAt as any).toDate() : new Date(c.acquiredAt as any)
             })) as Card[];
+            const formattedInv = inv.map(c => ({
+                ...c,
+                acquiredAt: (c.acquiredAt && 'toDate' in c.acquiredAt) ? (c.acquiredAt as any).toDate() : new Date(c.acquiredAt as any)
+            })) as Card[];
             setInventory(formattedInv);
+
+            // [Auto Recharge Check]
+            if (user?.uid && profile) {
+                const refreshedToken = await checkAndRechargeTokens(user.uid, profile.tokens, profile.lastTokenUpdate);
+                if (refreshedToken !== profile.tokens) {
+                    setTokens(refreshedToken);
+                    // No need to reload profile again, DB is updated inside checkAndRechargeTokens
+                }
+            }
 
             // [Fix] Re-enable starter pack check here for robustness
             // BUT only if tutorial is completed (otherwise TutorialManager handles it)

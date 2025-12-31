@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import CyberPageLayout from '@/components/CyberPageLayout';
 // import { getGameState, updateGameState } from '@/lib/game-state';
 import { useAlert } from '@/context/AlertContext';
-import { ShoppingCart, Coins, Package, Sparkles, X, ShoppingBag, Loader2 } from 'lucide-react';
+import { ShoppingCart, Coins, Package, Sparkles, X, ShoppingBag, Loader2, ArrowRight, RefreshCw, Zap } from 'lucide-react';
 import { CARD_PACKS, openCardPack, CardPack } from '@/lib/card-pack-system';
 import { Card } from '@/lib/types';
 import { addCardsToInventory } from '@/lib/inventory-system';
@@ -18,7 +18,7 @@ import { getResearchBonus } from '@/lib/research-system';
 export default function ShopPage() {
     const router = useRouter();
     const { showAlert, showConfirm } = useAlert();
-    const { coins, level, addCoins, refreshData } = useUser(); // Using UserContext
+    const { coins, tokens, level, addCoins, addTokens, refreshData } = useUser(); // [UPDATED] tokens, addTokens
 
     // 연구 보너스 로드
     const [negotiationBonus, setNegotiationBonus] = useState(0);
@@ -30,6 +30,7 @@ export default function ShopPage() {
     const [showPackOpening, setShowPackOpening] = useState(false);
     const [currentPack, setCurrentPack] = useState<CardPack | null>(null);
     const [isPurchasing, setIsPurchasing] = useState(false);
+    const [isExchanging, setIsExchanging] = useState(false); // [NEW] Exchange loading state
 
     useEffect(() => {
         loadResearchData();
@@ -140,6 +141,39 @@ export default function ShopPage() {
         }
     };
 
+    const handleExchangeToken = async () => {
+        const EXCHANGE_COST = 10000;
+        const EXCHANGE_AMOUNT = 50;
+
+        if (coins < EXCHANGE_COST) {
+            showAlert({
+                title: '코인 부족',
+                message: `코인이 부족합니다!\n필요: ${EXCHANGE_COST.toLocaleString()} 코인`,
+                type: 'error'
+            });
+            return;
+        }
+
+        setIsExchanging(true);
+        try {
+            // Atomic update ideal, but sequential for now
+            await addCoins(-EXCHANGE_COST);
+            await addTokens(EXCHANGE_AMOUNT);
+            await refreshData();
+
+            showAlert({
+                title: '환전 완료',
+                message: `${EXCHANGE_COST.toLocaleString()} 코인을 사용하여 ${EXCHANGE_AMOUNT} 토큰을 충전했습니다.`,
+                type: 'success'
+            });
+        } catch (error) {
+            console.error(error);
+            showAlert({ title: '오류', message: '환전 중 문제가 발생했습니다.', type: 'error' });
+        } finally {
+            setIsExchanging(false);
+        }
+    };
+
     return (
         <CyberPageLayout
             title="상점"
@@ -168,6 +202,52 @@ export default function ShopPage() {
                             <p className="text-sm text-white/60">레벨</p>
                             <p className="text-2xl font-bold text-cyan-400">Lv.{level}</p>
                         </div>
+                    </div>
+                </div>
+
+
+
+                {/* 환전소 섹션 [NEW] */}
+                <div className="bg-black/40 border border-white/10 rounded-xl p-6 mb-8 relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-cyan-500/5 blur-[80px] rounded-full pointer-events-none" />
+
+                    <div className="flex flex-col md:flex-row items-center justify-between gap-6 relative z-10">
+                        <div>
+                            <h2 className="text-xl font-bold text-white mb-2 flex items-center gap-2">
+                                <RefreshCw className="text-cyan-400" /> DATA EXCHANGE
+                            </h2>
+                            <p className="text-gray-400 text-sm">
+                                데이터 코인을 사용하여 활동력(Token)을 충전할 수 있습니다.
+                            </p>
+                        </div>
+
+                        <div className="flex items-center gap-4 bg-black/60 p-4 rounded-xl border border-white/5">
+                            <div className="text-right">
+                                <div className="text-xs text-gray-500">PAY</div>
+                                <div className="text-lg font-bold text-yellow-500 flex items-center justify-end gap-1">
+                                    <Coins size={16} /> 10,000
+                                </div>
+                            </div>
+                            <ArrowRight className="text-gray-600" />
+                            <div className="text-left">
+                                <div className="text-xs text-gray-500">GET</div>
+                                <div className="text-lg font-bold text-cyan-500 flex items-center gap-1">
+                                    <Zap size={16} /> 50 TOKENS
+                                </div>
+                            </div>
+                        </div>
+
+                        <button
+                            onClick={handleExchangeToken}
+                            disabled={coins < 10000 || isExchanging}
+                            className={`px-8 py-4 rounded-xl font-bold flex items-center gap-2 transition-all ${coins < 10000
+                                ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
+                                : 'bg-cyan-600 hover:bg-cyan-500 text-white shadow-[0_0_20px_rgba(6,182,212,0.3)] hover:scale-105'
+                                }`}
+                        >
+                            {isExchanging ? <Loader2 className="animate-spin" /> : <RefreshCw size={18} />}
+                            {isExchanging ? 'EXCHANGING...' : 'EXCHANGE NOW'}
+                        </button>
                     </div>
                 </div>
 
@@ -300,6 +380,6 @@ export default function ShopPage() {
                 cards={openedCards}
                 packType={currentPack?.price! >= 1000 ? 'legendary' : currentPack?.price! >= 500 ? 'premium' : 'basic'}
             />
-        </CyberPageLayout>
+        </CyberPageLayout >
     );
 }

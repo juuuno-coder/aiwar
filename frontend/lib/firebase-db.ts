@@ -36,6 +36,59 @@ export interface UserProfile {
     hasReceivedStarterPack?: boolean;
     createdAt?: any;
     lastLogin?: any;
+    lastTokenUpdate?: any; // [NEW] 토큰 자동 충전 기준 시간
+}
+
+const MAX_TOKENS_FREE = 100;
+const RECHARGE_RATE_PER_HOUR = 10; // 시간당 10개
+
+/**
+ * 토큰 자동 충전 체크 및 업데이트
+ */
+export async function checkAndRechargeTokens(userId: string, currentTokens: number, lastUpdate: any): Promise<number> {
+    if (!lastUpdate) {
+        // 첫 실행 시 현재 시간 기록
+        const userRef = doc(db!, 'users', userId);
+        await updateDoc(userRef, { lastTokenUpdate: serverTimestamp() });
+        return currentTokens;
+    }
+
+    const now = new Date();
+    const lastDate = lastUpdate.toDate ? lastUpdate.toDate() : new Date(lastUpdate);
+    const diffMs = now.getTime() - lastDate.getTime();
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+
+    if (diffHours >= 1) {
+        // 충전량 계산
+        let rechargeAmount = diffHours * RECHARGE_RATE_PER_HOUR;
+
+        // 최대 한도 체크 (일단 무료 기준 100개)
+        // 구독 등급에 따라 분기 처리 가능 (나중에 확장)
+        const maxTokens = MAX_TOKENS_FREE;
+
+        let newTokens = currentTokens + rechargeAmount;
+        if (newTokens > maxTokens) {
+            // 이미 꽉 찼거나 초과했다면 충전 안 함 (단, 이미 초과 상태면 유지)
+            if (currentTokens < maxTokens) {
+                newTokens = maxTokens;
+            } else {
+                return currentTokens; // 이미 많으면 유지
+            }
+        } else {
+            // 상한선 안 넘었으면 그대로
+        }
+
+        const userRef = doc(db!, 'users', userId);
+        await updateDoc(userRef, {
+            tokens: newTokens,
+            lastTokenUpdate: serverTimestamp()
+        });
+
+        console.log(`🔋 토큰 자동 충전: +${newTokens - currentTokens} (경과: ${diffHours}시간)`);
+        return newTokens;
+    }
+
+    return currentTokens;
 }
 
 /**
