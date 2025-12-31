@@ -155,9 +155,7 @@ export function getEnhancePreview(card: Card, masteryLevel: number = 0): {
         nextLevel: card.level + 1,
         currentStats: card.stats,
         nextStats: calculateEnhancedStats(card, masteryLevel),
-        nextStats: calculateEnhancedStats(card, masteryLevel),
         cost: getEnhanceCost(card.level || 1, card.rarity || 'common'),
-        materialsNeeded: 10
         materialsNeeded: 10
     };
 }
