@@ -55,6 +55,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     const [mounted, setMounted] = useState(false);
     const [isAdmin, setIsAdmin] = useState(false);
     const [starterPackAvailable, setStarterPackAvailable] = useState(false);
+    const [isClaimingInSession, setIsClaimingInSession] = useState(false); // [NEW] Prevents modal from re-popping after click
 
 
     // Initial mount check to prevent hydration mismatch
@@ -169,18 +170,22 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
                             message: '유실되었던 스타터팩 카드를 복구했습니다.',
                             icon: '🎁'
                         });
+                        setIsClaimingInSession(true); // Don't show modal ever again
                     }
                 }
 
-                // [Fix] Starter Pack Check
-                if (formattedCards.length === 0 && !profile.hasReceivedStarterPack) {
+                // [Fix] Starter Pack Check - Only show if NO cards and NOT claimed in session
+                if (!isClaimingInSession && formattedCards.length === 0 && !profile.hasReceivedStarterPack) {
                     setStarterPackAvailable(true);
+                    console.log("[SafetySystem] Starter Pack is available.");
+                } else {
+                    setStarterPackAvailable(false);
                 }
             }).catch(console.error);
 
             setLoading(false);
         }
-    }, [mounted, profile, user?.uid]);
+    }, [mounted, profile, user?.uid, isClaimingInSession]);
 
     const checkFeatureUnlocks = (newLevel: number) => {
         if (newLevel === 3) {
@@ -228,10 +233,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
                 acquiredAt: (c.acquiredAt && 'toDate' in c.acquiredAt) ? (c.acquiredAt as any).toDate() : new Date(c.acquiredAt as any)
             })) as Card[];
             setInventory(formattedInv);
-
-            if (formattedInv.length === 0 && !profile.hasReceivedStarterPack) {
-                setStarterPackAvailable(true);
-            }
+            // Removed redundant starterPackAvailable check here to prevent session flicker
         } else {
             setLoading(true);
             try {
@@ -358,7 +360,8 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         if (!user || !starterPackAvailable) return [];
 
         console.log("Starting starter pack claim process...");
-        setStarterPackAvailable(false); // [CRITICAL] Prevent double clicks immediately
+        setStarterPackAvailable(false);
+        setIsClaimingInSession(true); // [CRITICAL] Block re-opening immediately
 
         try {
             const uid = user.uid;
