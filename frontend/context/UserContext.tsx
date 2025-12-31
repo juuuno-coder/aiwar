@@ -330,24 +330,24 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         if (!mounted) return [];
 
         const uid = user?.uid;
-        if (!uid) {
-            addNotification({
-                type: 'error',
-                title: '오류 발생',
-                message: '로그인 정보를 찾을 수 없습니다.',
-                icon: '⚠️'
-            });
-            return [];
-        }
+        if (!user || !starterPackAvailable) return [];
 
-        setLoading(true);
+        console.log("Starting starter pack claim process...");
+        setStarterPackAvailable(false); // [CRITICAL] Prevent double clicks immediately
+
         try {
-            console.log("Claiming Starter Pack for:", uid);
+            const uid = user.uid;
 
-            // 1. Add Coins
-            await addCoinsByContext(1000);
+            // 1. 코인 지급 (1000 코인)
+            // if profile exists, we use the account-based coin update
+            if (profile) {
+                await firebaseUpdateCoins(1000, uid);
+            } else {
+                await addCoinsByContext(1000);
+            }
+            console.log("1000 coins added to account.");
 
-            // 2. Generate Cards
+            // 2. 카드 생성 및 지급 (5장)
             const newCards: Card[] = [];
 
             // 1 Rare Card
@@ -378,6 +378,9 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
                 await gameStorage.saveGameState(currentState, uid);
                 console.log("Local state flag marked.");
             }
+
+            // [CRITICAL] Ensure local state is refreshed immediately to reflect the flag
+            await refreshData();
 
             // 5. Notify
             addNotification({
