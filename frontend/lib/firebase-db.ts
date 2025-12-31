@@ -39,8 +39,8 @@ export interface UserProfile {
     lastTokenUpdate?: any; // [NEW] 토큰 자동 충전 기준 시간
 }
 
-const MAX_TOKENS_FREE = 100;
-const RECHARGE_RATE_PER_HOUR = 10; // 시간당 10개
+const MAX_TOKENS_FREE = 1000; // [UPDATED] 최대 1000개
+const RECHARGE_RATE_PER_HOUR = 100; // [UPDATED] 시간당 100개
 
 /**
  * 토큰 자동 충전 체크 및 업데이트

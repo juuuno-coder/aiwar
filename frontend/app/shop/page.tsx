@@ -239,8 +239,8 @@ export default function ShopPage() {
 
                         <button
                             onClick={handleExchangeToken}
-                            disabled={coins < 10000 || isExchanging}
-                            className={`px-8 py-4 rounded-xl font-bold flex items-center gap-2 transition-all ${coins < 10000
+                            disabled={coins < 100 || isExchanging}
+                            className={`px-8 py-4 rounded-xl font-bold flex items-center gap-2 transition-all ${coins < 100
                                 ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
                                 : 'bg-cyan-600 hover:bg-cyan-500 text-white shadow-[0_0_20px_rgba(6,182,212,0.3)] hover:scale-105'
                                 }`}
