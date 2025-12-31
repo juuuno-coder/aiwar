@@ -4,32 +4,37 @@ import { useState, useEffect } from 'react';
 import CyberPageLayout from '@/components/CyberPageLayout';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
-import WelcomeTutorialModal from '@/components/WelcomeTutorialModal';
+import TutorialOverlay from '@/components/tutorial/TutorialOverlay'; // [NEW]
+import { useGameSound } from '@/hooks/useGameSound'; // [NEW]
 import { BackgroundBeams } from "@/components/ui/aceternity/background-beams";
 import { CardBody, Card3D as CardContainer, CardItem } from "@/components/ui/aceternity/3d-card";
 
 export default function MainPage() {
   const [showTutorial, setShowTutorial] = useState(false);
 
+  const { playSound } = useGameSound();
+
   useEffect(() => {
+    // Play Main BGM
+    playSound('bgm_main', 'bgm'); // [NEW]
+
     // Check if tutorial has been seen
-    const hasSeenTutorial = localStorage.getItem('hasSeenCommandTutorial_v2');
+    const hasSeenTutorial = localStorage.getItem('hasSeenCommandTutorial_v3'); // Version up
     if (!hasSeenTutorial) {
-      // Small delay for effect
       const timer = setTimeout(() => setShowTutorial(true), 1000);
       return () => clearTimeout(timer);
     }
-  }, []);
+  }, [playSound]);
 
   const handleTutorialClose = () => {
     setShowTutorial(false);
-    localStorage.setItem('hasSeenCommandTutorial_v2', 'true');
+    localStorage.setItem('hasSeenCommandTutorial_v3', 'true');
   };
 
   const menuItems = [
     { title: '군단 본부', subtitle: 'LEGION HQ', path: '/factions', color: 'green', icon: '🏛️' },
-    { title: '작전 지역', subtitle: 'BATTLE FIELD', path: '/battle', color: 'red', icon: '⚔️' },
-    { title: '카드 보관소', subtitle: 'INVENTORY', path: '/my-cards', color: 'purple', icon: '📦' },
+    { title: '작전 지역', subtitle: 'BATTLE FIELD', path: '/battle', color: 'red', icon: '⚔️', id: 'menu-battle' }, // [NEW] ID
+    { title: '카드 보관소', subtitle: 'INVENTORY', path: '/my-cards', color: 'purple', icon: '📦', id: 'menu-inventory' }, // [NEW] ID
     { title: '연구소', subtitle: 'LAB', path: '/lab', color: 'orange', icon: '🧪' },
     { title: '생성', subtitle: 'GENERATION', path: '/generation', color: 'yellow', icon: '⚡' },
     { title: '강화', subtitle: 'ENHANCE', path: '/enhance', color: 'pink', icon: '✨' },
@@ -50,7 +55,7 @@ export default function MainPage() {
       </div>
 
       {/* Season 1 Banner - Added above grid */}
-      <div className="relative z-10 w-full max-w-7xl mx-auto mt-6 mb-8 overflow-hidden rounded-2xl border border-cyan-500/30 bg-black/60 backdrop-blur-md group cursor-pointer hover:border-cyan-500/80 transition-colors">
+      <div id="season-banner" className="relative z-10 w-full max-w-7xl mx-auto mt-6 mb-8 overflow-hidden rounded-2xl border border-cyan-500/30 bg-black/60 backdrop-blur-md group cursor-pointer hover:border-cyan-500/80 transition-colors">
         <div className="absolute inset-0 bg-gradient-to-r from-cyan-900/10 via-blue-900/10 to-transparent opacity-50 group-hover:opacity-100 transition-opacity" />
         <div className="relative p-6 flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-6">
@@ -95,7 +100,7 @@ export default function MainPage() {
           const variant = colorVariants[item.color] || colorVariants['green'];
 
           return (
-            <Link key={idx} href={item.path}>
+            <Link key={idx} href={item.path} id={(item as any).id}>
               <CardContainer className="inter-var w-full h-full">
                 <CardBody className={`
                         bg-black/40 relative group/card dark:hover:shadow-2xl ${variant.shadow}
@@ -159,9 +164,7 @@ export default function MainPage() {
       </div>
       */}
 
-      <AnimatePresence>
-        {showTutorial && <WelcomeTutorialModal onClose={handleTutorialClose} />}
-      </AnimatePresence>
+      <TutorialOverlay isOpen={showTutorial} onClose={handleTutorialClose} />
     </CyberPageLayout>
   );
 }
