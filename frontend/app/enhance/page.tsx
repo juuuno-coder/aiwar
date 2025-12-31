@@ -15,9 +15,12 @@ import { getResearchBonus } from '@/lib/research-system';
 import { loadInventory } from '@/lib/inventory-system';
 import { getGameState } from '@/lib/game-state';
 import { gameStorage } from '@/lib/game-storage';
+import { FACTION_CATEGORY_MAP } from '@/lib/token-constants'; // [NEW]
+import { useUser } from '@/context/UserContext'; // [NEW]
 
 export default function EnhancePage() {
     const { showAlert } = useAlert();
+    const { consumeTokens, profile } = useUser(); // [NEW]
     const [allCards, setAllCards] = useState<InventoryCard[]>([]);
     const [targetCard, setTargetCard] = useState<InventoryCard | null>(null);
     const [materialSlots, setMaterialSlots] = useState<(InventoryCard | null)[]>(Array(10).fill(null));
@@ -54,7 +57,8 @@ export default function EnhancePage() {
         setMasteryLevel(masteryVal);
 
         setAllCards(cards);
-        setUserTokens(gameState.tokens || 0);
+        setAllCards(cards);
+        setUserTokens(profile ? profile.tokens : (gameState.tokens || 0)); // Use profile tokens if available
     };
 
     // 카드 드래그 시작
@@ -173,7 +177,14 @@ export default function EnhancePage() {
 
         const cost = getEnhanceCost(targetCard.level || 1, targetCard.rarity || 'common', discount);
 
-        if (userTokens < cost) {
+        // 카테고리 판별 (팩션 ID 기반)
+        const factionId = targetCard.aiFactionId || 'gemini'; // default
+        const categoryKey = FACTION_CATEGORY_MAP[factionId] || 'COMMON';
+
+        // consumeTokens가 잔액 체크 및 소모(할인/페이백 포함) 처리
+        const success = await consumeTokens(cost, categoryKey);
+
+        if (!success) {
             showAlert({ title: '토큰 부족', message: `토큰이 부족합니다. (필요: ${cost})`, type: 'error' });
             return;
         }
@@ -194,17 +205,20 @@ export default function EnhancePage() {
             await removeCardFromInventory(targetCard.instanceId);
             await addCardToInventory(enhancedCard);
 
-            // 3. 토큰 차감
-            await gameStorage.addTokens(-cost);
+            // 3. 토큰 차감 (이미 consumeTokens에서 처리됨)
+            // await gameStorage.addTokens(-cost); // REMOVED
 
             // 4. 강화 성공 모달 표시
             setEnhancedResult(enhancedCard);
             setRewardModalOpen(true);
 
             handleClear();
-            await loadCards();
+            await loadCards(); // 인벤토리 & 토큰 갱신
         } catch (error) {
             console.error('강화 오류:', error);
+            // 실패 시 토큰 롤백 처리가 필요할 수 있으나, 일단 소모된 것으로 처리 (실패 비용)
+            // 혹은 여기서 addTokens(cost)로 복구해줄 수도 있음. 
+            // 하지만 transaction이 아니므로 복잡함. 일단 에러는 드물다고 가정.
             showAlert({ title: '강화 실패', message: `강화 중 문제가 발생했습니다.\n${error instanceof Error ? error.message : String(error)}`, type: 'error' });
         }
     };

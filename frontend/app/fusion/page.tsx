@@ -14,11 +14,12 @@ import CardRewardModal from '@/components/CardRewardModal';
 import { gameStorage } from '@/lib/game-storage'; // Keep for tokens
 import { useUser } from '@/context/UserContext';
 import { useNotification } from '@/context/NotificationContext';
+import { FACTION_CATEGORY_MAP } from '@/lib/token-constants'; // [NEW]
 
 export default function FusionPage() {
     const { addNotification } = useNotification();
     const { showAlert } = useAlert();
-    const { refreshData } = useUser(); // To refresh global data if needed
+    const { refreshData, consumeTokens } = useUser(); // [NEW] consumeTokens
     const { profile, reload } = useUserProfile(); // Firebase profile
 
     const [allCards, setAllCards] = useState<InventoryCard[]>([]);
@@ -124,9 +125,24 @@ export default function FusionPage() {
             return;
         }
 
+        // 토큰 체크 및 소모
+        const cost = getFusionCost(filledMaterials[0].rarity!);
+
+        // 카테고리 판별 (첫 번째 재료 기준)
+        const factionId = filledMaterials[0].aiFactionId || 'gemini';
+        const categoryKey = FACTION_CATEGORY_MAP[factionId] || 'COMMON';
+
+        const success = await consumeTokens(cost, categoryKey);
+
+        // check.canFuse에서 이미 토큰 잔액 체크를 했지만, consumeTokens가 최종 권한
+        if (!success) {
+            showAlert({ title: '토큰 부족', message: `토큰이 부족합니다. (필요: ${cost})`, type: 'error' });
+            return;
+        }
+
         try {
             const fusedCard = fuseCards(filledMaterials as any, 'guest');
-            const cost = getFusionCost(filledMaterials[0].rarity!);
+            // cost variable already defined above
 
             // 1. 재료 삭제 (DB & UI)
             for (const mat of filledMaterials) {
@@ -136,14 +152,7 @@ export default function FusionPage() {
             // 2. 결과 저장 (DB)
             await addCardToInventory(fusedCard);
 
-            // 3. 토큰 차감
-            if (profile) {
-                const { updateTokens } = await import('@/lib/firebase-db');
-                await updateTokens(-cost);
-                await reload(); // Refresh profile
-            } else {
-                await gameStorage.addTokens(-cost);
-            }
+            // 3. 토큰 차감 (consumeTokens에서 이미 처리됨)
 
             // 4. 모달 표시 및 데이터 갱신
             setRewardCard(fusedCard);

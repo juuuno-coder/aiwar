@@ -28,8 +28,11 @@ import { // [NEW]
     FACTION_CATEGORY_MAP, // [NEW]
     TIER_MULTIPLIER // [NEW]
 } from '@/lib/token-constants'; // [NEW]
+TIER_MULTIPLIER // [NEW]
+} from '@/lib/token-constants'; // [NEW]
 import { SubscriptionTier, UserSubscription } from '@/lib/faction-subscription'; // [NEW]
-import { User, UserProfile, fetchUserSubscriptions } from '@/lib/firebase-db'; // [NEW] Updated import
+import { UserProfile, fetchUserSubscriptions } from '@/lib/firebase-db'; // [NEW] Updated import
+import { User } from 'firebase/auth'; // [NEW] Correct import
 
 interface UserContextType {
     coins: number;
@@ -537,18 +540,19 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     return (
         <UserContext.Provider
             value={{
-                coins,
-                tokens,
-                level,
-                experience,
-                loading,
+                coins, // Explicitly pass state
+                tokens, // Explicitly pass state
+                level, // Explicitly pass state
+                experience, // Explicitly pass state
+                user,
+                profile: profile ? { ...profile, coins, tokens } : null,
                 inventory,
+                loading,
+                refreshData,
                 addCoins: addCoinsByContext,
                 addTokens: addTokensByContext,
                 addExperience: addExperienceByContext,
-                refreshData,
                 isAdmin,
-                user,
                 profile, // Added
                 starterPackAvailable,
                 claimStarterPack,
