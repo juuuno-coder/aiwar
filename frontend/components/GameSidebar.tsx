@@ -8,6 +8,8 @@ import { Settings, LogOut, ChevronLeft, ChevronRight } from 'lucide-react';
 import { logout } from '@/lib/auth-utils';
 import CommanderProfileModal from '@/components/CommanderProfileModal';
 import { useUserProfile } from '@/hooks/useUserProfile';
+import { useUser } from '@/context/UserContext';
+import { getGenerationSlots } from '@/lib/generation-utils';
 
 interface GameSidebarProps {
     isCollapsed: boolean;
@@ -20,6 +22,22 @@ export default function GameSidebar({ isCollapsed, onToggle }: GameSidebarProps)
     const { profile } = useUserProfile();
     const [nickname, setNickname] = useState('COMMANDER');
     const [showProfileModal, setShowProfileModal] = useState(false);
+
+    const { user } = useUser();
+    const [hasReadyGenerations, setHasReadyGenerations] = useState(false);
+
+    useEffect(() => {
+        const checkGenerations = () => {
+            const slots = getGenerationSlots(user?.uid);
+            const hasReady = slots.some(s => s.status === 'active');
+            setHasReadyGenerations(hasReady);
+        };
+
+        checkGenerations();
+        const interval = setInterval(checkGenerations, 5000);
+
+        return () => clearInterval(interval);
+    }, [user]);
 
     useEffect(() => {
         // Use Firebase profile nickname if available
@@ -38,6 +56,7 @@ export default function GameSidebar({ isCollapsed, onToggle }: GameSidebarProps)
         { name: t('menu.enhance'), path: '/enhance', icon: '🆙', color: 'amber' },
         { name: t('menu.fusion'), path: '/fusion', icon: '🔮', color: 'blue' },
         { name: t('menu.encyclopedia'), path: '/encyclopedia', icon: '📖', color: 'cyan' },
+        { name: '지원센터', path: '/support', icon: '🛠️', color: 'blue' },
     ];
 
     const handleWheel = (e: React.WheelEvent) => {
@@ -142,13 +161,18 @@ export default function GameSidebar({ isCollapsed, onToggle }: GameSidebarProps)
                                     {item.name}
                                 </span>
                             )}
+
+                            {/* Generation Ready Indicator */}
+                            {item.path === '/generation' && hasReadyGenerations && (
+                                <div className="absolute right-3 w-2.5 h-2.5 bg-green-500 rounded-full shadow-[0_0_8px_#22c55e] animate-pulse" />
+                            )}
                         </Link>
                     );
                 })}
             </nav>
 
             {/* Bottom Gradient Overlay */}
-            <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-black via-black/80 to-transparent pointer-events-none z-10" />
+            <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-black/50 to-transparent pointer-events-none z-10" />
 
             {/* Commander Profile Modal */}
             <CommanderProfileModal

@@ -4,6 +4,7 @@
  */
 
 import { Card } from './types';
+import { CARD_DATABASE } from '@/data/card-database';
 import { db, isFirebaseConfigured } from './firebase';
 import { getUserId } from './firebase-auth';
 import {
@@ -18,7 +19,8 @@ import {
     orderBy,
     serverTimestamp,
     Timestamp,
-    writeBatch
+    writeBatch,
+    updateDoc
 } from 'firebase/firestore';
 
 export interface InventoryCard extends Omit<Card, 'acquiredAt'> {
@@ -43,6 +45,34 @@ export type CardSortBy = 'name' | 'power' | 'acquiredAt' | 'rarity';
 function getInventoryKey(uid?: string): string {
     if (!uid) return 'inventory_guest';
     return `inventory_${uid}`;
+}
+
+/**
+ * 인벤토리 카드 업데이트 (Partial)
+ */
+export async function updateInventoryCard(instanceId: string, updates: Partial<InventoryCard>, uid?: string): Promise<void> {
+    if (!isFirebaseConfigured || !db) {
+        // localStorage fallback
+        const key = getInventoryKey(uid);
+        const inventory = JSON.parse(localStorage.getItem(key) || '[]');
+        const index = inventory.findIndex((c: InventoryCard) => c.instanceId === instanceId);
+        if (index !== -1) {
+            inventory[index] = { ...inventory[index], ...updates };
+            localStorage.setItem(key, JSON.stringify(inventory));
+        }
+        return;
+    }
+
+    try {
+        const userId = uid || await getUserId();
+        const cardRef = doc(db, 'users', userId, 'inventory', instanceId);
+        // @ts-ignore
+        await updateDoc(cardRef, updates);
+        console.log('✅ 카드 업데이트:', instanceId);
+    } catch (error) {
+        console.error('❌ 카드 업데이트 실패:', error);
+        throw error;
+    }
 }
 
 /**
@@ -161,7 +191,23 @@ export async function loadInventory(uid?: string): Promise<InventoryCard[]> {
         console.warn('Firebase가 설정되지 않았습니다. localStorage 사용.');
         const key = getInventoryKey(uid);
         const inventory = JSON.parse(localStorage.getItem(key) || '[]');
-        return inventory;
+
+        // LocalStorage 데이터도 동기화
+        return inventory.map((card: InventoryCard) => {
+            const staticData = CARD_DATABASE.find(c => c.id === card.id);
+            if (staticData) {
+                return {
+                    ...card,
+                    ...staticData,
+                    instanceId: card.instanceId,
+                    acquiredAt: card.acquiredAt,
+                    level: card.level || 1,
+                    experience: card.experience || 0,
+                    stats: card.stats || staticData.baseStats
+                };
+            }
+            return card;
+        });
     }
 
     try {
@@ -171,6 +217,20 @@ export async function loadInventory(uid?: string): Promise<InventoryCard[]> {
 
         const cards: InventoryCard[] = querySnapshot.docs.map(doc => {
             const data = doc.data() as InventoryCard;
+            const staticData = CARD_DATABASE.find(c => c.id === data.id);
+
+            if (staticData) {
+                return {
+                    ...data,
+                    ...staticData,
+                    instanceId: data.instanceId,
+                    acquiredAt: data.acquiredAt || new Date(),
+                    level: data.level || 1,
+                    experience: data.experience || 0,
+                    stats: data.stats || staticData.baseStats,
+                } as InventoryCard;
+            }
+
             return {
                 ...data,
                 acquiredAt: data.acquiredAt || new Date()
@@ -304,4 +364,65 @@ export function getInventoryStats(cards: InventoryCard[]) {
     stats.averagePower = cards.length > 0 ? Math.round(stats.totalPower / cards.length) : 0;
 
     return stats;
+}
+
+/**
+ * 스타터팩 지급 (튜토리얼 완료 시)
+ * 일반 1, 희귀 1, 영웅 1, 전설 1, 유니크 1 (군단장 카드) 지급
+ */
+const UNIQUE_COMMANDER_PORTRAITS = [
+    '/assets/cards/cyber-warlord.png',
+    '/assets/cards/fleet-admiral.png',
+    '/assets/cards/gemini-character.png',
+    '/assets/cards/cursor-character.png',
+    '/assets/cards/runway-character.png'
+];
+
+export async function distributeStarterPack(uid?: string, nickname?: string): Promise<InventoryCard[]> {
+    try {
+        const { generateCardByRarity } = await import('./card-generation-system');
+
+        // 각 등급별 1장씩 생성
+        const commonCard = generateCardByRarity('common', uid);
+        const rareCard = generateCardByRarity('rare', uid);
+        const epicCard = generateCardByRarity('epic', uid);
+        const legendaryCard = generateCardByRarity('legendary', uid);
+
+        // Commander Unique Card
+        const uniqueCard = generateCardByRarity('unique', uid);
+
+        // Customize Unique Card with Nickname
+        if (nickname) {
+            uniqueCard.name = `지휘관 ${nickname}`; // '사령관' -> '지휘관' (User refers to themselves)
+            uniqueCard.description = "전장에 새롭게 합류한 지휘관의 전용 유닛입니다.";
+
+            // Randomize portrait for the Unique card
+            const randomPortrait = UNIQUE_COMMANDER_PORTRAITS[Math.floor(Math.random() * UNIQUE_COMMANDER_PORTRAITS.length)];
+            uniqueCard.imageUrl = randomPortrait;
+        }
+
+        const starterPack = [
+            commonCard,
+            rareCard,
+            epicCard,
+            legendaryCard,
+            uniqueCard
+        ];
+
+        // 인벤토리에 추가
+        await addCardsToInventory(starterPack, uid);
+
+        // InventoryCard 형태로 반환 (UI 표시용)
+        const inventoryCards = starterPack.map(card => ({
+            ...card,
+            instanceId: '', // UI 표시용이라 ID 불필요하지만 타입 맞춤
+            acquiredAt: new Date()
+        } as InventoryCard));
+
+        console.log('✅ 스타터팩 지급 완료 (5장, 포함: Commander Card)');
+        return inventoryCards;
+    } catch (error) {
+        console.error('❌ 스타터팩 지급 실패:', error);
+        return [];
+    }
 }

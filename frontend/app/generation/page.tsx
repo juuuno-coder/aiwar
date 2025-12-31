@@ -20,9 +20,9 @@ import {
 } from '@/lib/generation-utils';
 import { getSubscribedFactions, TIER_CONFIG } from '@/lib/faction-subscription-utils';
 import CardRewardModal from '@/components/CardRewardModal';
-import { COMMANDERS } from '@/data/card-database';
+import { COMMANDERS, CARD_DATABASE } from '@/data/card-database';
 import { createCardFromTemplate } from '@/lib/card-generation-system';
-import { loadInventory } from '@/lib/inventory-system';
+import { loadInventory, removeCardFromInventory } from '@/lib/inventory-system';
 import { useFirebase } from '@/components/FirebaseProvider';
 import GenerationSlot from '@/components/GenerationSlot';
 
@@ -43,6 +43,7 @@ export default function GenerationPage() {
     const [rewardModalOpen, setRewardModalOpen] = useState(false);
     const [rewardCards, setRewardCards] = useState<Card[]>([]);
     const [rewardModalTitle, setRewardModalTitle] = useState("카드 획득!");
+    const [isProcessingAll, setIsProcessingAll] = useState(false);
 
     useEffect(() => {
         try {
@@ -117,20 +118,41 @@ export default function GenerationPage() {
     };
 
     const handleRemoveFaction = useCallback((slotIndex: number) => {
+        const slot = slots.find(s => s.index === slotIndex);
+        if (!slot || !slot.factionId) return;
+
         showConfirm({
-            title: '군단 제거',
-            message: '이 슬롯에서 군단을 제거하시겠습니까?',
-            onConfirm: () => {
+            title: '군단 배치 해제',
+            message: '군단을 슬롯에서 제거하면 보유 중인 해당 군단의 "군단장 카드"도 함께 회수됩니다. 계속하시겠습니까?',
+            onConfirm: async () => {
+                // 1. 군단장 카드 회수 로직
+                try {
+                    const inventory = await loadInventory(userId);
+                    // 해당 팩션의 군단장 카드 찾기
+                    const commanderTemplate = COMMANDERS.find(c => c.aiFactionId === slot.factionId);
+
+                    if (commanderTemplate) {
+                        const commanderCards = inventory.filter(c => c.templateId === commanderTemplate.id);
+                        for (const card of commanderCards) {
+                            await removeCardFromInventory(card.instanceId, userId);
+                            console.log(`[Generation] Reclaimed commander card: ${card.name}`);
+                        }
+                    }
+                } catch (error) {
+                    console.error("Failed to reclaim commander card:", error);
+                }
+
+                // 2. 슬롯 제거 로직
                 const result = removeFactionFromSlot(slotIndex, userId);
                 if (result.success) {
-                    showAlert({ title: '제거 완료', message: result.message, type: 'success' });
+                    showAlert({ title: '제거 완료', message: '군단이 제거되었으며, 군단장 카드가 회수되었습니다.', type: 'success' });
                     loadData();
                 } else {
                     showAlert({ title: '제거 실패', message: result.message, type: 'error' });
                 }
             }
         });
-    }, [userId, showConfirm, showAlert]);
+    }, [slots, userId, showConfirm, showAlert]);
 
     const handleReceiveCard = useCallback(async (slotIndex: number) => {
         const result = await generateCard(slotIndex, userId);
@@ -150,6 +172,8 @@ export default function GenerationPage() {
     }, [userId, showAlert]);
 
     const handleReceiveAll = async () => {
+        if (isProcessingAll) return;
+
         const readySlots = slots.filter(slot => {
             if (!slot.factionId) return false;
             const status = checkGenerationStatus(slot.index, userId);
@@ -158,22 +182,32 @@ export default function GenerationPage() {
 
         if (readySlots.length === 0) return;
 
+        setIsProcessingAll(true);
         const receivedCards: Card[] = [];
         let successCount = 0;
 
-        for (const slot of readySlots) {
-            const result = await generateCard(slot.index, userId);
-            if (result.success && result.card) {
-                await addCardToInventory(result.card);
-                receivedCards.push(result.card);
-                successCount++;
+        try {
+            // Sequential processing to avoid state race conditions and UI lag
+            for (const slot of readySlots) {
+                const result = await generateCard(slot.index, userId);
+                if (result.success && result.card) {
+                    await addCardToInventory(result.card);
+                    receivedCards.push(result.card);
+                    successCount++;
+                }
             }
-        }
 
-        if (successCount > 0) {
-            setRewardCards(receivedCards);
-            setRewardModalOpen(true);
-            loadData();
+            if (successCount > 0) {
+                setRewardCards(receivedCards);
+                setRewardModalTitle("모두 받기 완료!");
+                setRewardModalOpen(true);
+                loadData();
+            }
+        } catch (error) {
+            console.error("Batch receipt error:", error);
+            showAlert({ title: '오류', message: '일부 카드를 수령하는 중 오류가 발생했습니다.', type: 'error' });
+        } finally {
+            setIsProcessingAll(false);
         }
     };
 
@@ -255,10 +289,14 @@ export default function GenerationPage() {
                         {readyCount > 0 && (
                             <button
                                 onClick={handleReceiveAll}
-                                className="px-4 py-2 bg-gradient-to-r from-pink-500 to-purple-500 text-white font-bold text-sm rounded-lg hover:from-pink-400 hover:to-purple-400 transition-all flex items-center gap-2 animate-pulse shadow-lg shadow-pink-500/30"
+                                disabled={isProcessingAll}
+                                className={cn(
+                                    "px-4 py-2 bg-gradient-to-r from-pink-500 to-purple-500 text-white font-bold text-sm rounded-lg transition-all flex items-center gap-2 shadow-lg shadow-pink-500/30",
+                                    isProcessingAll ? "opacity-70 cursor-not-allowed" : "hover:from-pink-400 hover:to-purple-400 animate-pulse"
+                                )}
                             >
-                                <Gift size={16} />
-                                모두 받기 ({readyCount})
+                                <Gift size={16} className={isProcessingAll ? "animate-spin" : ""} />
+                                {isProcessingAll ? '처리 중...' : `모두 받기 (${readyCount})`}
                             </button>
                         )}
                     </div>
@@ -272,12 +310,20 @@ export default function GenerationPage() {
                             const remaining = slot.factionId ? getRemainingGenerations(slot.factionId, userId) : 0;
                             const faction = factions.find(f => f.id === slot.factionId);
 
+                            // 군단장(실제사진)보다는 군단의 대표 캐릭터(HERO/EPIC급 캐릭터) 이미지를 찾는 로직
+                            const characterTemplate = CARD_DATABASE.find((c: any) =>
+                                c.aiFactionId === slot.factionId &&
+                                (c.rarity === 'legendary' || c.rarity === 'epic' || c.rarity === 'rare')
+                            );
+
                             return (
                                 <GenerationSlot
                                     key={slot.index}
                                     slot={slot}
                                     subscription={subscription}
                                     factionName={faction?.displayName || slot.factionId || ''}
+                                    cardImage={characterTemplate?.imageUrl || faction?.iconUrl}
+                                    iconUrl={faction?.iconUrl}
                                     canGenerate={canGenerate}
                                     remainingTime={remainingTime}
                                     remainingGenerations={remaining}
@@ -341,8 +387,20 @@ export default function GenerationPage() {
                                                     onClick={() => handleAssignFaction(selectedSlotForAssignment, sub.factionId)}
                                                     className="flex items-center gap-4 p-4 rounded-xl border border-white/10 hover:border-cyan-500/50 hover:bg-cyan-500/5 transition-all text-left bg-white/5 group"
                                                 >
-                                                    <div className="w-12 h-12 bg-black rounded-lg flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
-                                                        🤖
+                                                    <div className="w-12 h-12 bg-black rounded-lg flex items-center justify-center p-2 group-hover:scale-110 transition-transform">
+                                                        {faction?.iconUrl ? (
+                                                            <img
+                                                                src={faction.iconUrl}
+                                                                alt={faction.displayName}
+                                                                className="w-full h-full object-contain"
+                                                                onError={(e) => {
+                                                                    e.currentTarget.style.display = 'none';
+                                                                    e.currentTarget.parentElement?.classList.add('fallback-icon');
+                                                                }}
+                                                            />
+                                                        ) : (
+                                                            <span className="text-2xl">🤖</span>
+                                                        )}
                                                     </div>
                                                     <div className="flex-1">
                                                         <div className="font-bold text-white group-hover:text-cyan-400 transition-colors">

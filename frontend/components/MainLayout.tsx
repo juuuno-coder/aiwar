@@ -13,6 +13,11 @@ const DynamicFooter = dynamic(() => import('@/components/DynamicFooter'), {
 const TutorialManager = dynamic(() => import('@/components/TutorialManager'), {
     ssr: false,
 });
+
+const StarterPackModal = dynamic(() => import('@/components/StarterPackModal'), {
+    ssr: false,
+});
+
 import { useFooter } from '@/context/FooterContext';
 import { cn } from '@/lib/utils';
 
@@ -67,6 +72,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
                         )}
                     >
                         <TutorialManager />
+                        <StarterPackModal />
                         {children}
 
                         {/* Dynamic Footer - Only renders when FooterContext.visible is true */}

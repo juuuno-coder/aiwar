@@ -4,7 +4,7 @@ export type Rarity = 'common' | 'rare' | 'epic' | 'legendary' | 'unique' | 'comm
 export type Specialty = 'text' | 'image' | 'video' | 'music' | 'voice' | 'code';
 export type CardType = 'normal' | 'automated';
 export type AIType = 'EFFICIENCY' | 'CREATIVITY' | 'FUNCTION' | 'COST';
-export type BattleMode = '1-card' | '3-card' | '5-card';
+export type BattleMode = 'sudden-death' | 'tactics' | 'ambush' | 'double';
 
 export interface Stats {
     creativity?: number;
@@ -81,6 +81,7 @@ export interface Card {
         effect: string;
     };
     equipment?: Equipment[];
+    aiFactionId?: string; // 소속 군단 ID
     plusStats?: Stats;
 }
 

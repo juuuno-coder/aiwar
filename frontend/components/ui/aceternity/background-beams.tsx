@@ -9,20 +9,28 @@ export const BackgroundBeams = ({ className }: { className?: string }) => {
         const beams = beamsRef.current;
         if (!beams) return;
 
-        const handleMouseMove = (event: MouseEvent) => {
-            const { clientX, clientY } = event;
-            const { left, top, width, height } = beams.getBoundingClientRect();
-            const x = clientX - left;
-            const y = clientY - top;
+        let animationFrameId: number;
 
-            beams.style.setProperty("--x", `${x}px`);
-            beams.style.setProperty("--y", `${y}px`);
+        const handleMouseMove = (event: MouseEvent) => {
+            if (animationFrameId) return;
+
+            animationFrameId = requestAnimationFrame(() => {
+                const { clientX, clientY } = event;
+                const { left, top, width, height } = beams.getBoundingClientRect();
+                const x = clientX - left;
+                const y = clientY - top;
+
+                beams.style.setProperty("--x", `${x}px`);
+                beams.style.setProperty("--y", `${y}px`);
+                animationFrameId = 0;
+            });
         };
 
         window.addEventListener("mousemove", handleMouseMove);
 
         return () => {
             window.removeEventListener("mousemove", handleMouseMove);
+            if (animationFrameId) cancelAnimationFrame(animationFrameId);
         };
     }, []);
 

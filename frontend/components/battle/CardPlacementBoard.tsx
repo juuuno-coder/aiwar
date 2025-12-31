@@ -16,11 +16,11 @@ interface CardPlacementBoardProps {
 }
 
 export interface RoundPlacement {
-    round1: any;
+    round1: { main: any; hidden?: any };
     round2: { main: any; hidden?: any };
-    round3: any;
+    round3: { main: any; hidden?: any };
     round4: { main: any; hidden?: any };
-    round5: any;
+    round5: { main: any; hidden?: any };
 }
 
 export default function CardPlacementBoard({ selectedCards, onPlacementComplete, battleMode = 'tactics', opponentDeck = [] }: CardPlacementBoardProps) {
@@ -28,30 +28,63 @@ export default function CardPlacementBoard({ selectedCards, onPlacementComplete,
 
     const [placement, setPlacement] = useState<{
         round1: any | null;
+        round1Hidden: any | null; // Added for Double Battle
         round2Main: any | null;
         round2Hidden: any | null;
-        round3: any | null;
+        round3Main: any | null;
+        round3Hidden: any | null;
         round4Main: any | null;
         round4Hidden: any | null;
         round5: any | null;
-    }>({
-        round1: null,
-        round2Main: null,
-        round2Hidden: null,
-        round3: null,
-        round4Main: null,
-        round4Hidden: null,
-        round5: null,
+    }>(() => {
+        const initial = {
+            round1: null,
+            round1Hidden: null, // Added for Double Battle
+            round2Main: null,
+            round2Hidden: null,
+            round3Main: null,
+            round3Hidden: null,
+            round4Main: null,
+            round4Hidden: null,
+            round5: null,
+        };
+
+        // Ambush 모드: 메인 슬롯 1~5번 자동 배치 (6번째는 히든)
+        // Ambush 모드: 초기화 시 빈 상태로 시작 (수동 배치 유도)
+        // if (battleMode === 'ambush' && selectedCards.length === 6) { ... }
+
+        return initial;
     });
 
     const [draggingCard, setDraggingCard] = useState<any | null>(null);
 
     // Get cards that are still available in the pool
     const getAvailableCards = () => {
+        if (battleMode === 'double') {
+            const placedCardIds = new Set([
+                placement.round1?.id,
+                placement.round1Hidden?.id,
+                placement.round2Main?.id,
+                placement.round2Hidden?.id,
+                placement.round3Main?.id,
+                placement.round3Hidden?.id,
+            ].filter(Boolean));
+            return selectedCards.filter(card => !placedCardIds.has(card.id));
+        }
+
+        if (hasHiddenSlots) {
+            // Ambush 모드: 히든 슬롯에 배치되지 않은 카드만 표시 (메인 슬롯 카드는 재사용 가능)
+            const hiddenPlacedIds = new Set([
+                placement.round3Hidden?.id
+            ].filter(Boolean));
+            return selectedCards.filter(card => !hiddenPlacedIds.has(card.id));
+        }
+
+        // 일반 모드: 어디든 배치된 카드는 제외
         const placedCardIds = new Set([
             placement.round1?.id,
             placement.round2Main?.id,
-            placement.round3?.id,
+            placement.round3Main?.id, // Changed from round3
             placement.round4Main?.id,
             placement.round5?.id,
         ].filter(Boolean));
@@ -61,10 +94,29 @@ export default function CardPlacementBoard({ selectedCards, onPlacementComplete,
 
     // Get cards that can be used as hidden (already placed in main slots)
     const getHiddenEligibleCards = () => {
+        // For Double Battle, any card can be hidden if not already placed in another slot
+        if (battleMode === 'double') {
+            return selectedCards.filter(card => {
+                const p = placement;
+                const cardId = card.id;
+                if (p.round1?.id === cardId) return true;
+                if (p.round1Hidden?.id === cardId) return true;
+                if (p.round2Main?.id === cardId) return true;
+                if (p.round2Hidden?.id === cardId) return true;
+                if (p.round3Main?.id === cardId) return true;
+                if (p.round3Hidden?.id === cardId) return true;
+                if (p.round4Main?.id === cardId) return true;
+                if (p.round4Hidden?.id === cardId) return true;
+                if (p.round5?.id === cardId) return true;
+                return false;
+            });
+        }
+
+        // For Ambush, only cards already in main slots can be hidden
         return [
             placement.round1,
             placement.round2Main,
-            placement.round3,
+            placement.round3Main, // Changed from round3
             placement.round4Main,
             placement.round5,
         ].filter(Boolean);
@@ -79,6 +131,9 @@ export default function CardPlacementBoard({ selectedCards, onPlacementComplete,
     };
 
     const handleDropMain = (round: string, cardId: string, sourceSlot?: string) => {
+        // Ambush 모드에서는 메인 슬롯 변경 불가
+        if (hasHiddenSlots && !round.includes('Hidden')) return;
+
         // Swap logic
         if (sourceSlot) {
             handleSwap(sourceSlot, round);
@@ -96,7 +151,7 @@ export default function CardPlacementBoard({ selectedCards, onPlacementComplete,
     };
 
     const handleDropHidden = (round: string, cardId: string, sourceSlot?: string) => {
-        if (!hasHiddenSlots) return;
+        if (!hasHiddenSlots && battleMode !== 'double') return;
 
         // Swap logic
         if (sourceSlot) {
@@ -107,26 +162,24 @@ export default function CardPlacementBoard({ selectedCards, onPlacementComplete,
         const card = selectedCards.find(c => c.id === cardId);
         if (!card) return;
 
-        // Check if card is already placed in a main slot (logic preserved but simplified if dragging from pool)
-        // ... (existing validation logic for hidden cards from pool) ...
-        const isPlaced = [
-            placement.round1,
-            placement.round2Main,
-            placement.round3,
-            placement.round4Main,
-            placement.round5,
-        ].some(c => c?.id === card.id);
-
-        if (!isPlaced) {
-            alert('히든 카드는 이미 배치된 카드 중에서만 선택할 수 있습니다!');
-            return;
+        // Check if card is already used as hidden in another round (for Ambush)
+        if (battleMode === 'ambush') {
+            const otherHiddenRound = round === 'round3Hidden' ? null : 'round3Hidden'; // Only one hidden slot in Ambush
+            if (otherHiddenRound && placement[otherHiddenRound as keyof typeof placement]?.id === card.id) {
+                alert('이 카드는 이미 다른 라운드의 히든 카드로 사용 중입니다!');
+                return;
+            }
         }
 
-        // Check if card is already used as hidden in another round
-        const otherHiddenRound = round === 'round2Hidden' ? 'round4Hidden' : 'round2Hidden';
-        if (placement[otherHiddenRound as keyof typeof placement]?.id === card.id) {
-            alert('이 카드는 이미 다른 라운드의 히든 카드로 사용 중입니다!');
-            return;
+        // Check for Double Battle: card cannot be in any other slot (main or hidden)
+        if (battleMode === 'double') {
+            const isCardAlreadyPlaced = Object.entries(placement).some(([key, value]) =>
+                value && value.id === card.id && key !== round
+            );
+            if (isCardAlreadyPlaced) {
+                alert('이 카드는 이미 다른 슬롯에 배치되었습니다!');
+                return;
+            }
         }
 
         setPlacement(prev => ({
@@ -137,22 +190,15 @@ export default function CardPlacementBoard({ selectedCards, onPlacementComplete,
 
     // Swap function
     const handleSwap = (sourceSlot: string, targetSlot: string) => {
+        // Ambush 모드에서도 스왑 허용 (일반 <-> 히든)
+        // if (hasHiddenSlots && (!sourceSlot.includes('Hidden') || !targetSlot.includes('Hidden'))) return;
+
         if (sourceSlot === targetSlot) return;
 
         setPlacement(prev => {
             const newPlacement = { ...prev };
             const sourceCard = newPlacement[sourceSlot as keyof typeof placement];
             const targetCard = newPlacement[targetSlot as keyof typeof placement];
-
-            // Validation for Hidden slots? 
-            // If swapping into a hidden slot, validation might be needed if strictly enforcing rules.
-            // For now, allow direct swap for flexibility, or implement checks if strict.
-            // Let's implement basic "Move" if target is empty, "Swap" if occupied.
-
-            // Special check: if moving TO a hidden slot, and source was NOT hidden? 
-            // Actually, if we just swap state, it might break "Hidden must be in Main first" rule if we are strict.
-            // But let's assume if user manually swaps, they know what they are doing OR apply loose rules.
-            // Simpler: Just swap the values.
 
             newPlacement[sourceSlot as keyof typeof placement] = targetCard;
             newPlacement[targetSlot as keyof typeof placement] = sourceCard;
@@ -162,6 +208,9 @@ export default function CardPlacementBoard({ selectedCards, onPlacementComplete,
     };
 
     const handleRemove = (round: string) => {
+        // Ambush 모드에서도 삭제 허용
+        // if (hasHiddenSlots && !round.includes('Hidden')) return;
+
         setPlacement(prev => ({
             ...prev,
             [round]: null,
@@ -169,23 +218,100 @@ export default function CardPlacementBoard({ selectedCards, onPlacementComplete,
     };
 
     const handleReset = () => {
-        setPlacement({
-            round1: null,
-            round2Main: null,
-            round2Hidden: null,
-            round3: null,
-            round4Main: null,
-            round4Hidden: null,
-            round5: null,
-        });
+        if (battleMode === 'double') {
+            setPlacement(prev => ({
+                ...prev,
+                round1: null,
+                round1Hidden: null,
+                round2Main: null,
+                round2Hidden: null,
+                round3Main: null,
+                round3Hidden: null,
+            }));
+        } else if (hasHiddenSlots) {
+            // Ambush 모드: 전체 초기화 (수동 배치 지원)
+            setPlacement({
+                round1: null,
+                round1Hidden: null,
+                round2Main: null,
+                round2Hidden: null,
+                round3Main: null,
+                round3Hidden: null,
+                round4Main: null,
+                round4Hidden: null,
+                round5: null,
+            });
+        } else {
+            setPlacement({
+                round1: null,
+                round1Hidden: null, // Reset this too for consistency
+                round2Main: null,
+                round2Hidden: null,
+                round3Main: null, // Changed from round3
+                round3Hidden: null,
+                round4Main: null,
+                round4Hidden: null,
+                round5: null,
+            });
+        }
     };
 
     const handleAutoFill = () => {
+        if (battleMode === 'double') {
+            const available = getAvailableCards();
+            const emptySlots = [
+                'round1', 'round1Hidden',
+                'round2Main', 'round2Hidden',
+                'round3Main', 'round3Hidden'
+            ].filter(slot => !placement[slot as keyof typeof placement]);
+
+            const shuffled = [...available].sort(() => Math.random() - 0.5);
+
+            setPlacement(prev => {
+                const next = { ...prev };
+                emptySlots.forEach((slot, i) => {
+                    if (shuffled[i]) {
+                        next[slot as keyof typeof placement] = shuffled[i];
+                    }
+                });
+                return next;
+            });
+            return;
+        }
+
+        // Ambush 모드: 히든 슬롯만 채우기
+        // Ambush 모드: 자동 배치 (최강 카드 -> 히든, 나머지 랜덤)
+        if (hasHiddenSlots) {
+            // 전체 재배치 로직으로 변경 (기존 배치 무시)
+            const allCards = [...selectedCards];
+
+            // 1. Find Strongest Card (Total Power)
+            const strongest = allCards.reduce((prev, current) => {
+                return (prev.stats?.totalPower || 0) > (current.stats?.totalPower || 0) ? prev : current;
+            });
+
+            // 2. Others
+            const others = allCards.filter(c => c.id !== strongest.id).sort(() => Math.random() - 0.5);
+
+            setPlacement({
+                round1: others[0],
+                round1Hidden: null,
+                round2Main: others[1],
+                round2Hidden: null,
+                round3Main: others[2],
+                round3Hidden: strongest, // Strongest to Hidden
+                round4Main: others[3],
+                round4Hidden: null,
+                round5: others[4],
+            });
+            return;
+        }
+
         const available = getAvailableCards();
         if (available.length === 0) return;
 
         const emptySlots = [
-            'round1', 'round2Main', 'round3', 'round4Main', 'round5'
+            'round1', 'round2Main', 'round3Main', 'round4Main', 'round5' // Changed from round3
         ].filter(slot => !placement[slot as keyof typeof placement]);
 
         const shuffled = [...available].sort(() => Math.random() - 0.5);
@@ -203,25 +329,54 @@ export default function CardPlacementBoard({ selectedCards, onPlacementComplete,
 
     // 클릭으로 자동 배치 (첫 번째 빈 슬롯에 배치)
     const handleAutoPlace = (card: any) => {
+        if (battleMode === 'double') {
+            if (!placement.round1) handleDropMain('round1', card.id);
+            else if (!placement.round1Hidden) handleDropHidden('round1Hidden', card.id);
+            else if (!placement.round2Main) handleDropMain('round2Main', card.id);
+            else if (!placement.round2Hidden) handleDropHidden('round2Hidden', card.id);
+            else if (!placement.round3Main) handleDropMain('round3Main', card.id);
+            else if (!placement.round3Hidden) handleDropHidden('round3Hidden', card.id);
+            return;
+        }
+
+        if (hasHiddenSlots) {
+            // Ambush: R1 -> R5 -> Hidden 순서 배치
+            if (!placement.round1) handleDropMain('round1', card.id);
+            else if (!placement.round2Main) handleDropMain('round2Main', card.id);
+            else if (!placement.round3Main) handleDropMain('round3Main', card.id);
+            else if (!placement.round4Main) handleDropMain('round4Main', card.id);
+            else if (!placement.round5) handleDropMain('round5', card.id);
+            else if (!placement.round3Hidden) handleDropHidden('round3Hidden', card.id);
+            return;
+        }
+
         if (!placement.round1) handleDropMain('round1', card.id);
         else if (!placement.round2Main) handleDropMain('round2Main', card.id);
-        else if (!placement.round3) handleDropMain('round3', card.id);
+        else if (!placement.round3Main) handleDropMain('round3Main', card.id); // Changed from round3
         else if (!placement.round4Main) handleDropMain('round4Main', card.id);
         else if (!placement.round5) handleDropMain('round5', card.id);
     };
 
     const isPlacementComplete = () => {
+        // Double Battle: 3 Rounds x 2 Cards = 6 Total
+        if (battleMode === 'double') {
+            return placement.round1 && placement.round1Hidden &&
+                placement.round2Main && placement.round2Hidden &&
+                placement.round3Main && placement.round3Hidden;
+        }
+
+        // Standard / Ambush Base: 5 Main Cards
         const basicCheck = placement.round1 &&
             placement.round2Main &&
-            placement.round3 &&
+            placement.round3Main &&
             placement.round4Main &&
             placement.round5;
 
         if (!basicCheck) return false;
 
-        // 히든 슬롯이 있는 경우 (Ambush 모드), 히든 카드도 모두 배치되었는지 확인
-        if (hasHiddenSlots) {
-            return placement.round2Hidden && placement.round4Hidden;
+        // Ambush: R3 Hidden
+        if (battleMode === 'ambush') {
+            return placement.round3Hidden;
         }
 
         return true;
@@ -234,17 +389,26 @@ export default function CardPlacementBoard({ selectedCards, onPlacementComplete,
         }
 
         const finalPlacement: RoundPlacement = {
-            round1: placement.round1!,
+            round1: {
+                main: placement.round1!,
+                hidden: placement.round1Hidden || undefined,
+            },
             round2: {
                 main: placement.round2Main!,
                 hidden: placement.round2Hidden || undefined,
             },
-            round3: placement.round3!,
+            round3: {
+                main: placement.round3Main!,
+                hidden: placement.round3Hidden || undefined,
+            },
             round4: {
                 main: placement.round4Main!,
                 hidden: placement.round4Hidden || undefined,
             },
-            round5: placement.round5!,
+            round5: {
+                main: placement.round5!,
+                hidden: undefined, // Round 5 never has hidden
+            },
         };
 
         onPlacementComplete(finalPlacement);
@@ -264,7 +428,8 @@ export default function CardPlacementBoard({ selectedCards, onPlacementComplete,
                 <h2 className="text-2xl font-bold text-white mb-2">라운드별 카드 배치</h2>
                 <p className="text-sm text-white/60">
                     카드를 드래그하거나 클릭하여 순서대로 배치하세요.
-                    {hasHiddenSlots && " 2, 4라운드는 히든 카드를 추가할 수 있습니다."}
+                    {battleMode === 'ambush' && " 3라운드는 히든 카드(매복)를 추가할 수 있습니다."}
+                    {battleMode === 'double' && " 각 라운드에 2장의 카드를 배치하세요."}
                 </p>
             </div>
 
@@ -314,22 +479,26 @@ export default function CardPlacementBoard({ selectedCards, onPlacementComplete,
                 )
             }
 
-            {/* Round Slots */}
-            <div className="flex justify-center gap-4">
+            {/* Round Slots - Dynamic Layout */}
+            <div className="flex justify-center gap-4 flex-wrap">
+                {/* Round 1 */}
                 <RoundPlacementSlot
                     roundNumber={1}
-                    hasHidden={false}
+                    hasHidden={battleMode === 'double'}
                     mainCard={placement.round1}
-                    hiddenCard={null}
+                    hiddenCard={placement.round1Hidden}
                     mainSlotId="round1"
+                    hiddenSlotId="round1Hidden"
                     onDropMain={(cardId, sourceSlot) => handleDropMain('round1', cardId, sourceSlot)}
-                    onDropHidden={() => { }}
+                    onDropHidden={(cardId, sourceSlot) => handleDropHidden('round1Hidden', cardId, sourceSlot)}
                     onRemoveMain={() => handleRemove('round1')}
-                    onRemoveHidden={() => { }}
+                    onRemoveHidden={() => handleRemove('round1Hidden')}
                 />
+
+                {/* Round 2 */}
                 <RoundPlacementSlot
                     roundNumber={2}
-                    hasHidden={hasHiddenSlots} // 전략 승부(ambush)에서만 히든 슬롯 표시
+                    hasHidden={battleMode === 'double'} // Ambush no longer has hidden here
                     mainCard={placement.round2Main}
                     hiddenCard={placement.round2Hidden}
                     mainSlotId="round2Main"
@@ -339,40 +508,48 @@ export default function CardPlacementBoard({ selectedCards, onPlacementComplete,
                     onRemoveMain={() => handleRemove('round2Main')}
                     onRemoveHidden={() => handleRemove('round2Hidden')}
                 />
+
+                {/* Round 3 - Ambush & Double have hidden here */}
                 <RoundPlacementSlot
                     roundNumber={3}
-                    hasHidden={false}
-                    mainCard={placement.round3}
-                    hiddenCard={null}
-                    mainSlotId="round3"
-                    onDropMain={(cardId, sourceSlot) => handleDropMain('round3', cardId, sourceSlot)}
-                    onDropHidden={() => { }}
-                    onRemoveMain={() => handleRemove('round3')}
-                    onRemoveHidden={() => { }}
+                    hasHidden={battleMode === 'ambush' || battleMode === 'double'}
+                    mainCard={placement.round3Main}
+                    hiddenCard={placement.round3Hidden}
+                    mainSlotId="round3Main"
+                    hiddenSlotId="round3Hidden"
+                    onDropMain={(cardId, sourceSlot) => handleDropMain('round3Main', cardId, sourceSlot)}
+                    onDropHidden={(cardId, sourceSlot) => handleDropHidden('round3Hidden', cardId, sourceSlot)}
+                    onRemoveMain={() => handleRemove('round3Main')}
+                    onRemoveHidden={() => handleRemove('round3Hidden')}
                 />
-                <RoundPlacementSlot
-                    roundNumber={4}
-                    hasHidden={hasHiddenSlots} // 전략 승부(ambush)에서만 히든 슬롯 표시
-                    mainCard={placement.round4Main}
-                    hiddenCard={placement.round4Hidden}
-                    mainSlotId="round4Main"
-                    hiddenSlotId="round4Hidden"
-                    onDropMain={(cardId, sourceSlot) => handleDropMain('round4Main', cardId, sourceSlot)}
-                    onDropHidden={(cardId, sourceSlot) => handleDropHidden('round4Hidden', cardId, sourceSlot)}
-                    onRemoveMain={() => handleRemove('round4Main')}
-                    onRemoveHidden={() => handleRemove('round4Hidden')}
-                />
-                <RoundPlacementSlot
-                    roundNumber={5}
-                    hasHidden={false}
-                    mainCard={placement.round5}
-                    hiddenCard={null}
-                    mainSlotId="round5"
-                    onDropMain={(cardId, sourceSlot) => handleDropMain('round5', cardId, sourceSlot)}
-                    onDropHidden={() => { }}
-                    onRemoveMain={() => handleRemove('round5')}
-                    onRemoveHidden={() => { }}
-                />
+
+                {/* Round 4 & 5 (Not for Double) */}
+                {battleMode !== 'double' && (
+                    <>
+                        <RoundPlacementSlot
+                            roundNumber={4}
+                            hasHidden={false} // Ambush removed hidden here
+                            mainCard={placement.round4Main}
+                            hiddenCard={null}
+                            mainSlotId="round4Main"
+                            onDropMain={(cardId, sourceSlot) => handleDropMain('round4Main', cardId, sourceSlot)}
+                            onDropHidden={() => { }}
+                            onRemoveMain={() => handleRemove('round4Main')}
+                            onRemoveHidden={() => { }}
+                        />
+                        <RoundPlacementSlot
+                            roundNumber={5}
+                            hasHidden={false}
+                            mainCard={placement.round5}
+                            hiddenCard={null}
+                            mainSlotId="round5"
+                            onDropMain={(cardId, sourceSlot) => handleDropMain('round5', cardId, sourceSlot)}
+                            onDropHidden={() => { }}
+                            onRemoveMain={() => handleRemove('round5')}
+                            onRemoveHidden={() => { }}
+                        />
+                    </>
+                )}
             </div>
 
 
@@ -398,7 +575,7 @@ export default function CardPlacementBoard({ selectedCards, onPlacementComplete,
             {/* Card Pool */}
             <div className="space-y-3">
                 <div className="text-center text-sm font-bold text-white/80">
-                    선택한 카드 ({availableCards.length}/5)
+                    선택한 카드 ({availableCards.length}/{battleMode === 'double' ? 6 : 5})
                 </div>
                 <div className="flex justify-center gap-3 flex-wrap">
                     {availableCards.map((card) => (
@@ -431,7 +608,7 @@ export default function CardPlacementBoard({ selectedCards, onPlacementComplete,
                             {(() => {
                                 const rarityInfo: Record<string, { text: string; bg: string }> = {
                                     legendary: { text: '전설', bg: 'bg-gradient-to-r from-yellow-500 to-orange-500' },
-                                    commander: { text: '사령관', bg: 'bg-gradient-to-r from-purple-600 to-pink-600' },
+                                    commander: { text: '군단장', bg: 'bg-gradient-to-r from-purple-600 to-pink-600' },
                                     epic: { text: '영웅', bg: 'bg-gradient-to-r from-purple-500 to-indigo-500' },
                                     rare: { text: '희귀', bg: 'bg-gradient-to-r from-blue-500 to-cyan-500' },
                                     unique: { text: '유니크', bg: 'bg-gradient-to-r from-green-500 to-emerald-500' },

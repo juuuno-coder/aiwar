@@ -171,6 +171,7 @@ export default function Sidebar({ isOpen, onToggle }: SidebarProps) {
                         {navItemsFixed.map((item) => (
                             <Tooltip key={item.path} content={item.name} placement="left" isDisabled={isOpen}>
                                 <Button
+                                    id={`sidebar-nav${item.path.replace('/', '-')}`} // Added ID for tutorial targeting
                                     fullWidth
                                     variant="light"
                                     color="default"

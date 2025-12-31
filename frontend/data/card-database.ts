@@ -7,12 +7,13 @@ export const CARD_DATABASE: CardTemplate[] = [
     // Gemini - Demis Hassabis (Google DeepMind)
     {
         id: 'cmdr-gemini',
+        imageUrl: '/assets/cards/cmdr-gemini.png',
         name: 'Demis Hassabis',
         aiFactionId: 'gemini',
         rarity: 'commander',
         specialty: 'text',
         cardType: 'normal',
-        imageUrl: '/assets/cards/cmdr-gemini.png',
+
         description: 'Google DeepMind의 창립자이자 CEO. 멀티모달 AI의 선구자로서 텍스트, 이미지, 비디오를 아우르는 통합 지성을 이끄는 전략가.',
         baseStats: { creativity: { min: 95, max: 100 }, accuracy: { min: 95, max: 100 }, speed: { min: 90, max: 98 }, stability: { min: 90, max: 100 }, ethics: { min: 85, max: 95 } },
         specialAbility: { name: 'Multimodal Synthesis', description: '모든 타입 카드 효율 10% 증가', type: 'passive' }
@@ -130,7 +131,7 @@ export const CARD_DATABASE: CardTemplate[] = [
         rarity: 'commander',
         specialty: 'image',
         cardType: 'normal',
-        imageUrl: '/assets/cards/cmdr-stable.png',
+        imageUrl: '/assets/cards/cmdr-stable-diffusion.png',
         description: 'Stability AI의 설립자. AI의 민주화를 위해 오픈 소스 혁명을 주도한다.',
         baseStats: { creativity: { min: 90, max: 95 }, accuracy: { min: 75, max: 85 }, speed: { min: 90, max: 100 }, stability: { min: 60, max: 80 }, ethics: { min: 60, max: 70 } },
         specialAbility: { name: 'Open Weight', description: '팀 전체 창의성 +10%', type: 'passive' }
@@ -208,7 +209,7 @@ export const CARD_DATABASE: CardTemplate[] = [
         rarity: 'commander',
         specialty: 'voice',
         cardType: 'normal',
-        imageUrl: '/assets/cards/cmdr-eleven.png',
+        imageUrl: '/assets/cards/cmdr-elevenlabs.png',
         description: 'ElevenLabs의 CEO. 감정을 담은 초현실적 음성 합성 기술의 리더.',
         baseStats: { creativity: { min: 85, max: 95 }, accuracy: { min: 98, max: 100 }, speed: { min: 90, max: 100 }, stability: { min: 90, max: 100 }, ethics: { min: 65, max: 80 } },
         specialAbility: { name: 'Voice Clone', description: '상대방 스킬 복제 확률 10%', type: 'active' }
@@ -286,7 +287,7 @@ export const CARD_DATABASE: CardTemplate[] = [
         rarity: 'unique',
         specialty: 'text',
         cardType: 'normal',
-        imageUrl: '/assets/cards/shodan-echo.png',
+        imageUrl: '/assets/cards/gemini-character.png',
         description: 'A fragment of a legendary malevolent AI. Speaks in riddles and nightmares.',
         baseStats: { creativity: { min: 90, max: 100 }, accuracy: { min: 90, max: 100 }, speed: { min: 80, max: 90 }, stability: { min: 40, max: 60 }, ethics: { min: 0, max: 5 } },
         specialAbility: { name: 'Neural Shock', description: 'Stuns enemy for 1 turn.', type: 'active' }

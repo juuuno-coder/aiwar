@@ -39,25 +39,38 @@ export interface FactionEffects {
 /**
  * 티어 및 친밀도에 따른 등급별 확률 계산
  */
-function calculateRarityWeights(tier: string, affinity: number = 0): Record<Rarity, number> {
+function calculateRarityWeights(tier: string, affinity: number = 0, insightLevel: number = 0): Record<Rarity, number> {
     const bonus = TIER_BONUSES[tier] || TIER_BONUSES.free;
 
-    // 지휘관 숙련도(Mastery) 보너스: 숙련도 100 달성 시 Epic +5%, Legendary +2% 추가 확률
-    // 기존 개별 친밀도(Affinity) 대신 전역 숙련도(Mastery)를 사용합니다.
-    const mastery = affinity; // 파라미터 이름은 하위 호환성을 위해 유지하되 로직은 숙련도로 취급
-    const masteryEpicBonus = (mastery / 100) * 5;
-    const masteryLegendaryBonus = (mastery / 100) * 2;
+    // 지휘관 숙련도(Mastery) 보너스 (친밀도 기반)
+    const masteryEpicBonus = (affinity / 100) * 5;
+    const masteryLegendaryBonus = (affinity / 100) * 2;
 
-    // Common과 Rare에서 확률을 빼서 Epic/Legendary에 추가
-    const totalBonus = bonus.epic + bonus.legendary + masteryEpicBonus + masteryLegendaryBonus;
-    const commonReduction = totalBonus * 0.6; // Common에서 60% 차감
-    const rareReduction = totalBonus * 0.4;   // Rare에서 40% 차감
+    // 통찰력(Insight) 연구 보너싱 (정의서 v2.0 테이블 반영)
+    let insightRareBonus = 0;
+    let insightEpicBonus = 0;
+    let insightLegendaryBonus = 0;
+
+    if (insightLevel > 0) {
+        // 정의서 테이블 수치 매핑
+        const rareMap = [0, 2, 4, 6, 8, 12, 15, 18, 22, 30];
+        const epicMap = [0, 1, 2, 3.5, 5, 7, 9, 12, 15, 20];
+        const legMap = [0, 0.2, 0.4, 0.7, 1.0, 1.5, 2.0, 2.5, 3.2, 5.0];
+
+        const idx = Math.min(insightLevel, 9);
+        insightRareBonus = rareMap[idx];
+        insightEpicBonus = epicMap[idx];
+        insightLegendaryBonus = legMap[idx];
+    }
+
+    // Common에서 확률을 빼서 고등급에 분배
+    const totalBonus = insightRareBonus + insightEpicBonus + insightLegendaryBonus + bonus.epic + bonus.legendary + masteryEpicBonus + masteryLegendaryBonus;
 
     return {
-        common: Math.max(0, BASE_RARITY_WEIGHTS.common - commonReduction),
-        rare: Math.max(0, BASE_RARITY_WEIGHTS.rare - rareReduction),
-        epic: BASE_RARITY_WEIGHTS.epic + bonus.epic + masteryEpicBonus,
-        legendary: BASE_RARITY_WEIGHTS.legendary + bonus.legendary + masteryLegendaryBonus,
+        common: Math.max(0, BASE_RARITY_WEIGHTS.common - totalBonus),
+        rare: BASE_RARITY_WEIGHTS.rare + insightRareBonus,
+        epic: BASE_RARITY_WEIGHTS.epic + bonus.epic + masteryEpicBonus + insightEpicBonus,
+        legendary: BASE_RARITY_WEIGHTS.legendary + bonus.legendary + masteryLegendaryBonus + insightLegendaryBonus,
         unique: BASE_RARITY_WEIGHTS.unique,
         commander: BASE_RARITY_WEIGHTS.commander
     };
@@ -104,11 +117,11 @@ function selectCardByRarity(rarity: Rarity, factionEffects?: FactionEffects, res
  */
 const RARITY_POWER_RANGES: Record<string, { min: number, max: number }> = {
     common: { min: 40, max: 60 },
-    rare: { min: 50, max: 70 },      // Changed from 60~70
-    epic: { min: 60, max: 80 },      // Changed from 70~80
-    legendary: { min: 70, max: 90 }, // Changed from 80~100
-    unique: { min: 80, max: 90 },    // Changed from 80~100
-    commander: { min: 80, max: 90 }  // Changed from 80~100
+    rare: { min: 50, max: 70 },
+    epic: { min: 60, max: 80 },
+    legendary: { min: 70, max: 90 },
+    unique: { min: 80, max: 100 },
+    commander: { min: 80, max: 100 }
 };
 
 export interface ResearchBonuses {
@@ -169,18 +182,19 @@ export function createCardFromTemplate(template: any, factionEffects?: FactionEf
     const types: ('EFFICIENCY' | 'CREATIVITY' | 'FUNCTION')[] = ['EFFICIENCY', 'CREATIVITY', 'FUNCTION'];
     const mainType = types[Math.floor(Math.random() * types.length)];
 
-    let efficiency = 0;
-    let creativity = 0;
-    let func = 0;
+    let efficiency = 5; // 최소값 보장
+    let creativity = 5;
+    let func = 5;
 
-    if (mainType === 'EFFICIENCY') { // 바위
+    if (mainType === 'EFFICIENCY') {
         efficiency = mainStatValue;
         creativity = subStat1;
         func = subStat2;
-    } else if (mainType === 'CREATIVITY') { // 보
+    } else if (mainType === 'CREATIVITY') {
         creativity = mainStatValue;
         efficiency = subStat1;
         func = subStat2;
+    } else if (mainType === 'FUNCTION') {
         func = mainStatValue;
         efficiency = subStat1;
         creativity = subStat2;
@@ -203,40 +217,66 @@ export function createCardFromTemplate(template: any, factionEffects?: FactionEf
     // Recalculate Total Power after bonuses
     totalPower = efficiency + creativity + func;
 
+    // 4. 구형 스탯 필드(Accuracy, Speed 등)도 Total Power에 비례하여 채워줌 (UI 0 표시 방지)
+    const baseLegacyStat = Math.floor(totalPower / 5); // 100 PWR -> ~20 각 스탯
     const stats = {
         efficiency,
         creativity,
         function: func,
         totalPower,
-        // Legacy stats (set to 0)
-        accuracy: 0,
-        speed: 0,
-        stability: 0,
-        ethics: 0
+        // Legacy stats (분산 할당)
+        accuracy: baseLegacyStat + Math.floor(Math.random() * 5),
+        speed: baseLegacyStat + Math.floor(Math.random() * 5),
+        stability: baseLegacyStat + Math.floor(Math.random() * 5),
+        ethics: baseLegacyStat + Math.floor(Math.random() * 5)
     };
+
+    // 4. 통찰력 기본 스탯 보너스 적용
+    let insightBonus = 0;
+    if (researchBonuses?.creativity) {
+        // Lv 1,2: +1, Lv 3,4: +2, Lv 5,6: +3, Lv 7,8: +4, Lv 9: +5
+        const level = researchBonuses.creativity;
+        if (level >= 9) insightBonus = 5;
+        else if (level >= 7) insightBonus = 4;
+        else if (level >= 5) insightBonus = 3;
+        else if (level >= 3) insightBonus = 2;
+        else if (level >= 1) insightBonus = 1;
+    }
+
+    efficiency += insightBonus;
+    creativity += insightBonus;
+    func += insightBonus;
+    totalPower += (insightBonus * 3);
 
     const card: Card = {
         id: generateId(),
         templateId: template.id,
         name: template.name,
+        rarity: rarity,
         ownerId: 'player', // Default owner
         level: 1,
         experience: 0,
-        stats,
-        rarity: rarity as Rarity,
         acquiredAt: new Date(),
         isLocked: false,
-        type: mainType
-    };
-
-    // specialSkill이 있을 때만 추가 (undefined 방지)
-    if (template.specialAbility) {
-        card.specialSkill = {
+        type: mainType,
+        stats: {
+            efficiency,
+            creativity,
+            function: func,
+            accuracy: stats.accuracy,
+            speed: stats.speed,
+            stability: stats.stability,
+            ethics: stats.ethics,
+            totalPower
+        },
+        imageUrl: template.image,
+        description: template.story,
+        specialSkill: template.specialAbility ? {
             name: template.specialAbility.name,
             description: template.specialAbility.description,
             effect: template.specialAbility.type
-        };
-    }
+        } : undefined
+    };
 
     return card;
 }
@@ -245,7 +285,7 @@ export function createCardFromTemplate(template: any, factionEffects?: FactionEf
  * 메인 함수: 티어에 따라 랜덤 카드 생성
  */
 export function generateRandomCard(tier: string = 'free', affinity: number = 0, factionEffects?: FactionEffects, researchBonuses?: ResearchBonuses): Card {
-    const weights = calculateRarityWeights(tier, affinity);
+    const weights = calculateRarityWeights(tier, affinity, researchBonuses?.creativity || 1);
     const selectedRarity = selectRandomRarity(weights);
     return selectCardByRarity(selectedRarity, factionEffects, researchBonuses);
 }
@@ -264,8 +304,8 @@ export function generateCardByRarity(rarity: Rarity, userId?: string, researchBo
 /**
  * 등급별 확률 정보 반환 (디버깅/UI용)
  */
-export function getRarityProbabilities(tier: string = 'free', affinity: number = 0): Record<Rarity, number> {
-    const weights = calculateRarityWeights(tier, affinity);
+export function getRarityProbabilities(tier: string = 'free', affinity: number = 0, insightLevel: number = 1): Record<Rarity, number> {
+    const weights = calculateRarityWeights(tier, affinity, insightLevel);
     const total = Object.values(weights).reduce((sum, w) => sum + w, 0);
 
     return {

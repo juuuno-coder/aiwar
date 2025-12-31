@@ -52,8 +52,27 @@ export async function submitUniqueApplication(
         await gameStorage.deleteCard(card.id);
     }
 
+    let firestoreId = `uniq-app-${Date.now()}`;
+
+    // Firebase 연동: 신청서 저장
+    try {
+        const { createUniqueRequest } = await import('@/lib/firebase-db');
+        const { loadUserProfile } = await import('@/lib/firebase-db');
+        const profile = await loadUserProfile();
+
+        firestoreId = await createUniqueRequest({
+            name,
+            description,
+            imageUrl,
+            userNickname: profile?.nickname || 'Unknown Commander'
+        });
+    } catch (error) {
+        console.error('Failed to save unique request to Firebase:', error);
+        // Firebase 저장이 실패해도 로컬 진행은 허용 (선택 사항)
+    }
+
     const newApp: UniqueApplication = {
-        id: `uniq-app-${Date.now()}`,
+        id: firestoreId,
         name,
         description,
         imageUrl,

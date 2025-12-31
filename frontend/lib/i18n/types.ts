@@ -37,6 +37,14 @@ export type TranslationKey =
     | 'tutorial.skip'
     | 'tutorial.next'
     | 'tutorial.initialize'
+    // 팩션 튜토리얼 (Faction Tutorial)
+    | 'tutorial.faction.step1.title'
+    | 'tutorial.faction.step1.desc'
+    | 'tutorial.faction.step2.title'
+    | 'tutorial.faction.step2.desc'
+    | 'tutorial.faction.step3.title'
+    | 'tutorial.faction.step3.desc'
+    | 'tutorial.faction.finish'
     // 스토리 (Story)
     | 'story.chapter1.title'
     | 'story.chapter1.desc'

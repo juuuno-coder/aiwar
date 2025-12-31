@@ -23,7 +23,7 @@ export function getNextRarity(currentRarity: Rarity): Rarity | null {
 /**
  * 합성 비용 계산 (토큰)
  */
-export function getFusionCost(rarity: Rarity): number {
+export function getFusionCost(rarity: Rarity, discountPercentage: number = 0): number {
     const costs: Record<Rarity, number> = {
         common: 100,
         rare: 200,
@@ -32,7 +32,8 @@ export function getFusionCost(rarity: Rarity): number {
         unique: 2000,
         commander: 0 // 군단장은 합성 불가
     };
-    return costs[rarity] || 0;
+    const baseCost = costs[rarity] || 0;
+    return Math.floor(baseCost * (1 - discountPercentage / 100));
 }
 
 /**
@@ -216,7 +217,10 @@ export function fuseCards(
 /**
  * 합성 미리보기
  */
-export function getFusionPreview(materialCards: Card[]): {
+export function getFusionPreview(
+    materialCards: Card[],
+    masteryBonusPercentage: number = 0
+): {
     currentRarity: Rarity;
     nextRarity: Rarity | null;
     currentAvgStats: Card['stats'];
@@ -226,6 +230,14 @@ export function getFusionPreview(materialCards: Card[]): {
 } {
     const currentRarity = materialCards[0].rarity!;
     const nextRarity = getNextRarity(currentRarity);
+
+    // 합성 성공률 계산 (등급이 높을수록 실패 확률 증가)
+    let baseRate = 100;
+    if (currentRarity === 'rare') baseRate = 95;
+    if (currentRarity === 'epic') baseRate = 85;
+    if (currentRarity === 'legendary') baseRate = 70;
+
+    const successRate = Math.min(baseRate + masteryBonusPercentage, 100);
 
     const avgStats = {
         efficiency: Math.floor(materialCards.reduce((sum, c) => sum + (c.stats.efficiency || 0), 0) / 3),
@@ -248,7 +260,7 @@ export function getFusionPreview(materialCards: Card[]): {
         currentAvgStats: avgStats,
         nextStats: calculateFusedStats(materialCards),
         cost: getFusionCost(currentRarity),
-        successRate: 100 // 항상 100% 성공
+        successRate
     };
 }
 

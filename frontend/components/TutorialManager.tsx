@@ -4,10 +4,15 @@ import { useState, useEffect, useCallback } from 'react';
 import { usePathname } from 'next/navigation';
 import WelcomeTutorialModal from '@/components/WelcomeTutorialModal';
 import NicknameModal from '@/components/NicknameModal';
+import UnitReceiptModal from '@/components/UnitReceiptModal'; // Import Receipt Modal
+import StarterPackOpeningModal from '@/components/StarterPackOpeningModal'; // Import Opening Modal
+import FactionTutorialModal from '@/components/FactionTutorialModal'; // Import Faction Tutorial Modal
 import { useFooter } from '@/context/FooterContext';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { updateNickname } from '@/lib/firebase-db';
 import { useFirebase } from '@/components/FirebaseProvider';
+import { distributeStarterPack, InventoryCard } from '@/lib/inventory-system'; // Import Starter Pack logic
+import { Card as CardType } from '@/lib/types'; // Import Card Type
 
 export default function TutorialManager() {
     const pathname = usePathname();
@@ -15,6 +20,13 @@ export default function TutorialManager() {
     const { profile, reload: reloadProfile, loading } = useUserProfile();
     const [showNicknameModal, setShowNicknameModal] = useState(false);
     const [showTutorialModal, setShowTutorialModal] = useState(false);
+
+    // New Flow States
+    const [showOpeningModal, setShowOpeningModal] = useState(false); // The Crate UI
+    const [showStarterPackModal, setShowStarterPackModal] = useState(false); // The Cards UI (UnitReceipt)
+    const [showFactionTutorial, setShowFactionTutorial] = useState(false); // New Faction Tutorial
+
+    const [starterCards, setStarterCards] = useState<CardType[]>([]); // Rewards
     const { showFooter, hideFooter } = useFooter();
 
     useEffect(() => {
@@ -29,20 +41,50 @@ export default function TutorialManager() {
         if (loading) return;
 
         const checkOnboarding = async () => {
+            console.log("[TutorialManager] Checking onboarding status...", {
+                uid: user.uid,
+                nickname: profile?.nickname,
+                hasNickname: !!(profile?.nickname && profile.nickname !== ''),
+                tutorialCompleted: localStorage.getItem(`tutorial_completed_${user.uid}`)
+            });
+
             // 1. Check if nickname is missing
             const hasNickname = profile?.nickname && profile.nickname !== '';
 
             if (!hasNickname) {
+                console.log("[TutorialManager] Nickname missing. Triggering NicknameModal.");
                 setShowNicknameModal(true);
                 hideFooter();
                 return;
             }
 
             // 2. Check if tutorial is completed
-            const isCompleted = localStorage.getItem(`tutorial_completed_${user.uid}`);
+            // Use Mock Session ID if available (for precise new user tracking), otherwise fall back to Firebase UID
+            // This fixes the issue where persistent Anonymous Firebase UID prevents new Mock Users from seeing the tutorial.
+            const sessionStr = localStorage.getItem('auth-session');
+            let trackingId = user.uid;
+
+            if (sessionStr) {
+                try {
+                    const session = JSON.parse(sessionStr);
+                    if (session?.user?.id) {
+                        trackingId = session.user.id;
+                    }
+                } catch (e) {
+                    // Ignore parse error
+                }
+            }
+
+            const isCompleted = localStorage.getItem(`tutorial_completed_${trackingId}`);
+
+            console.log("[TutorialManager] Tutorial Check:", { trackingId, isCompleted });
+
             if (!isCompleted) {
+                console.log("[TutorialManager] Tutorial not completed. Triggering WelcomeTutorialModal.");
                 setShowTutorialModal(true);
                 hideFooter();
+            } else {
+                console.log("[TutorialManager] Tutorial already completed.");
             }
         };
 
@@ -54,7 +96,7 @@ export default function TutorialManager() {
             await updateNickname(nickname, user?.uid);
             // Wait a bit for Firebase to sync
             await new Promise(resolve => setTimeout(resolve, 500));
-            await reloadProfile(user?.uid);
+            await reloadProfile();
             setShowNicknameModal(false);
 
             // Immediately start tutorial after nickname
@@ -64,12 +106,74 @@ export default function TutorialManager() {
         }
     };
 
-    const handleTutorialClose = () => {
+    /**
+     * Phase 1: Tutorial Close -> Distribute Pack & Show Crate
+     */
+    const handleTutorialClose = async () => {
         setShowTutorialModal(false);
-        if (user) {
-            localStorage.setItem(`tutorial_completed_${user.uid}`, 'true');
+
+        // Distribute Starter Pack Logic
+        try {
+            console.log("[TutorialManager] Distributing Starter Pack...");
+            // Pass nickname for Custom Commander Card
+            const rewards = await distributeStarterPack(user?.uid, profile?.nickname);
+            if (rewards.length > 0) {
+                setStarterCards(rewards as unknown as CardType[]);
+
+                // Instead of showing Receipt immediately, show the Opening Ceremony first
+                setShowOpeningModal(true);
+            } else {
+                // Fallback if distribution fails (should rarely happen)
+                finalizeTutorial();
+            }
+        } catch (e) {
+            console.error(e);
+            finalizeTutorial();
         }
-        // showFooter() 제거 - 각 페이지가 필요할 때 직접 호출
+    };
+
+    /**
+     * Phase 2: Crate Opened -> Show Cards
+     */
+    const handlePackOpened = () => {
+        setShowOpeningModal(false);
+        setShowStarterPackModal(true); // Now show the UnitReceiptModal
+    };
+
+    /**
+     * Phase 3: Receipt Closed -> Start Faction Tutorial
+     */
+    const handleReceiptClose = () => {
+        setShowStarterPackModal(false);
+        // Start the Faction/Generation Tutorial
+        setShowFactionTutorial(true);
+    };
+
+    /**
+     * Phase 4: Faction Tutorial Closed -> Finalize All
+     */
+    const handleFactionTutorialClose = () => {
+        setShowFactionTutorial(false);
+        finalizeTutorial();
+        window.location.reload(); // Refresh to ensure complete state sync
+    };
+
+    const finalizeTutorial = () => {
+        let trackingId = user?.uid;
+        // Logic duplicated for safety (or could be extracted)
+        const sessionStr = localStorage.getItem('auth-session');
+        if (sessionStr) {
+            try {
+                const session = JSON.parse(sessionStr);
+                if (session?.user?.id) {
+                    trackingId = session.user.id;
+                }
+            } catch (e) { }
+        }
+
+        if (trackingId) {
+            localStorage.setItem(`tutorial_completed_${trackingId}`, 'true');
+        }
     };
 
     if (showNicknameModal) {
@@ -78,6 +182,19 @@ export default function TutorialManager() {
 
     if (showTutorialModal) {
         return <WelcomeTutorialModal onClose={handleTutorialClose} />;
+    }
+
+    // New: Opening Ceremony Modal
+    if (showOpeningModal) {
+        return <StarterPackOpeningModal onOpen={handlePackOpened} />;
+    }
+
+    if (showStarterPackModal) {
+        return <UnitReceiptModal isOpen={true} onClose={handleReceiptClose} units={starterCards} />;
+    }
+
+    if (showFactionTutorial) {
+        return <FactionTutorialModal onClose={handleFactionTutorialClose} />;
     }
 
     return null;

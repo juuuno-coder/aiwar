@@ -10,7 +10,7 @@ import {
 } from '@/lib/firebase-db';
 import { generateCardByRarity } from '@/lib/card-generation-system';
 import { addCardToInventory } from '@/lib/inventory-system';
-import type { Rarity } from '@/lib/types';
+import type { Card, Rarity } from '@/lib/types';
 import { useNotification } from '@/context/NotificationContext';
 import { useFirebase } from '@/components/FirebaseProvider';
 import { addNotification } from '@/components/NotificationCenter';
@@ -27,12 +27,16 @@ interface UserContextType {
     level: number;
     experience: number;
     loading: boolean;
+    inventory: Card[];
     addCoins: (amount: number) => Promise<number>;
     addTokens: (amount: number) => Promise<number>;
     addExperience: (amount: number) => Promise<{ level: number; experience: number; leveledUp: boolean }>;
     refreshData: () => Promise<void>;
-    applyAdminCheat: () => Promise<void>;
     isAdmin: boolean;
+    user: any;
+    starterPackAvailable: boolean;
+    claimStarterPack: () => Promise<Card[]>;
+    hideStarterPack: () => void;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -45,25 +49,48 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     const [tokens, setTokens] = useState<number>(0);
     const [level, setLevel] = useState<number>(1);
     const [experience, setExperience] = useState<number>(0);
+    const [inventory, setInventory] = useState<Card[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
     const [mounted, setMounted] = useState(false);
     const [isAdmin, setIsAdmin] = useState(false);
+    const [starterPackAvailable, setStarterPackAvailable] = useState(false);
+
 
     // Initial mount check to prevent hydration mismatch
     useEffect(() => {
         setMounted(true);
     }, []);
 
-    // Reset state when user changes
+    const prevUserRef = React.useRef<string | null>(null);
+
+    // Reset state and clear storage when user logs out or changes
     useEffect(() => {
         if (!mounted) return;
 
-        // Reset state to default before loading new user data
-        setLoading(true);
-        setCoins(0);
-        setTokens(0);
-        setLevel(1);
-        setExperience(0);
+        const currentUid = user?.uid || null;
+        const prevUid = prevUserRef.current;
+
+        // If user changed (logged out or switched)
+        if (prevUid !== currentUid) {
+            console.log(`[Auth] User changed from ${prevUid} to ${currentUid}`);
+
+            // If we had a previous user, clear their local session state
+            if (prevUid) {
+                console.log(`[Auth] Clearing session for previous user: ${prevUid}`);
+                gameStorage.clearState(prevUid);
+            }
+
+            // Reset UI state
+            setLoading(true);
+            setCoins(0);
+            setTokens(0);
+            setLevel(1);
+            setExperience(0);
+        }
+
+        // Update ref
+        prevUserRef.current = currentUid;
+
 
         // Sync subscriptions from Firebase if user is logged in
         if (user?.uid) {
@@ -102,9 +129,15 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
             setTokens(profile.tokens);
             setLevel(profile.level);
             setExperience(profile.exp);
+
+            // Load inventory separately since it's not in profile
+            gameStorage.getCards(user?.uid).then((cards: any[]) => {
+                setInventory(cards || []);
+            }).catch(console.error);
+
             setLoading(false);
         }
-    }, [mounted, profile]);
+    }, [mounted, profile, user?.uid]);
 
     const checkFeatureUnlocks = (newLevel: number) => {
         if (newLevel === 3) {
@@ -145,7 +178,15 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         if (!mounted) return;
 
         if (profile) {
-            await reloadProfile(user?.uid);
+            await reloadProfile();
+            // Check inventory from profile or context?
+            // Profile context usually syncs to local state, so check local state in useEffect or here?
+            // Actually reloadProfile updates 'profile' object.
+            // Let's assume profile has inventory or we check loaded state.
+            // gameStorage.loadGameState gives full state.
+            // But if profile exists, we trust profile.
+            // Let's check if inventory is empty in the profile-based flow too.
+            // Ideally inventory is loaded.
         } else {
             setLoading(true);
             try {
@@ -153,7 +194,14 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
                 setCoins(state.coins || 0);
                 setTokens(state.tokens || 0);
                 setLevel(state.level || 1);
+                setLevel(state.level || 1);
                 setExperience(state.experience || 0);
+                setInventory(state.inventory || []);
+
+                // Starter Pack Check
+                if ((!state.inventory || state.inventory.length === 0) && !state.hasReceivedStarterPack) {
+                    setStarterPackAvailable(true);
+                }
             } catch (err) {
                 console.error("Failed to load state:", err);
             } finally {
@@ -174,7 +222,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
         if (profile) {
             await firebaseUpdateCoins(amount, user?.uid);
-            await reloadProfile(user?.uid);
+            await reloadProfile();
             return coins + amount;
         } else {
             try {
@@ -193,7 +241,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
         if (profile) {
             await firebaseUpdateTokens(amount, user?.uid);
-            await reloadProfile(user?.uid);
+            await reloadProfile();
             return tokens + amount;
         } else {
             try {
@@ -226,7 +274,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
             currentExp = Math.max(0, currentExp);
 
             await firebaseUpdateExpAndLevel(currentExp, currentLevel, user?.uid);
-            await reloadProfile(user?.uid);
+            await reloadProfile();
 
             // Trigger Notification for Feature Unlocks (Firebase Mode)
             if (leveledUp) {
@@ -248,76 +296,88 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         }
     };
 
-    const applyAdminCheat = async () => {
-        if (!mounted || !user) return;
 
-        console.log("🛠️ Admin Cheat Activated for:", user.email);
 
-        const MAX_COINS = 99999999;
-        const MAX_TOKENS = 9999999;
-        const MAX_LEVEL = 99;
-        const MAX_EXP = 0;
+    const hideStarterPack = () => setStarterPackAvailable(false);
 
-        if (profile) {
-            // Update Firestore
-            await firebaseUpdateCoins(MAX_COINS - coins, user.uid);
-            await firebaseUpdateTokens(MAX_TOKENS - tokens, user.uid);
-            await firebaseUpdateExpAndLevel(MAX_EXP, MAX_LEVEL, user.uid);
-            await reloadProfile(user.uid);
-        } else {
-            // Update LocalStorage (Guest/Local)
-            const state = await gameStorage.loadGameState(user.uid);
-            state.coins = MAX_COINS;
-            state.tokens = MAX_TOKENS;
-            state.level = MAX_LEVEL;
-            state.experience = MAX_EXP;
-            await gameStorage.saveGameState(state, user.uid);
-            setCoins(MAX_COINS);
-            setTokens(MAX_TOKENS);
-            setLevel(MAX_LEVEL);
-            setExperience(MAX_EXP);
+    const claimStarterPack = async (): Promise<Card[]> => {
+        if (!mounted) return [];
+
+        const uid = user?.uid;
+        if (!uid) {
+            addNotification({
+                type: 'error',
+                title: '오류 발생',
+                message: '로그인 정보를 찾을 수 없습니다.',
+                icon: '⚠️'
+            });
+            return [];
+        }
+
+        setLoading(true);
+        try {
+            console.log("Claiming Starter Pack for:", uid);
+
+            // 1. Add Coins
+            await addCoinsByContext(1000);
+
+            // 2. Generate Cards
+            const newCards: Card[] = [];
+
+            // 1 Rare Card
+            const rareCard = generateCardByRarity('rare');
+            if (rareCard) newCards.push(rareCard);
+
+            // 4 Common Cards
+            for (let i = 0; i < 4; i++) {
+                const commonCard = generateCardByRarity('common');
+                if (commonCard) newCards.push(commonCard);
+            }
+
+            console.log("Generated starter cards:", newCards.length);
+
+            // 3. Add to Inventory
+            for (const card of newCards) {
+                card.ownerId = uid;
+                await addCardToInventory(card, uid);
+            }
+
+            // 4. Update Flag in GameState
+            const currentState = await gameStorage.loadGameState(uid);
+            currentState.hasReceivedStarterPack = true;
+            await gameStorage.saveGameState(currentState, uid);
+            console.log("Starter pack flag check marked.");
+
+            // 5. Notify
+            addNotification({
+                type: 'reward',
+                title: '스타터팩 지급 완료!',
+                message: '1000 코인과 카드 5장을 획득했습니다.',
+                icon: '🎁'
+            });
+
+            // 6. Finish
+            // setStarterPackAvailable(false); 
+
+            // Refresh to update UI
+            await refreshData();
+            console.log("Data refreshed successfully.");
+
+            return newCards;
+
+        } catch (error) {
+            console.error("Failed to claim starter pack:", error);
+            addNotification({
+                type: 'error',
+                title: '오류 발생',
+                message: '스타터팩 지급 중 문제가 발생했습니다. 관리자에게 문의해주세요.',
+                icon: '⚠️'
+            });
+            return [];
+        } finally {
+            setLoading(false);
         }
     };
-
-
-
-    // Auto-detect admin email for convenience and redundancy
-    useEffect(() => {
-        if (!mounted) return;
-
-        const checkAdmin = () => {
-            // 1. Check Firebase User
-            if (user?.email === 'nerounni@gmail.com') return true;
-
-            // 2. Check Local Auth Session (from auth-utils.ts)
-            try {
-                const sessionStr = localStorage.getItem('auth-session');
-                if (sessionStr) {
-                    const session = JSON.parse(sessionStr);
-                    const userEmail = session.user?.email || session.user?.username;
-                    if (userEmail === 'nerounni@gmail.com') return true;
-                }
-            } catch (e) { }
-
-            return false;
-        };
-
-        const isUserAdmin = checkAdmin();
-        setIsAdmin(isUserAdmin);
-
-        if (isUserAdmin) {
-            console.log("👑 Hello Admin! You can use 'window.applyCheat()' in the console or use the Admin Terminal in Settings.");
-            (window as any).applyCheat = applyAdminCheat;
-
-            // Auto-apply if it's the first time (low resources)
-            const autoCheatApplied = localStorage.getItem('admin_cheat_auto_applied');
-            if (!autoCheatApplied && coins < 1000 && level === 1) {
-                console.log("🛠️ Auto-applying admin resources for testing...");
-                applyAdminCheat();
-                localStorage.setItem('admin_cheat_auto_applied', 'true');
-            }
-        }
-    }, [mounted, user, coins, tokens, level, profile, applyAdminCheat]);
 
     return (
         <UserContext.Provider
@@ -327,15 +387,20 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
                 level,
                 experience,
                 loading,
+                inventory,
                 addCoins: addCoinsByContext,
                 addTokens: addTokensByContext,
                 addExperience: addExperienceByContext,
                 refreshData,
-                applyAdminCheat,
-                isAdmin
+                isAdmin,
+                user,
+                starterPackAvailable,
+                claimStarterPack,
+                hideStarterPack
             }}
         >
             {children}
+            {/* Modal for Starter Pack could be here or handled by layout */}
         </UserContext.Provider>
     );
 }

@@ -37,19 +37,19 @@ export const RESEARCH_STATS: ResearchStat[] = [
     {
         id: 'insight',
         name: '통찰력',
-        description: '유닛 생성 시 높은 등급 확률 증가',
+        description: '유닛 발견 능력을 키워 더 높은 등급의 유닛을 확보합니다.',
         icon: '👁️',
         maxLevel: 9,
         effects: [
-            { level: 1, bonus: 2, description: '희귀 등급 +2%' },
-            { level: 2, bonus: 4, description: '희귀 등급 +4%' },
-            { level: 3, bonus: 6, description: '희귀 등급 +6%' },
-            { level: 4, bonus: 8, description: '희귀 등급 +8%' },
-            { level: 5, bonus: 12, description: '희귀 등급 +12%, 영웅 +2%' },
-            { level: 6, bonus: 15, description: '희귀 등급 +15%, 영웅 +3%' },
-            { level: 7, bonus: 18, description: '희귀 등급 +18%, 영웅 +5%' },
-            { level: 8, bonus: 22, description: '희귀 등급 +22%, 영웅 +7%' },
-            { level: 9, bonus: 30, description: '희귀 +30%, 영웅 +15%, 전설 +3%' },
+            { level: 1, bonus: 1, description: '고등급 확률 소폭 상승' },
+            { level: 2, bonus: 2, description: '고등급 확률 상승' },
+            { level: 3, bonus: 4, description: '희귀+ 확률 체감 상승' },
+            { level: 4, bonus: 7, description: '영웅+ 확률 소폭 상향' },
+            { level: 5, bonus: 10, description: '고등급 출현 빈도 증가' },
+            { level: 6, bonus: 14, description: '영웅 등급 획득 유리' },
+            { level: 7, bonus: 18, description: '전설 등급 확률 상향' },
+            { level: 8, bonus: 23, description: '최상급 등급 확률 보정' },
+            { level: 9, bonus: 30, description: '전설 유닛 획득 기회 대폭 확대' },
         ],
         baseCost: 200,
         costMultiplier: 1.5,
@@ -61,20 +61,20 @@ export const RESEARCH_STATS: ResearchStat[] = [
     },
     {
         id: 'efficiency',
-        name: '효율성',
-        description: '모든 슬롯의 유닛 생산 속도 증가',
+        name: '효율',
+        description: '생산 및 연구 공정을 최적화하여 대기 시간을 단축합니다.',
         icon: '⚡',
         maxLevel: 9,
         effects: [
-            { level: 1, bonus: 5, description: '생산 속도 +5%' },
-            { level: 2, bonus: 10, description: '생산 속도 +10%' },
-            { level: 3, bonus: 15, description: '생산 속도 +15%' },
-            { level: 4, bonus: 20, description: '생산 속도 +20%' },
-            { level: 5, bonus: 27, description: '생산 속도 +27%' },
-            { level: 6, bonus: 34, description: '생산 속도 +34%' },
-            { level: 7, bonus: 42, description: '생산 속도 +42%' },
-            { level: 8, bonus: 50, description: '생산 속도 +50%' },
-            { level: 9, bonus: 75, description: '생산 속도 +75%' },
+            { level: 1, bonus: 5, description: '모든 대기 시간 5% 단축' },
+            { level: 2, bonus: 10, description: '모든 대기 시간 10% 단축' },
+            { level: 3, bonus: 15, description: '모든 대기 시간 15% 단축' },
+            { level: 4, bonus: 20, description: '모든 대기 시간 20% 단축' },
+            { level: 5, bonus: 25, description: '모든 대기 시간 25% 단축' },
+            { level: 6, bonus: 30, description: '모든 대기 시간 30% 단축' },
+            { level: 7, bonus: 35, description: '모든 대기 시간 35% 단축' },
+            { level: 8, bonus: 40, description: '모든 대기 시간 40% 단축' },
+            { level: 9, bonus: 50, description: '모든 대기 시간 절반으로 단축' },
         ],
         baseCost: 150,
         costMultiplier: 1.4,
@@ -89,19 +89,19 @@ export const RESEARCH_STATS: ResearchStat[] = [
     {
         id: 'negotiation',
         name: '협상력',
-        description: '상점 및 강화 비용 할인',
+        description: '경제적 우위를 점하여 상점가 및 각종 비용을 할인받습니다.',
         icon: '💰',
         maxLevel: 9,
         effects: [
-            { level: 1, bonus: 3, description: '비용 -3%' },
-            { level: 2, bonus: 6, description: '비용 -6%' },
-            { level: 3, bonus: 9, description: '비용 -9%' },
-            { level: 4, bonus: 12, description: '비용 -12%' },
-            { level: 5, bonus: 16, description: '비용 -16%' },
-            { level: 6, bonus: 20, description: '비용 -20%' },
-            { level: 7, bonus: 24, description: '비용 -24%' },
-            { level: 8, bonus: 28, description: '비용 -28%' },
-            { level: 9, bonus: 40, description: '비용 -40%' },
+            { level: 1, bonus: 4, description: '모든 비용 -4%' },
+            { level: 2, bonus: 8, description: '모든 비용 -8%' },
+            { level: 3, bonus: 12, description: '모든 비용 -12%' },
+            { level: 4, bonus: 16, description: '모든 비용 -16%' },
+            { level: 5, bonus: 20, description: '모든 비용 -20%' },
+            { level: 6, bonus: 25, description: '모든 비용 -25%' },
+            { level: 7, bonus: 30, description: '모든 비용 -30%' },
+            { level: 8, bonus: 35, description: '모든 비용 -35%' },
+            { level: 9, bonus: 40, description: '모든 비용 -40% (VIP)' },
         ],
         baseCost: 250,
         costMultiplier: 1.5,
@@ -116,19 +116,19 @@ export const RESEARCH_STATS: ResearchStat[] = [
     {
         id: 'leadership',
         name: '리더십',
-        description: '군단 숙련도 획득 속도 증가',
+        description: '전군을 지휘하여 부대 전체의 화력을 상시 강화합니다.',
         icon: '👑',
         maxLevel: 9,
         effects: [
-            { level: 1, bonus: 10, description: '숙련도 획득량 +10%' },
-            { level: 2, bonus: 20, description: '숙련도 획득량 +20%' },
-            { level: 3, bonus: 30, description: '숙련도 획득량 +30%' },
-            { level: 4, bonus: 40, description: '숙련도 획득량 +40%' },
-            { level: 5, bonus: 50, description: '숙련도 획득량 +50%' },
-            { level: 6, bonus: 75, description: '숙련도 획득량 +75%' },
-            { level: 7, bonus: 100, description: '숙련도 획득량 +100%' },
-            { level: 8, bonus: 150, description: '숙련도 획득량 +150%' },
-            { level: 9, bonus: 300, description: '숙련도 획득량 +300%' },
+            { level: 1, bonus: 2, description: '전군 전투력 +2%' },
+            { level: 2, bonus: 4, description: '전군 전투력 +4%' },
+            { level: 3, bonus: 6, description: '전군 전투력 +6%' },
+            { level: 4, bonus: 8, description: '전군 전투력 +8%' },
+            { level: 5, bonus: 10, description: '전군 전투력 +10%' },
+            { level: 6, bonus: 12, description: '전군 전투력 +12%' },
+            { level: 7, bonus: 14, description: '전군 전투력 +14%' },
+            { level: 8, bonus: 16, description: '전군 전투력 +16%' },
+            { level: 9, bonus: 20, description: '압도적인 지휘력 (전투력 +20%)' },
         ],
         baseCost: 300,
         costMultiplier: 1.6,
@@ -143,19 +143,19 @@ export const RESEARCH_STATS: ResearchStat[] = [
     {
         id: 'mastery',
         name: '숙달',
-        description: '강화/합성 성공률 증가',
+        description: '강화 기술을 연마하여 더 높은 스탯 상승 기회를 얻습니다.',
         icon: '🔧',
         maxLevel: 9,
         effects: [
-            { level: 1, bonus: 2, description: '성공률 +2%' },
-            { level: 2, bonus: 4, description: '성공률 +4%' },
-            { level: 3, bonus: 6, description: '성공률 +6%' },
-            { level: 4, bonus: 8, description: '성공률 +8%' },
-            { level: 5, bonus: 11, description: '성공률 +11%' },
-            { level: 6, bonus: 14, description: '성공률 +14%' },
-            { level: 7, bonus: 17, description: '성공률 +17%' },
-            { level: 8, bonus: 21, description: '성공률 +21%' },
-            { level: 9, bonus: 30, description: '성공률 +30%' },
+            { level: 1, bonus: 19, description: '+3 상승 확률 19.3%' },
+            { level: 2, bonus: 23, description: '+3 상승 확률 23.6%' },
+            { level: 3, bonus: 28, description: '+3 상승 확률 28.0%' },
+            { level: 4, bonus: 32, description: '+3 상승 확률 32.3%' },
+            { level: 5, bonus: 36, description: '+3 상승 확률 36.6%' },
+            { level: 6, bonus: 41, description: '+3 상승 확률 41.0%' },
+            { level: 7, bonus: 45, description: '+3 상승 확률 45.3%' },
+            { level: 8, bonus: 50, description: '+3 상승 확률 50.0%' },
+            { level: 9, bonus: 55, description: '+3 상승 확률 최고치 (55%)' },
         ],
         baseCost: 350,
         costMultiplier: 1.6,
@@ -170,19 +170,19 @@ export const RESEARCH_STATS: ResearchStat[] = [
     {
         id: 'fortune',
         name: '행운',
-        description: '배틀/스토리 보상 증가',
+        description: '운명을 개척하여 전투 보상을 대폭 증가시킵니다.',
         icon: '🍀',
         maxLevel: 9,
         effects: [
-            { level: 1, bonus: 3, description: '보상 +3%' },
-            { level: 2, bonus: 6, description: '보상 +6%' },
-            { level: 3, bonus: 10, description: '보상 +10%' },
-            { level: 4, bonus: 14, description: '보상 +14%' },
-            { level: 5, bonus: 19, description: '보상 +19%' },
-            { level: 6, bonus: 24, description: '보상 +24%' },
-            { level: 7, bonus: 30, description: '보상 +30%' },
-            { level: 8, bonus: 37, description: '보상 +37%' },
-            { level: 9, bonus: 55, description: '보상 +55%' },
+            { level: 1, bonus: 6, description: '모든 보상 +6%' },
+            { level: 2, bonus: 12, description: '모든 보상 +12%' },
+            { level: 3, bonus: 18, description: '모든 보상 +18%' },
+            { level: 4, bonus: 24, description: '모든 보상 +24%' },
+            { level: 5, bonus: 30, description: '모든 보상 +30%' },
+            { level: 6, bonus: 38, description: '모든 보상 +38%' },
+            { level: 7, bonus: 46, description: '모든 보상 +46%' },
+            { level: 8, bonus: 54, description: '모든 보상 +54%' },
+            { level: 9, bonus: 60, description: '보상 대폭 증가 (+60%)' },
         ],
         baseCost: 400,
         costMultiplier: 1.7,
@@ -324,7 +324,23 @@ export function getResearchTime(stat: ResearchStat, targetLevel: number): number
         8: 3840,    // 64시간
         9: 7680     // 128시간
     };
-    return FIXED_TIMES[targetLevel] || 30;
+
+    let baseTime = FIXED_TIMES[targetLevel] || 30;
+
+    // 효율성(Efficiency) 연구에 따른 시간 단축 적용 (추가)
+    try {
+        const { gameStorage } = require('./game-storage');
+        const state = gameStorage.getGameState();
+        if (state.research?.stats?.efficiency) {
+            const level = state.research.stats.efficiency.currentLevel;
+            const reduction = getResearchBonus('efficiency', level) / 100;
+            baseTime = baseTime * (1 - reduction);
+        }
+    } catch (e) {
+        // Fallback or SSR
+    }
+
+    return baseTime;
 }
 
 /**

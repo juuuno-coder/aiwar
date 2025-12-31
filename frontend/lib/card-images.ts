@@ -119,18 +119,22 @@ export const RARITY_FALLBACK_IMAGES: Record<Rarity, string> = {
  * @returns 캐릭터 이미지 경로
  */
 export function getCardCharacterImage(templateId?: string, cardName?: string, rarity?: Rarity): string | null {
-    // 1. templateId에서 군단 ID 추출 (예: 'gemini-001' -> 'gemini')
+    // 1. templateId에서 군단 ID 추출 (예: 'gemini-001' -> 'gemini', 'cmdr-chatgpt' -> 'chatgpt')
     if (templateId) {
-        const factionId = templateId.split('-')[0]?.toLowerCase() || '';
+        let factionId = templateId.split('-')[0]?.toLowerCase() || '';
 
-        // Commander 등급 우선 체크 - 사용자의 요청으로 도감(Faction) 이미지를 그대로 사용
+        // 'cmdr-' 접두사가 있는 경우 두 번째 세그먼트가 실제 factionId임
+        if (factionId === 'cmdr' || factionId === 'commander') {
+            factionId = templateId.split('-')[1]?.toLowerCase() || factionId;
+        }
+
+        // 군단장(Commander) 등급 우선 체크 - 도감(Encyclopedia) 인물 이미지를 우선적으로 사용
         if (rarity === 'commander') {
-            if (FACTION_ICONS[factionId]) {
-                return FACTION_ICONS[factionId];
-            }
-            // fallback if not found in FACTION_ICONS (though unlikely)
             if (COMMANDER_IMAGES[factionId]) {
                 return COMMANDER_IMAGES[factionId];
+            }
+            if (FACTION_ICONS[factionId]) {
+                return FACTION_ICONS[factionId];
             }
         }
 

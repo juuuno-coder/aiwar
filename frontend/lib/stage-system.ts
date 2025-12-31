@@ -129,11 +129,11 @@ export function getStageConfig(stageId: number): StageConfig {
     // 챕터 1: 튜토리얼 (스테이지 1-10)
     // ============================================
     if (chapter === 1) {
-        // 스테이지 1-10: 3장 선택 3장 전투 (완전 단순화)
-        playerHandSize = 3;
-        battleCardCount = 3;
+        // 스토리 시스템의 설정을 따르기 위해 기본값 확장
+        playerHandSize = 5; // PvP 아레나와 동일하게 5장 핸드 제공
+        battleCardCount = 5; // 기본적으로 5라운드(또는 방식에 따른 최대치) 지원
         enemyPattern = stageInChapter <= 5 ? 'predictable' : 'semi-predictable';
-        description = isFinalBoss ? '챕터 1 보스: 3장 전투' : '3장 전투: 3장 선택 2승제';
+        description = isFinalBoss ? '챕터 1 보스: 단판 승부' : '전술 학습 단계';
 
         enemyPowerBonus = 0;
         rewardMultiplier = 1.0;
@@ -168,29 +168,27 @@ export function getStageConfig(stageId: number): StageConfig {
     // 챕터 3+: 혼합 전투
     // ============================================
     else {
+        playerHandSize = 5; // 기본 5장 (double/ambush는 6장으로 자동 확장됨)
         if (isMidBoss) {
             // 중간 보스: 1장 단판
-            playerHandSize = 5;
             battleCardCount = 1;
             enemyPattern = 'random';
             description = '중간 보스: 단판 승부';
         } else if (isFinalBoss) {
             // 최종 보스: 5장 전투
-            playerHandSize = 5;
             battleCardCount = 5;
             enemyPattern = 'random';
-            description = '챕터 보스: 5장 전투 3승제';
+            description = '최종 보스: 단판 승부';
         } else {
             // 일반: 3장 전투
-            playerHandSize = 5;
-            battleCardCount = 3;
+            battleCardCount = 5; // 5라운드 기본
             enemyPattern = 'random';
-            description = '3장 전투: 2승제';
+            description = '고급 전략 전투';
         }
 
-        // 챕터별 난이도 상승
-        enemyPowerBonus = 10 + (chapter - 2) * 5;
-        rewardMultiplier = 1.5 + (chapter - 2) * 0.5;
+        // 챕터별 난이도 상승 (챕터 3은 더 강력하게)
+        enemyPowerBonus = 15 + (chapter - 3) * 10;
+        rewardMultiplier = 2.0 + (chapter - 3) * 1.0;
     }
 
     // 보스 추가 효과

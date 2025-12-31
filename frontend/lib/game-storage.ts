@@ -148,9 +148,33 @@ class UnifiedStorage {
 
             // console.log(`[SafetySystem] Backup created in slot ${backupSlots[nextIndex]}`);
         } catch (error) {
-            this.logError('Backup failed', error);
+            console.warn('Backup failed:', error);
         }
     }
+
+    /**
+     * 로컬 상태 초기화 (로그아웃 시 호출)
+     */
+    public clearState(uid?: string) {
+        try {
+            const key = this.getStorageKey(uid);
+            localStorage.removeItem(key); // Main state
+
+            // Clear backups
+            localStorage.removeItem(`${key}_backup_1`);
+            localStorage.removeItem(`${key}_backup_2`);
+            localStorage.removeItem(`${key}_backup_3`);
+            localStorage.removeItem(`${key}_lastBackupIndex`);
+
+            // Clear logs
+            localStorage.removeItem('gameErrorLogs');
+
+            console.log(`[GameStorage] State cleared for user: ${uid || 'guest'}`);
+        } catch (error) {
+            console.error('Failed to clear state:', error);
+        }
+    }
+
 
     /**
      * 데이터 무결성 체크 (로드 시)
@@ -175,7 +199,7 @@ class UnifiedStorage {
 
         // 기본 상태 정의
         const defaultState: GameState = {
-            coins: 1000,
+            coins: 0,
             tokens: 100,
             level: 1,
             experience: 0,
@@ -186,7 +210,7 @@ class UnifiedStorage {
             decks: [],
             research: undefined,
             subscriptions: [],
-            uniqueApplications: []
+            uniqueApplications: [],
         };
 
         if (this.useFirebase) {

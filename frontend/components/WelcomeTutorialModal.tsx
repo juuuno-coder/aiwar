@@ -10,7 +10,10 @@ import {
     Zap,
     Terminal,
     ChevronRight,
-    SkipForward
+    SkipForward,
+    Users,
+    Activity,
+    Database
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { HoverBorderGradient } from '@/components/ui/aceternity/hover-border-gradient';
@@ -29,21 +32,21 @@ export default function WelcomeTutorialModal({ onClose }: WelcomeTutorialModalPr
             title: t('tutorial.step1.title'),
             subtitle: t('tutorial.step1.subtitle'),
             content: t('tutorial.step1.content'),
-            icon: <Cpu className="w-16 h-16 text-cyan-400" />,
+            icon: <Terminal className="w-16 h-16 text-cyan-400" />,
             color: "cyan"
         },
         {
             title: t('tutorial.step2.title'),
             subtitle: t('tutorial.step2.subtitle'),
             content: t('tutorial.step2.content'),
-            icon: <Shield className="w-16 h-16 text-purple-400" />,
+            icon: <Users className="w-16 h-16 text-purple-400" />, // Changed from Shield to Users (Partnership)
             color: "purple"
         },
         {
             title: t('tutorial.step3.title'),
             subtitle: t('tutorial.step3.subtitle'),
             content: t('tutorial.step3.content'),
-            icon: <Swords className="w-16 h-16 text-red-500" />,
+            icon: <Activity className="w-16 h-16 text-red-500" />, // Changed from Swords (Combat) to Activity (Test/Simulation)
             color: "red"
         },
         {
@@ -57,7 +60,7 @@ export default function WelcomeTutorialModal({ onClose }: WelcomeTutorialModalPr
             title: t('tutorial.step5.title'),
             subtitle: t('tutorial.step5.subtitle'),
             content: t('tutorial.step5.content'),
-            icon: <Zap className="w-16 h-16 text-green-400" />,
+            icon: <Database className="w-16 h-16 text-green-400" />, // Changed from Zap to Database (Data Pack)
             color: "green"
         }
     ];

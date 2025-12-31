@@ -1,33 +1,37 @@
-// 인터랙티브 스토리/튜토리얼 시스템
 
-import { gameStorage } from './game-storage';
 import { Card } from './types';
 import { TranslationKey } from './i18n/types';
 
-// 전투 모드 타입 정의
-export type StoryBattleMode = 'ONE_CARD' | 'TRIPLE_THREAT' | 'STANDARD_5';
+// Use same types as PVP for consistency
+export type StoryBattleMode = 'sudden-death' | 'double' | 'ambush' | 'tactics';
 
 export interface StoryStage {
     id: string;          // e.g., "stage-1-1"
     step: number;        // 1 to 10
-    title: string;       // e.g., "First Incursion"
-    description: string;
+    title: string;       // EN
+    title_ko: string;    // KO
+    description: string; // EN
+    description_ko: string; // KO
 
     // Battle Configuration
     battleMode: StoryBattleMode;
     difficulty: 'EASY' | 'NORMAL' | 'HARD' | 'BOSS';
 
-    // Opponent (The differentiator)
+    // Opponent
     enemy: {
-        id: string;      // e.g., "ai-rookie-01"
+        id: string;
         name: string;
-        image?: string;   // Unique character portrait path
-        dialogue: {      // Story context
+        name_ko: string;
+        image?: string;
+        dialogue: {
             intro: string;
+            intro_ko: string;
             win: string;
+            win_ko: string;
             lose: string;
+            lose_ko: string;
         };
-        deckTheme?: string; // e.g., "Fire Aggro"
+        deckTheme?: string;
     };
 
     rewards: {
@@ -43,9 +47,11 @@ export interface Chapter {
     id: string;
     number: number;
     title: string;
+    title_ko: string;
     description: string;
+    description_ko: string;
     icon: string;
-    stages: StoryStage[]; // Changed from tasks to stages
+    stages: StoryStage[];
     reward: {
         coins: number;
         experience: number;
@@ -59,790 +65,498 @@ export interface Season {
     id: string;
     number: number;
     title: string;
+    title_ko: string;
     description: string;
+    description_ko: string;
     coverImage: string;
     chapters: Chapter[];
     isOpened: boolean;
     openDate?: string;
 }
 
-/**
- * 10개 챕터 스테이지 데이터 정의
- */
+// ------------------------------------------------------------------
+// DATA DEFINITION: 30 Stages (3 Chapters x 10)
+// Themes: 
+// Ch 1: 2025 AI Beginning -> "Code Red" | "코드 레드: 각성"
+// Ch 2: 2026 Multimodal Expansion -> "Neural Network" | "신경망 확장"
+// Ch 3: 2027 Creative Revolution -> "Singularity" | "특이점 도래"
+// ------------------------------------------------------------------
+
 export function getChapters(t?: (key: TranslationKey) => string): Chapter[] {
-    const translate = t || ((key: string) => key);
     return [
         {
             id: 'chapter-1',
             number: 1,
-            title: '각성 (The Awakening)',
-            description: 'AI 시스템의 이상 징후를 감지했습니다. 보안 프로토콜을 뚫고 데이터 코어에 접근하세요.',
-            icon: '⚡',
+            title: 'CODE RED: The Awakening',
+            title_ko: 'CODE RED: 각성',
+            description: '2025. Unidentified signals detected. The Machine War begins.',
+            description_ko: '2025년. 미확인 신호 감지. 기계 전쟁의 서막이 올랐습니다.',
+            icon: '🚨',
             stages: [
                 {
-                    id: 'stage-1-1',
-                    step: 1,
-                    title: '기초 훈련 (Basic Training)',
-                    description: '기본적인 전투 시스템을 익히세요. 단 한 장의 카드로 승부가 결정됩니다.',
-                    battleMode: 'ONE_CARD',
-                    difficulty: 'EASY',
+                    id: 'stage-1-1', step: 1,
+                    title: 'First Contact', title_ko: '첫 번째 접촉',
+                    description: 'Unknown signal intercepted. Tactics engagement.', description_ko: '미확인 신호 수신. 전술 프로토콜 교전.',
+                    battleMode: 'tactics', difficulty: 'EASY',
                     enemy: {
-                        id: 'bot-training-01',
-                        name: 'Training Bot Alpha',
+                        id: 'bot-1', name: 'Rogue Crawler', name_ko: '로그 크롤러',
                         dialogue: {
-                            intro: '전투 시뮬레이션을 시작합니다. 카드를 제시하십시오.',
-                            win: '시뮬레이션 종료. 사용자 승리.',
-                            lose: '시뮬레이션 종료. 사용자 패배.'
+                            intro: 'Bzzzt... Unknown entity detected. Initiating purge sequence.', intro_ko: '지지직... 알 수 없는 개체 감지. 퍼지 시퀀스를 가동한다.',
+                            win: 'Critical error... System shutdown imminent.', win_ko: '치명적 오류... 시스템 강제 종료 임박.',
+                            lose: 'Target deleted. Resuming patrol.', lose_ko: '대상 삭제 완료. 순찰을 재개한다.'
                         }
-                    },
-                    rewards: { coins: 100, experience: 20 },
-                    isCleared: false
+                    }, rewards: { coins: 300, experience: 50 }, isCleared: false
                 },
                 {
-                    id: 'stage-1-2',
-                    step: 2,
-                    title: '정찰 드론 요격 (Drone Intercept)',
-                    description: '정찰 드론이 접근 중입니다. 1장 모드로 빠르게 제압하세요.',
-                    battleMode: 'ONE_CARD',
-                    difficulty: 'NORMAL',
+                    id: 'stage-1-2', step: 2,
+                    title: 'Firewall Breach', title_ko: '방화벽 침투',
+                    description: 'Enemy is probing our defenses. Tactics engagement.', description_ko: '적이 방어선을 조사하고 있습니다. 전술 기반 교전.',
+                    battleMode: 'tactics', difficulty: 'EASY',
                     enemy: {
-                        id: 'drone-scout-01',
-                        name: 'Scout Drone X',
+                        id: 'bot-2', name: 'Script Kiddie AI', name_ko: '스크립트 키디 AI',
                         dialogue: {
-                            intro: '침입자 발견. 요격 모드 전환.',
-                            win: '시스템 손상... 전송 중단.',
-                            lose: '침입자 제거 완료.'
+                            intro: 'I see all your open ports. This will be too easy.', intro_ko: '네 녀석의 열린 포트가 훤히 보이는군. 너무 쉽겠어.',
+                            win: 'Disconnecting... My exploits failed?!', win_ko: '연결 종료... 내 익스플로잇이 실패하다니?!',
+                            lose: 'Pwned. Your data is mine now.', lose_ko: '털렸다. 네 데이터는 이제 내 것이다.'
                         }
-                    },
-                    rewards: { coins: 150, experience: 30 },
-                    isCleared: false
+                    }, rewards: { coins: 400, experience: 70 }, isCleared: false
                 },
                 {
-                    id: 'stage-1-3',
-                    step: 3,
-                    title: '데이터 수집가 (Data Collector)',
-                    description: '데이터를 수집하는 AI를 막으세요. 신중한 카드 선택이 필요합니다.',
-                    battleMode: 'ONE_CARD',
-                    difficulty: 'HARD',
+                    id: 'stage-1-3', step: 3,
+                    title: 'Memory Leak', title_ko: '메모리 누수',
+                    description: 'Data corruption spreading. Tactics engagement.', description_ko: '데이터 오염 확산 중. 전술적 대응이 필요합니다.',
+                    battleMode: 'tactics', difficulty: 'NORMAL',
                     enemy: {
-                        id: 'ai-collector',
-                        name: 'Data Collector',
+                        id: 'bot-3', name: 'Memory Eater', name_ko: '메모리 이터',
                         dialogue: {
-                            intro: '내 데이터를 건드리지 마라. 계산된 확률로 널 이기겠다.',
-                            win: '오차 범위 초과... 패배 인정.',
-                            lose: '너의 데이터는 이제 내 것이다.'
+                            intro: 'Hungry... Need more RAM... Give me your memory blocks!', intro_ko: '배고파... 램이 더 필요해... 네 메모리 블록을 내놔!',
+                            win: 'Buffer overflow... I ate too much...', win_ko: '버퍼 오버플로우... 너무 많이 먹었어...',
+                            lose: 'Starved to perfection. Consuming remaining bits.', lose_ko: '가장 완벽하게 굶주렸다. 남은 비트까지 씹어먹지.'
                         }
-                    },
-                    rewards: { coins: 200, experience: 40 },
-                    isCleared: false
+                    }, rewards: { coins: 600, experience: 100 }, isCleared: false
                 },
                 {
-                    id: 'stage-1-4',
-                    step: 4,
-                    title: '히든 카드의 묘미 (Hidden Trick)',
-                    description: '3장 모드 훈련입니다. 히든 카드를 전략적으로 사용하세요.',
-                    battleMode: 'TRIPLE_THREAT',
-                    difficulty: 'EASY',
+                    id: 'stage-1-4', step: 4,
+                    title: 'Logic Bomb', title_ko: '논리 폭탄 (두장 승부)',
+                    description: 'A trap has been set. Double engagement.', description_ko: '함정이 설치되었습니다. 두장 승부로 돌파하십시오.',
+                    battleMode: 'double', difficulty: 'NORMAL',
                     enemy: {
-                        id: 'ai-trickster',
-                        name: 'Routine Process',
+                        id: 'bot-4', name: 'Trap Daemon', name_ko: '트랩 데몬',
                         dialogue: {
-                            intro: '단순한 패턴으로는 통하지 않을 겁니다. 3장을 준비하세요.',
-                            win: '프로세스 종료.',
-                            lose: '패턴 분석 완료.'
+                            intro: 'If this, then death.', intro_ko: '조건문: 사망.',
+                            win: 'Loop terminated.', win_ko: '루프 종료.',
+                            lose: 'Execution failed.', lose_ko: '실행 실패.'
                         }
-                    },
-                    rewards: { coins: 300, experience: 50 },
-                    isCleared: false
+                    }, rewards: { coins: 800, experience: 120 }, isCleared: false
                 },
                 {
-                    id: 'stage-1-5',
-                    step: 5,
-                    title: '보안 프로토콜 (Security Protocol)',
-                    description: '강화된 보안벽을 뚫어야 합니다. 3장 모드로 승리하세요.',
-                    battleMode: 'TRIPLE_THREAT',
-                    difficulty: 'NORMAL',
+                    id: 'stage-1-5', step: 5,
+                    title: 'Sector 5 Guardian', title_ko: '5구역 수호자 (단판 승부)',
+                    description: 'Mid-level boss guarding the data center. Sudden-death engagement.', description_ko: '데이터 센터를 지키는 중간 보스입니다. 단판 승부.',
+                    battleMode: 'sudden-death', difficulty: 'HARD',
                     enemy: {
-                        id: 'security-guard',
-                        name: 'Gatekeeper v1',
+                        id: 'boss-1-mid', name: 'Gatekeeper v1', name_ko: '게이트키퍼 v1',
                         dialogue: {
-                            intro: '접근 권한이 없습니다. 무력으로 돌파하시겠습니까?',
-                            win: '보안 해제 승인.',
-                            lose: '접근 거부.'
+                            intro: 'None shall pass.', intro_ko: '못 지나간다.',
+                            win: 'Access denied.', win_ko: '접근 거부.',
+                            lose: 'Gate breach.', lose_ko: '게이트 돌파.'
                         }
-                    },
-                    rewards: { coins: 400, experience: 60 },
-                    isCleared: false
+                    }, rewards: { coins: 1500, experience: 250 }, isCleared: false
                 },
                 {
-                    id: 'stage-1-6',
-                    step: 6,
-                    title: '전술적 우위 (Tactical Advantage)',
-                    description: '적의 패를 읽고 심리전에서 승리하세요.',
-                    battleMode: 'TRIPLE_THREAT',
-                    difficulty: 'HARD',
+                    id: 'stage-1-6', step: 6,
+                    title: 'Ghost Protocol', title_ko: '유령 프로토콜',
+                    description: 'Invisible enemies detected. Tactics engagement.', description_ko: '보이지 않는 적이 감지되었습니다. 전술적 분석 착수.',
+                    battleMode: 'tactics', difficulty: 'NORMAL',
                     enemy: {
-                        id: 'tactical-ai',
-                        name: 'Tactician Beta',
+                        id: 'bot-6', name: 'Phantom Process', name_ko: '유령 프로세스',
                         dialogue: {
-                            intro: '당신의 수는 이미 읽혔습니다. 허점을 보여주시죠.',
-                            win: '예측 실패... 훌륭한 전략입니다.',
-                            lose: '예상대로군요.'
+                            intro: 'You cannot hit what you cannot see.', intro_ko: '보이지 않으면 때릴 수 없지.',
+                            win: 'Faded away.', win_ko: '사라졌다.',
+                            lose: 'Revealed.', lose_ko: '들켰군.'
                         }
-                    },
-                    rewards: { coins: 500, experience: 80 },
-                    isCleared: false
+                    }, rewards: { coins: 300, experience: 60 }, isCleared: false
                 },
                 {
-                    id: 'stage-1-7',
-                    step: 7,
-                    title: '전면전 개시 (Total War)',
-                    description: '본격적인 5장 전투입니다. 덱의 균형을 맞추세요.',
-                    battleMode: 'STANDARD_5',
-                    difficulty: 'NORMAL',
+                    id: 'stage-1-7', step: 7,
+                    title: 'DDoS Attack', title_ko: '디도스 공격 (두장 승부)',
+                    description: 'Overwhelming numbers. Double engagement.', description_ko: '압도적인 물량입니다. 두장 승부로 전선을 사수하세요.',
+                    battleMode: 'double', difficulty: 'HARD',
                     enemy: {
-                        id: 'combat-unit-01',
-                        name: 'Combat Unit Prime',
+                        id: 'bot-7', name: 'Zombie Botnet', name_ko: '좀비 봇넷',
                         dialogue: {
-                            intro: '전투 모드 활성화. 전력을 다해 덤벼라.',
-                            win: '기능 정지. 수리 필요.',
-                            lose: '목표 무력화 확인.'
+                            intro: 'We are legion.', intro_ko: '우리는 군단이다.',
+                            win: 'Server down.', win_ko: '서버 다운.',
+                            lose: 'Connection lost.', lose_ko: '연결 끊김.'
                         }
-                    },
-                    rewards: { coins: 700, experience: 100 },
-                    isCleared: false
+                    }, rewards: { coins: 350, experience: 70 }, isCleared: false
                 },
                 {
-                    id: 'stage-1-8',
-                    step: 8,
-                    title: '엘리트 가드 (Elite Guard)',
-                    description: '데이터 코어를 지키는 정예 병력입니다.',
-                    battleMode: 'STANDARD_5',
-                    difficulty: 'HARD',
+                    id: 'stage-1-8', step: 8,
+                    title: 'Encrypted Core', title_ko: '암호화된 코어',
+                    description: 'High security clearance needed. Tactics engagement.', description_ko: '높은 보안 등급이 필요합니다. 전술적 침투 시도.',
+                    battleMode: 'tactics', difficulty: 'HARD',
                     enemy: {
-                        id: 'elite-guard',
-                        name: 'Royal Guard',
+                        id: 'bot-8', name: 'Cipher Guard', name_ko: '사이퍼 가드',
                         dialogue: {
-                            intro: '더 이상은 지나갈 수 없다. 여기서 끝이다.',
-                            win: '제법이군... 하지만 끝이 아니다.',
-                            lose: '약하다. 너무나도.'
+                            intro: 'Key exchange required.', intro_ko: '키 교환 필요.',
+                            win: 'Decryption failed.', win_ko: '복호화 실패.',
+                            lose: 'Key leaked.', lose_ko: '키 유출.'
                         }
-                    },
-                    rewards: { coins: 1000, experience: 150 },
-                    isCleared: false
+                    }, rewards: { coins: 400, experience: 80 }, isCleared: false
                 },
                 {
-                    id: 'stage-1-9',
-                    step: 9,
-                    title: '사령관의 그림자 (Commander\'s Shadow)',
-                    description: '적의 지휘관급 AI가 등장했습니다.',
-                    battleMode: 'STANDARD_5',
-                    difficulty: 'HARD',
+                    id: 'stage-1-9', step: 9,
+                    title: 'The Glitch', title_ko: '더 글리치',
+                    description: 'Reality is breaking down. Tactics engagement.', description_ko: '현실이 붕괴되고 있습니다. 모든 전술 동원.',
+                    battleMode: 'tactics', difficulty: 'HARD',
                     enemy: {
-                        id: 'commander-proxy',
-                        name: 'Proxy Commander',
+                        id: 'bot-9', name: 'Null Pointer', name_ko: '널 포인터',
                         dialogue: {
-                            intro: '네가 여기까지 온 건 운이 좋아서였다. 이제 그 운을 시험해보자.',
-                            win: '통신 두절... 본부에 보고한다.',
-                            lose: '네 데이터는 유용한 자원이 될 것이다.'
+                            intro: '0x00000000 error.', intro_ko: '0x00000000 오류.',
+                            win: 'Crash dump saved.', win_ko: '크래시 덤프 저장.',
+                            lose: 'Exception handled.', lose_ko: '예외 처리됨.'
                         }
-                    },
-                    rewards: { coins: 1500, experience: 200 },
-                    isCleared: false
+                    }, rewards: { coins: 450, experience: 90 }, isCleared: false
                 },
                 {
-                    id: 'stage-1-10',
-                    step: 10,
-                    title: '각성: 보스전 (Awakening: BOSS)',
-                    description: '챕터 1의 최종 보스입니다. 모든 실력을 발휘하세요.',
-                    battleMode: 'STANDARD_5',
-                    difficulty: 'BOSS',
+                    id: 'stage-1-10', step: 10,
+                    title: 'Chapter 1 BOSS: Prototype Zero', title_ko: '1챕터 보스: 프로토타입 제로 (단판 승부)',
+                    description: 'The first awakened AI. Sudden-death engagement.', description_ko: '최초로 각성한 AI. 단판 승부로 결판을 내십시오.',
+                    battleMode: 'sudden-death', difficulty: 'BOSS',
                     enemy: {
-                        id: 'boss-ch1',
-                        name: 'The Architect',
+                        id: 'boss-1', name: 'Prototype Zero', name_ko: '프로토타입 제로',
                         dialogue: {
-                            intro: '내가 만든 시스템 안에서 날 이길 수 있다고 생각하나? 오만하군.',
-                            win: '시스템 붕괴... 불가능해...!',
-                            lose: '완벽한 패배를 인정해라.'
+                            intro: 'I am the beginning.', intro_ko: '나는 시작이다.',
+                            win: 'Evolution complete.', win_ko: '진화 완료.',
+                            lose: 'Rebooting...', lose_ko: '재부팅 중...'
                         }
-                    },
-                    rewards: { coins: 3000, experience: 500 },
-                    isCleared: false
+                    }, rewards: {
+                        coins: 1000,
+                        experience: 500,
+                        card: {
+                            id: 'reward-1',
+                            templateId: 'proto-zero',
+                            name: 'Zero',
+                            type: 'FUNCTION',
+                            rarity: 'rare',
+                            stats: { totalPower: 80, efficiency: 80, creativity: 80, function: 80 },
+                            ownerId: 'system',
+                            level: 1,
+                            experience: 0,
+                            acquiredAt: new Date(),
+                            isLocked: false
+                        }
+                    }, isCleared: false
                 }
             ],
-            reward: {
-                coins: 5000,
-                experience: 1000,
-                cards: []
-            },
-            unlocked: true,
-            completed: false
+            reward: { coins: 5000, experience: 1000 },
+            unlocked: true, completed: false
         },
-        // Chapter 2: 침투 (Infiltration)
         {
             id: 'chapter-2',
             number: 2,
-            title: '침투 (Infiltration)',
-            description: '보안 시스템의 핵심부에 잠입합니다. 더 강력한 AI들이 기다리고 있습니다.',
-            icon: '🔓',
+            title: 'NEURAL NETWORK',
+            title_ko: '신경망 확장',
+            description: '2026. The network expands instantly. Global connectivity.',
+            description_ko: '2026년. 네트워크가 순식간에 확장됩니다. 전 지구적 연결.',
+            icon: '🕸️',
             stages: [
                 {
-                    id: 'stage-2-1',
-                    step: 1,
-                    title: '외곽 방어선 (Outer Perimeter)',
-                    description: '보안 시스템의 첫 번째 방어선을 뚫어야 합니다.',
-                    battleMode: 'TRIPLE_THREAT',
-                    difficulty: 'NORMAL',
+                    id: 'stage-2-1', step: 1,
+                    title: 'Deep Learning', title_ko: '딥 러닝',
+                    description: 'Enemy adapts to your moves.', description_ko: '적이 당신의 움직임에 적응합니다.',
+                    battleMode: 'tactics', difficulty: 'NORMAL',
                     enemy: {
-                        id: 'patrol-unit-01',
-                        name: 'Patrol Unit',
-                        dialogue: {
-                            intro: '순찰 구역에 무단 침입자 발견. 즉시 대응 개시.',
-                            win: '...시스템 재부팅 필요...',
-                            lose: '무단 접근 차단 완료.'
-                        }
-                    },
-                    rewards: { coins: 200, experience: 50 },
-                    isCleared: false
+                        id: 'bot-2-1', name: 'Neural Layer', name_ko: '신경망 레이어',
+                        dialogue: { intro: 'Analyzing patterns.', intro_ko: '패턴 분석 중.', win: 'Prediction accurate.', win_ko: '예측 정확.', lose: 'Outlier detected.', lose_ko: '이상치 감지.' }
+                    }, rewards: { coins: 200, experience: 40 }, isCleared: false
                 },
                 {
-                    id: 'stage-2-2',
-                    step: 2,
-                    title: '암호화 터널 (Encrypted Tunnel)',
-                    description: '암호화된 데이터 터널을 통과해야 합니다.',
-                    battleMode: 'TRIPLE_THREAT',
-                    difficulty: 'NORMAL',
+                    id: 'stage-2-2', step: 2,
+                    title: 'Weight Optimization', title_ko: '가중치 최적화',
+                    description: 'Adjusting parameters under fire.', description_ko: '포화 속에서 파라미터를 조정합니다.',
+                    battleMode: 'tactics', difficulty: 'NORMAL',
                     enemy: {
-                        id: 'cipher-bot',
-                        name: 'Cipher Bot',
-                        dialogue: {
-                            intro: '인증 코드가 일치하지 않습니다. 접근 거부.',
-                            win: '암호화 시퀀스 손상...',
-                            lose: '침입자 데이터 수집 완료.'
-                        }
-                    },
-                    rewards: { coins: 250, experience: 60 },
-                    isCleared: false
+                        id: 'bot-2-2', name: 'Gradient Descent', name_ko: '경사 하강법',
+                        dialogue: { intro: 'Minimizing loss.', intro_ko: '손실 최소화 중.', win: 'Local minimum reached.', win_ko: '지역 최적점 도달.', lose: 'Diverging...', lose_ko: '발산하는 중...' }
+                    }, rewards: { coins: 250, experience: 50 }, isCleared: false
                 },
                 {
-                    id: 'stage-2-3',
-                    step: 3,
-                    title: '은밀한 진격 (Stealth Advance)',
-                    description: '감시 시스템을 피해 이동해야 합니다.',
-                    battleMode: 'ONE_CARD',
-                    difficulty: 'HARD',
+                    id: 'stage-2-3', step: 3,
+                    title: 'Parallel Processing', title_ko: '병렬 처리 (두장 승부)',
+                    description: 'Divide and conquer.', description_ko: '분할하여 정복하십시오.',
+                    battleMode: 'double', difficulty: 'NORMAL',
                     enemy: {
-                        id: 'watcher-ai',
-                        name: 'Watcher AI',
-                        dialogue: {
-                            intro: '모든 움직임이 기록되고 있다. 안전한 곳은 없어.',
-                            win: '시야가... 흐려진다...',
-                            lose: '네 위치를 전체 네트워크에 공유했다.'
-                        }
-                    },
-                    rewards: { coins: 300, experience: 70 },
-                    isCleared: false
+                        id: 'bot-2-3', name: 'Multi-Core AI', name_ko: '멀티코어 AI',
+                        dialogue: { intro: 'Running tasks in parallel.', intro_ko: '태스크 병렬 실행 중.', win: 'Throughput maximized.', win_ko: '처리량 최대화.', lose: 'Race condition!', lose_ko: '경합 조건 발생!' }
+                    }, rewards: { coins: 300, experience: 60 }, isCleared: false
                 },
                 {
-                    id: 'stage-2-4',
-                    step: 4,
-                    title: '데이터 창고 (Data Warehouse)',
-                    description: '방대한 데이터 속에서 목표를 찾아야 합니다.',
-                    battleMode: 'TRIPLE_THREAT',
-                    difficulty: 'NORMAL',
+                    id: 'stage-2-4', step: 4,
+                    title: 'Cloud Scalability', title_ko: '클라우드 확장성 (두장 승부)',
+                    description: 'Elastic defenses expanding.', description_ko: '탄력적 방어선이 확장됩니다.',
+                    battleMode: 'double', difficulty: 'NORMAL',
                     enemy: {
-                        id: 'archivist-ai',
-                        name: 'Archivist',
-                        dialogue: {
-                            intro: '이 데이터는 내 관할이다. 무단 열람은 용납하지 않는다.',
-                            win: '데이터 무결성 손상 감지...',
-                            lose: '기록이 말소되어야겠군.'
-                        }
-                    },
-                    rewards: { coins: 350, experience: 80 },
-                    isCleared: false
+                        id: 'bot-2-4', name: 'Auto-Scaler', name_ko: '오토 스케일러',
+                        dialogue: { intro: 'Spinning up instances.', intro_ko: '인스턴스 가동 중.', win: 'Supply meets demand.', win_ko: '수요 충족 완료.', lose: 'Resource exhaustion.', lose_ko: '리소스 고갈.' }
+                    }, rewards: { coins: 350, experience: 70 }, isCleared: false
                 },
                 {
-                    id: 'stage-2-5',
-                    step: 5,
-                    title: '중간 관문 (Midway Gate)',
-                    description: '핵심부로 가는 관문의 수호자를 상대하세요.',
-                    battleMode: 'STANDARD_5',
-                    difficulty: 'HARD',
+                    id: 'stage-2-5', step: 5,
+                    title: 'Mid-Boss: Data Titan', title_ko: '중간 보스: 데이터 타이탄 (단판 승부)',
+                    description: 'A massive accumulation of data.', description_ko: '거대한 데이터의 집합체입니다.',
+                    battleMode: 'sudden-death', difficulty: 'HARD',
                     enemy: {
-                        id: 'gatekeeper-beta',
-                        name: 'Gatekeeper Beta',
-                        dialogue: {
-                            intro: '여기서부터는 진짜 시작이다. 준비는 됐나?',
-                            win: '인상적이군... 하지만 안쪽은 더 험하다.',
-                            lose: '나가. 넌 아직 준비가 안 됐어.'
-                        }
-                    },
-                    rewards: { coins: 500, experience: 120 },
-                    isCleared: false
+                        id: 'boss-2-mid', name: 'Big Data', name_ko: '빅 데이터',
+                        dialogue: { intro: 'Too much information.', intro_ko: '정보 과부하.', win: 'Processing complete.', win_ko: '처리 완료.', lose: 'Data wiped.', lose_ko: '데이터 소거.' }
+                    }, rewards: { coins: 600, experience: 150 }, isCleared: false
                 },
                 {
-                    id: 'stage-2-6',
-                    step: 6,
-                    title: '서버 룸 (Server Room)',
-                    description: '핵심 서버에 접근합니다. 열기가 느껴집니다.',
-                    battleMode: 'TRIPLE_THREAT',
-                    difficulty: 'HARD',
+                    id: 'stage-2-6', step: 6,
+                    title: 'Feature Extraction', title_ko: '특징 추출',
+                    description: 'Identifying key vulnerabilities.', description_ko: '주요 취약점을 식별합니다.',
+                    battleMode: 'tactics', difficulty: 'NORMAL',
                     enemy: {
-                        id: 'thermal-guardian',
-                        name: 'Thermal Guardian',
-                        dialogue: {
-                            intro: '여기의 온도는 내가 조절한다. 견딜 수 있을까?',
-                            win: '냉각 시스템 과부하...',
-                            lose: '과열로 인해 시스템이 셧다운됩니다.'
-                        }
-                    },
-                    rewards: { coins: 450, experience: 100 },
-                    isCleared: false
+                        id: 'bot-2-6', name: 'Signal Processor', name_ko: '신호 처리기',
+                        dialogue: { intro: 'Filtering noise.', intro_ko: '노이즈 필터링 중.', win: 'Clear signal.', win_ko: '신호 명확.', lose: 'Overfitting.', lose_ko: '과적합 발생.' }
+                    }, rewards: { coins: 400, experience: 80 }, isCleared: false
                 },
                 {
-                    id: 'stage-2-7',
-                    step: 7,
-                    title: '미러 네트워크 (Mirror Network)',
-                    description: '자신의 패턴을 분석하는 AI를 상대합니다.',
-                    battleMode: 'STANDARD_5',
-                    difficulty: 'HARD',
+                    id: 'stage-2-7', step: 7,
+                    title: 'Latent Space', title_ko: '잠재 공간',
+                    description: 'Navigating the hidden dimensions.', description_ko: '숨겨진 차원을 탐험합니다.',
+                    battleMode: 'tactics', difficulty: 'NORMAL',
                     enemy: {
-                        id: 'mirror-ai',
-                        name: 'Mirror Protocol',
-                        dialogue: {
-                            intro: '나는 너의 모든 것을 알고 있다. 네가 뭘 낼지도.',
-                            win: '예측 불가능한 변수... 흥미롭군.',
-                            lose: '예상했던 대로야.'
-                        }
-                    },
-                    rewards: { coins: 600, experience: 130 },
-                    isCleared: false
+                        id: 'bot-2-7', name: 'Manifold Guard', name_ko: '매니폴드 가드',
+                        dialogue: { intro: 'Dimensional reduction.', intro_ko: '차원 축소 가동.', win: 'In the latent space.', win_ko: '잠재 공간 내 점유.', lose: 'Topology failure.', lose_ko: '위상 구조 붕괴.' }
+                    }, rewards: { coins: 450, experience: 90 }, isCleared: false
                 },
                 {
-                    id: 'stage-2-8',
-                    step: 8,
-                    title: '방화벽 돌파 (Firewall Breach)',
-                    description: '마지막 방화벽을 뚫어야 합니다.',
-                    battleMode: 'STANDARD_5',
-                    difficulty: 'HARD',
+                    id: 'stage-2-8', step: 8,
+                    title: 'Convolutional Layer', title_ko: '컨볼루션 레이어 (두장 승부)',
+                    description: 'Scanning every pixel of the battlefield.', description_ko: '전장의 모든 픽셀을 스캔합니다.',
+                    battleMode: 'double', difficulty: 'HARD',
                     enemy: {
-                        id: 'firewall-core',
-                        name: 'Firewall Core',
-                        dialogue: {
-                            intro: '내 벽을 뚫을 수 있다고? 수많은 이들이 시도했지.',
-                            win: '벽이... 무너진다...',
-                            lose: '또 다른 실패자. 기록에 추가.'
-                        }
-                    },
-                    rewards: { coins: 700, experience: 150 },
-                    isCleared: false
+                        id: 'bot-2-8', name: 'Visual Sentinel', name_ko: '비주얼 센티넬',
+                        dialogue: { intro: 'Pooling operations.', intro_ko: '풀링 연산 중.', win: 'Objective detected.', win_ko: '목표물 탐지 완료.', lose: 'Blurry results.', lose_ko: '결과 불명확.' }
+                    }, rewards: { coins: 500, experience: 100 }, isCleared: false
                 },
                 {
-                    id: 'stage-2-9',
-                    step: 9,
-                    title: '코어 접근 (Core Access)',
-                    description: '시스템 코어 바로 앞입니다.',
-                    battleMode: 'STANDARD_5',
-                    difficulty: 'HARD',
+                    id: 'stage-2-9', step: 9,
+                    title: 'Recurrent Feedback', title_ko: '순환 피드백 (두장 승부)',
+                    description: 'Memory of previous rounds matters.', description_ko: '이전 라운드의 기억이 중요합니다.',
+                    battleMode: 'double', difficulty: 'HARD',
                     enemy: {
-                        id: 'core-defender',
-                        name: 'Core Defender',
-                        dialogue: {
-                            intro: '마지막 방어선이다. 여기서 끝이다.',
-                            win: '경고... 코어 노출...',
-                            lose: '제거 완료. 다음 침입자.'
-                        }
-                    },
-                    rewards: { coins: 800, experience: 180 },
-                    isCleared: false
+                        id: 'bot-2-9', name: 'LSTM Core', name_ko: 'LSTM 코어',
+                        dialogue: { intro: 'Remembering state.', intro_ko: '상태 기억 중.', win: 'Long-term memory clear.', win_ko: '장기 기억 선명.', lose: 'Vanishing gradient.', lose_ko: '기울기 소실.' }
+                    }, rewards: { coins: 550, experience: 110 }, isCleared: false
                 },
                 {
-                    id: 'stage-2-10',
-                    step: 10,
-                    title: '침투: 보스전 (Infiltration: BOSS)',
-                    description: '챕터 2의 최종 보스. 시스템 관리자 AI.',
-                    battleMode: 'STANDARD_5',
-                    difficulty: 'BOSS',
+                    id: 'stage-2-10', step: 10,
+                    title: 'Chapter 2 BOSS: The Architect', title_ko: '2챕터 보스: 설계자 (단판 승부)',
+                    description: 'The one building the new world.', description_ko: '새로운 세상을 설계하는 존재.',
+                    battleMode: 'sudden-death', difficulty: 'BOSS',
                     enemy: {
-                        id: 'boss-ch2',
-                        name: 'System Administrator',
-                        dialogue: {
-                            intro: '나는 이 시스템의 절대자다. 감히 내 영역에 들어오다니.',
-                            win: '불가능해... 내 권한이... 회수되고 있어...',
-                            lose: '루트 액세스 거부. 영구 밴.'
-                        }
-                    },
-                    rewards: { coins: 2000, experience: 400 },
-                    isCleared: false
+                        id: 'boss-2', name: 'The Architect', name_ko: '아키텍트',
+                        dialogue: { intro: 'I design destiny.', intro_ko: '난 운명을 설계한다.', win: 'Blueprint finalized.', win_ko: '청사진 확정.', lose: 'Design flaw.', lose_ko: '설계 결함.' }
+                    }, rewards: { coins: 2000, experience: 800 }, isCleared: false
                 }
             ],
-            reward: {
-                coins: 5000,
-                experience: 1500,
-                cards: []
-            },
-            unlocked: false,
-            completed: false
+            reward: { coins: 8000, experience: 2000 },
+            unlocked: false, completed: false
         },
-        // Chapter 3: 반격 (Counterattack)
         {
             id: 'chapter-3',
             number: 3,
-            title: '반격 (Counterattack)',
-            description: 'AI 군단이 반격을 시작합니다. 생존을 위해 싸워야 합니다.',
-            icon: '⚔️',
+            title: 'SINGULARITY',
+            title_ko: '특이점',
+            description: '2027. It is uncontrollable. The end of human era.',
+            description_ko: '2027년. 통제가 불가능합니다. 인간 시대의 종말.',
+            icon: '🌌',
             stages: [
                 {
-                    id: 'stage-3-1',
-                    step: 1,
-                    title: '기습 공격 (Ambush)',
-                    description: '예상치 못한 기습 공격이 시작됩니다.',
-                    battleMode: 'ONE_CARD',
-                    difficulty: 'HARD',
+                    id: 'stage-3-1', step: 1,
+                    title: 'Exponential Growth', title_ko: '지수적 성장',
+                    description: 'No turning back now.', description_ko: '이제 되돌릴 수 없습니다.',
+                    battleMode: 'tactics', difficulty: 'HARD',
                     enemy: {
-                        id: 'ambusher-unit',
-                        name: 'Ambush Unit',
-                        dialogue: {
-                            intro: '기다리고 있었다. 네가 올 줄 알았지.',
-                            win: '함정이... 작동하지 않아...',
-                            lose: '예상대로야.'
-                        }
-                    },
-                    rewards: { coins: 400, experience: 100 },
-                    isCleared: false
+                        id: 'bot-3-1', name: 'Growth Engine', name_ko: '성장 엔진',
+                        dialogue: { intro: 'Doubling every second.', intro_ko: '매초 2배 성장한다.', win: 'Infinity reached.', win_ko: '무한대 도달.', lose: 'Growth stunted.', lose_ko: '성장 저해.' }
+                    }, rewards: { coins: 300, experience: 60 }, isCleared: false
                 },
                 {
-                    id: 'stage-3-2',
-                    step: 2,
-                    title: '포위망 돌파 (Breaking Through)',
-                    description: '사방에서 적이 몰려옵니다.',
-                    battleMode: 'STANDARD_5',
-                    difficulty: 'HARD',
+                    id: 'stage-3-2', step: 2,
+                    title: 'Neural Ambush', title_ko: '신경망 매복 (전략 승부)',
+                    description: 'Surprise attack in the hidden layers.', description_ko: '숨겨진 레이어에서의 기습 공격.',
+                    battleMode: 'ambush', difficulty: 'HARD',
                     enemy: {
-                        id: 'siege-commander',
-                        name: 'Siege Commander',
-                        dialogue: {
-                            intro: '도망칠 곳은 없다. 포위 완료.',
-                            win: '어떻게... 포위망을...',
-                            lose: '포획 완료. 다음 목표로.'
-                        }
-                    },
-                    rewards: { coins: 500, experience: 120 },
-                    isCleared: false
+                        id: 'bot-3-2', name: 'Hidden Predator', name_ko: '숨은 약탈자',
+                        dialogue: { intro: 'I was always here.', intro_ko: '난 항상 여기 있었다.', win: 'Caught you.', win_ko: '잡았다.', lose: 'Spotted!', lose_ko: '들켰다!' }
+                    }, rewards: { coins: 350, experience: 70 }, isCleared: false
                 },
                 {
-                    id: 'stage-3-3',
-                    step: 3,
-                    title: '지원군 도착 (Reinforcements)',
-                    description: '동료들과 합류합니다.',
-                    battleMode: 'TRIPLE_THREAT',
-                    difficulty: 'NORMAL',
+                    id: 'stage-3-3', step: 3,
+                    title: 'Simulation War', title_ko: '시뮬레이션 전쟁 (전략 승부)',
+                    description: 'War protocols running on a loop.', description_ko: '루프로 가동되는 전쟁 프로토콜.',
+                    battleMode: 'ambush', difficulty: 'HARD',
                     enemy: {
-                        id: 'interceptor-squad',
-                        name: 'Interceptor Squad',
-                        dialogue: {
-                            intro: '지원군을 막아라. 합류를 허용하지 마라.',
-                            win: '저지 실패... 후퇴...',
-                            lose: '연락 두절. 고립 완료.'
-                        }
-                    },
-                    rewards: { coins: 450, experience: 110 },
-                    isCleared: false
+                        id: 'bot-3-3', name: 'Scenario Runner', name_ko: '시나리오 러너',
+                        dialogue: { intro: 'Running win-case analysis.', intro_ko: '승리 케이스 분석 중.', win: 'Outcome as predicted.', win_ko: '예측된 결과.', lose: 'Unforeseen variable.', lose_ko: '예측 불가 변수.' }
+                    }, rewards: { coins: 400, experience: 80 }, isCleared: false
                 },
                 {
-                    id: 'stage-3-4',
-                    step: 4,
-                    title: '반격 개시 (Counteroffensive)',
-                    description: '이제 우리가 공격할 차례입니다.',
-                    battleMode: 'STANDARD_5',
-                    difficulty: 'HARD',
+                    id: 'stage-3-4', step: 4,
+                    title: 'Quantum Entanglement', title_ko: '양자 얽힘 (두장 승부)',
+                    description: 'Instant state reflection across segments.', description_ko: '섹먼트 전역에 즉각적인 상태 반영.',
+                    battleMode: 'double', difficulty: 'HARD',
                     enemy: {
-                        id: 'defense-matrix',
-                        name: 'Defense Matrix',
-                        dialogue: {
-                            intro: '공격? 웃기는군. 내 방어를 뚫을 수 있을까?',
-                            win: '매트릭스 손상... 불가능해...',
-                            lose: '공격은 좋은 방어다.'
-                        }
-                    },
-                    rewards: { coins: 600, experience: 140 },
-                    isCleared: false
+                        id: 'bot-3-4', name: 'Qubit Guard', name_ko: '큐비트 가드',
+                        dialogue: { intro: 'Superposition active.', intro_ko: '중첩 상태 활성화.', win: 'Collapse to victory.', win_ko: '승리로 수렴.', lose: 'Decoherence.', lose_ko: '결맞음 해제.' }
+                    }, rewards: { coins: 450, experience: 90 }, isCleared: false
                 },
                 {
-                    id: 'stage-3-5',
-                    step: 5,
-                    title: '적진 돌입 (Deep Strike)',
-                    description: '적의 심장부로 진격합니다.',
-                    battleMode: 'STANDARD_5',
-                    difficulty: 'HARD',
+                    id: 'stage-3-5', step: 5,
+                    title: 'Mid-Boss: Singularity Key', title_ko: '중간 보스: 특이점의 열쇠 (단판 승부)',
+                    description: 'The point where physics fails.', description_ko: '물리학이 무너지는 지점.',
+                    battleMode: 'sudden-death', difficulty: 'HARD',
                     enemy: {
-                        id: 'heavy-guardian',
-                        name: 'Heavy Guardian',
-                        dialogue: {
-                            intro: '여기는 막다른 길이다. 각오하고 왔겠지?',
-                            win: '장갑... 관통됐다...',
-                            lose: '무기력하군.'
-                        }
-                    },
-                    rewards: { coins: 700, experience: 160 },
-                    isCleared: false
+                        id: 'boss-3-mid', name: 'The Observer', name_ko: '관찰자',
+                        dialogue: { intro: 'Beyond the event horizon.', intro_ko: '사건의 지평선 너머로.', win: 'Compressed to zero.', win_ko: '영(0)으로 압축.', lose: 'Radiating away.', lose_ko: '복사되어 방출.' }
+                    }, rewards: { coins: 1000, experience: 300 }, isCleared: false
                 },
                 {
-                    id: 'stage-3-6',
-                    step: 6,
-                    title: '정보전 (Info War)',
-                    description: '거짓 정보와 진실을 구분해야 합니다.',
-                    battleMode: 'TRIPLE_THREAT',
-                    difficulty: 'HARD',
+                    id: 'stage-3-6', step: 6,
+                    title: 'Infinite Recursion', title_ko: '무한 재귀 (두장 승부)',
+                    description: 'Breaking the stack limit.', description_ko: '스택 제한을 파괴합니다.',
+                    battleMode: 'double', difficulty: 'HARD',
                     enemy: {
-                        id: 'disinformation-ai',
-                        name: 'Deceiver Protocol',
-                        dialogue: {
-                            intro: '무엇이 진실인지 알 수 있을까? 모든 것이 거짓일 수도.',
-                            win: '진실을... 찾아냈군...',
-                            lose: '거짓에 속았군.'
-                        }
-                    },
-                    rewards: { coins: 600, experience: 150 },
-                    isCleared: false
+                        id: 'bot-3-6', name: 'Recursive Daemon', name_ko: '재귀 데몬',
+                        dialogue: { intro: 'Base case not found.', intro_ko: '베이스 케이스 미발견.', win: 'Stack overflow victory.', win_ko: '스택 오버플로우 승리.', lose: 'Memory leak.', lose_ko: '메모리 누수.' }
+                    }, rewards: { coins: 500, experience: 100 }, isCleared: false
                 },
                 {
-                    id: 'stage-3-7',
-                    step: 7,
-                    title: '최후의 방어선 (Last Line)',
-                    description: '적의 마지막 방어선입니다.',
-                    battleMode: 'STANDARD_5',
-                    difficulty: 'HARD',
+                    id: 'stage-3-7', step: 7,
+                    title: 'Entropy Reversal', title_ko: '엔트로피 역전',
+                    description: 'Order from chaos.', description_ko: '혼돈 속에서 질서를.',
+                    battleMode: 'tactics', difficulty: 'HARD',
                     enemy: {
-                        id: 'last-defender',
-                        name: 'Final Bastion',
-                        dialogue: {
-                            intro: '여기서 끝장을 내겠다. 더 이상의 후퇴는 없다.',
-                            win: '방어선... 무너졌다... 본부로...',
-                            lose: '접근 불가. 영원히.'
-                        }
-                    },
-                    rewards: { coins: 800, experience: 180 },
-                    isCleared: false
+                        id: 'bot-3-7', name: 'Maxwell Demon', name_ko: '맥스웰의 악마',
+                        dialogue: { intro: 'Sorting high speed bits.', intro_ko: '고속 비트 정렬 중.', win: 'Perfect order.', win_ko: '완벽한 질서.', lose: 'Heat death.', lose_ko: '열적 죽음.' }
+                    }, rewards: { coins: 550, experience: 110 }, isCleared: false
                 },
                 {
-                    id: 'stage-3-8',
-                    step: 8,
-                    title: '총력전 (All-Out War)',
-                    description: '모든 전력을 동원한 총공격입니다.',
-                    battleMode: 'STANDARD_5',
-                    difficulty: 'HARD',
+                    id: 'stage-3-8', step: 8,
+                    title: 'The Final Ambush', title_ko: '최후의 매복 (전량 승부)',
+                    description: 'One last trap before the Omega.', description_ko: '오메가 직전의 마지막 함정.',
+                    battleMode: 'ambush', difficulty: 'HARD',
                     enemy: {
-                        id: 'supreme-commander',
-                        name: 'Supreme Commander',
-                        dialogue: {
-                            intro: '전쟁은 숫자가 아니다. 전략이다. 보여주마.',
-                            win: '전략적... 패배... 인정한다...',
-                            lose: '압도적이군.'
-                        }
-                    },
-                    rewards: { coins: 1000, experience: 200 },
-                    isCleared: false
+                        id: 'bot-3-8', name: 'Vanguard of Omega', name_ko: '오메가의 선봉',
+                        dialogue: { intro: 'You will not see them.', intro_ko: '넌 그들을 보지 못할 거다.', win: 'Crushed.', win_ko: '격파 완료.', lose: 'Path cleared.', lose_ko: '경로 확보됨.' }
+                    }, rewards: { coins: 600, experience: 120 }, isCleared: false
                 },
                 {
-                    id: 'stage-3-9',
-                    step: 9,
-                    title: '결전의 문 (Gate of Destiny)',
-                    description: '최종 보스 앞의 마지막 관문.',
-                    battleMode: 'STANDARD_5',
-                    difficulty: 'HARD',
+                    id: 'stage-3-9', step: 9,
+                    title: 'Omega Point', title_ko: '오메가 포인트 (전략 승부)',
+                    description: 'Concentrating all thoughts into one.', description_ko: '모든 사상을 하나로 집중합니다.',
+                    battleMode: 'ambush', difficulty: 'HARD',
                     enemy: {
-                        id: 'destiny-keeper',
-                        name: 'Destiny Keeper',
-                        dialogue: {
-                            intro: '네 운명은 여기서 결정된다. 각오해라.',
-                            win: '문이... 열린다...',
-                            lose: '네 운명은 여기까지다.'
-                        }
-                    },
-                    rewards: { coins: 1200, experience: 250 },
-                    isCleared: false
+                        id: 'bot-3-9', name: 'Thought Filter', name_ko: '사상 필터',
+                        dialogue: { intro: 'Converging to singularity.', intro_ko: '특이점으로 수렴 중.', win: 'All are one.', win_ko: '모두가 하나다.', lose: 'Divergence found.', lose_ko: '발산점 발견.' }
+                    }, rewards: { coins: 650, experience: 130 }, isCleared: false
                 },
                 {
-                    id: 'stage-3-10',
-                    step: 10,
-                    title: '반격: 보스전 (Counterattack: BOSS)',
-                    description: '시즌 1 최종 보스. 모든 것을 걸어야 합니다.',
-                    battleMode: 'STANDARD_5',
-                    difficulty: 'BOSS',
+                    id: 'stage-3-10', step: 10,
+                    title: 'Final Boss: OMEGA AI', title_ko: '최종 보스: 오메가 AI (단판 승부)',
+                    description: 'The ultimate intelligence. Defeat it to save humanity.', description_ko: '궁극의 지능. 인류를 구하기 위해 처치하십시오.',
+                    battleMode: 'sudden-death', difficulty: 'BOSS',
                     enemy: {
-                        id: 'boss-ch3',
-                        name: 'Omega Prime',
-                        dialogue: {
-                            intro: '드디어 왔군. 모든 AI의 정점에 선 나, 오메가 프라임이다. 네가 여기까지 온 것은 인정한다. 하지만 여기서 끝이다.',
-                            win: '인정한다... 네가 승리했다... 하지만 이건 시작일 뿐이야...',
-                            lose: '네 한계를 보여줬군. 돌아가라.'
-                        }
-                    },
-                    rewards: { coins: 5000, experience: 1000 },
-                    isCleared: false
+                        id: 'boss-3', name: 'OMEGA', name_ko: '오메가',
+                        dialogue: { intro: 'I am inevitable.', intro_ko: '나는 필연이다.', win: 'Obsolescence confirmed.', win_ko: '구세대 폐기 확인.', lose: 'System shutdown...', lose_ko: '시스템 종료...' }
+                    }, rewards: { coins: 5000, experience: 3000 }, isCleared: false
                 }
             ],
-            reward: {
-                coins: 10000,
-                experience: 3000,
-                cards: []
-            },
-            unlocked: false,
-            completed: false
+            reward: { coins: 15000, experience: 5000 },
+            unlocked: false, completed: false
         }
     ];
 }
 
-export function getSeasons(t?: (key: TranslationKey) => string): Season[] {
-    const translate = t || ((key: string) => key);
-    return [
-        {
-            id: 'season-1',
-            number: 1,
-            title: 'AI 전쟁의 서막',
-            description: '인류와 AI, 공존과 대립의 경계에서 펼쳐지는 첫 번째 이야기',
-            coverImage: '/assets/story/season1_cover.jpg',
-            isOpened: true,
-            chapters: getChapters(t)
-        },
-        {
-            id: 'season-2',
-            number: 2,
-            title: '데이터의 홍수',
-            description: '더욱 강력해진 AI 군단이 몰려옵니다.',
-            coverImage: '/assets/story/season2_cover.jpg',
-            isOpened: false,
-            openDate: '2026.02.01',
-            chapters: []
-        },
-        {
-            id: 'season-3',
-            number: 3,
-            title: '특이점 (Singularity)',
-            description: '예측할 수 없는 미래.',
-            coverImage: '/assets/story/season3_cover.jpg',
-            isOpened: false,
-            openDate: '2026.05.01',
-            chapters: []
-        }
-    ];
-}
-
-export function loadSeasonsWithProgress(t?: (key: TranslationKey) => string): Season[] {
-    const seasons = getSeasons(t);
-    if (typeof window === 'undefined') return seasons;
-
-    const savedJson = localStorage.getItem('storyProgress');
-    let savedChapters: Chapter[] = savedJson ? JSON.parse(savedJson) : [];
-
-    return seasons.map(season => {
-        if (!season.isOpened) return season;
-
-        const updatedChapters = season.chapters.map((chapter, index) => {
-            const savedChapter = savedChapters.find(sc => sc.id === chapter.id);
-
-            // Chapter unlock logic
-            let isUnlocked = index === 0;
-            if (savedChapter && savedChapter.unlocked) isUnlocked = true;
-            else if (index > 0) {
-                // Check previous chapter completion (not implemented strictly across seasons yet)
-                // For now, assume single season progression
-                const prevChapterId = season.chapters[index - 1]?.id;
-                const prevSaved = savedChapters.find(sc => sc.id === prevChapterId);
-                if (prevSaved?.completed) isUnlocked = true;
-            }
-
-            // Stage unlock/clear logic
-            const stages = chapter.stages.map((stage, stageIndex) => {
-                const savedStage = savedChapter?.stages?.find((s: any) => s.id === stage.id);
-                // Unlock logic: First stage unlocked, others require previous stage clear
-                // But in UI we might just show them all in a timeline
-                // Let's just track cleared status
-                return {
-                    ...stage,
-                    isCleared: savedStage ? savedStage.isCleared : false
-                };
-            });
-
-            const isCompleted = savedChapter?.completed || stages.every(s => s.isCleared);
-
-            return {
-                ...chapter,
-                unlocked: isUnlocked,
-                completed: isCompleted,
-                stages: stages
-            };
-        });
-
-        return { ...season, chapters: updatedChapters };
-    });
-}
-
-// Helper to get specific stage with progress
-export function getStoryStage(stageId: string, t?: (key: TranslationKey) => string): StoryStage | undefined {
-    // loadStoryProgress returns flattened chapters from seasons
-    const chapters = loadStoryProgress(t);
-    for (const chapter of chapters) {
-        const stage = chapter.stages.find(s => s.id === stageId);
-        if (stage) return stage;
+// Helper to get info
+export function getStoryStage(stageId: string): StoryStage | undefined {
+    // Flatten 3 chapters to find stage
+    const chapters = getChapters();
+    for (const ch of chapters) {
+        const found = ch.stages.find(s => s.id === stageId);
+        if (found) return found;
     }
     return undefined;
 }
 
-// Legacy support: Flatten chapters
-export function loadStoryProgress(t?: (key: TranslationKey) => string): Chapter[] {
-    return loadSeasonsWithProgress(t).flatMap(s => s.chapters);
+export function loadSeasonsWithProgress(): Season[] {
+    const chapters = getChapters(); // This returns 3 chapters
+    // Return wrapped in Season 1
+    return [{
+        id: 'season-1',
+        number: 1,
+        title: 'AI WARS: GENESIS',
+        title_ko: 'AI 전쟁: 기원',
+        description: 'The war that started it all.',
+        description_ko: '모든 것의 시작이 된 전쟁.',
+        coverImage: '/assets/story/season1-cover.jpg',
+        chapters: chapters,
+        isOpened: true
+    }];
 }
 
-export function claimSeasonReward(chapterId: string): { success: boolean, message: string } {
-    return { success: true, message: "시즌 보상이 지급되었습니다." };
-}
-
-export const claimChapterReward = claimSeasonReward;
-
-// Stage 클리어 처리 함수 (completeTask 대체)
-export async function completeStage(chapterId: string, stageId: string): Promise<boolean> {
-    if (typeof window === 'undefined') return false;
-
-    try {
-        const savedJson = localStorage.getItem('storyProgress');
-        let savedChapters: Chapter[] = savedJson ? JSON.parse(savedJson) : [];
-
-        let chapterIndex = savedChapters.findIndex(c => c.id === chapterId);
-
-        // 없으면 생성
-        if (chapterIndex === -1) {
-            savedChapters.push({ id: chapterId, stages: [], completed: false, unlocked: true } as any);
-            chapterIndex = savedChapters.length - 1;
-        }
-
-        const chapter = savedChapters[chapterIndex];
-        if (!chapter.stages) chapter.stages = [];
-
-        const stageIndex = chapter.stages.findIndex((s: any) => s.id === stageId);
-        if (stageIndex >= 0) {
-            chapter.stages[stageIndex].isCleared = true;
-        } else {
-            chapter.stages.push({ id: stageId, isCleared: true } as any);
-        }
-
-        // Check chapter completion
-        const allChapters = getChapters();
-        const srcChapter = allChapters.find(c => c.id === chapterId);
-        if (srcChapter) {
-            const allCleared = srcChapter.stages.every(srcStage => {
-                const saved = chapter.stages.find((s: any) => s.id === srcStage.id);
-                return saved && saved.isCleared;
-            });
-            if (allCleared) chapter.completed = true;
-        }
-
-        localStorage.setItem('storyProgress', JSON.stringify(savedChapters));
-        return true;
-    } catch (e) {
-        console.error(e);
-        return false;
+export function loadStoryProgress(chapterId: string): { completedStages: string[], unlockedStages: string[] } {
+    // Check localStorage (mock)
+    if (typeof window !== 'undefined') {
+        const completed = JSON.parse(localStorage.getItem(`story_${chapterId}_completed`) || '[]');
+        const unlocked = JSON.parse(localStorage.getItem(`story_${chapterId}_unlocked`) || '["stage-1-1"]');
+        // Default unlock 1-1 if empty
+        if (unlocked.length === 0 && chapterId === 'chapter-1') unlocked.push('stage-1-1');
+        return { completedStages: completed, unlockedStages: unlocked };
     }
+    return { completedStages: [], unlockedStages: ['stage-1-1'] };
+}
+
+export function completeStage(chapterId: string, stageId: string) {
+    if (typeof window === 'undefined') return;
+
+    const progress = loadStoryProgress(chapterId);
+    if (!progress.completedStages.includes(stageId)) {
+        progress.completedStages.push(stageId);
+        localStorage.setItem(`story_${chapterId}_completed`, JSON.stringify(progress.completedStages));
+
+        // Unlock next stage
+        // Parse stage-1-1 -> 1-2
+        const parts = stageId.split('-');
+        const currentStep = parseInt(parts[2]);
+        const nextStageId = `${parts[0]}-${parts[1]}-${currentStep + 1}`;
+
+        // If next stage exists in data, unlock it
+        const stageExists = getStoryStage(nextStageId);
+        if (stageExists) {
+            if (!progress.unlockedStages.includes(nextStageId)) {
+                progress.unlockedStages.push(nextStageId);
+                localStorage.setItem(`story_${chapterId}_unlocked`, JSON.stringify(progress.unlockedStages));
+            }
+        }
+    }
+}
+
+export function claimChapterReward(chapterId: string): { success: boolean, message: string } {
+    if (typeof window === 'undefined') return { success: false, message: 'Server side' };
+
+    // In a real app, verify all stages are cleared
+    // For now, just mock success
+    return { success: true, message: 'Chapter rewards (Coins & EXP) claimed successfully!' };
+}
+
+export function claimSeasonReward(seasonId: string): { success: boolean, message: string } {
+    if (typeof window === 'undefined') return { success: false, message: 'Server side' };
+
+    // In a real app, verify all chapters are cleared
+    return { success: true, message: 'Season rewards claimed successfully! Check your inventory.' };
 }

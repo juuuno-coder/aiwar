@@ -12,76 +12,87 @@ import { Card } from './types';
  * 강화 비용 계산 (토큰)
  * 레벨에 따라 증가
  */
-export function getEnhanceCost(level: number, discountMultiplier: number = 0): number {
+export function getEnhanceCost(level: number, discountPercentage: number = 0): number {
     const baseCost = level * 50;
-    return Math.floor(baseCost * (1 - discountMultiplier));
+    return Math.floor(baseCost * (1 - discountPercentage / 100));
 }
 
 /**
  * 강화 가능 여부 확인
- * - 아무 카드 10장을 재료로 사용 가능
  */
 export function canEnhance(
     targetCard: Card,
     materialCards: Card[],
-    userTokens: number
-): { canEnhance: boolean; reason?: string } {
-    // 최대 레벨 체크
-    if (targetCard.level >= 10) {
-        return { canEnhance: false, reason: '이미 최대 레벨입니다.' };
+    tokenBalance: number,
+    masteryLevel: number = 0
+): {
+    can: boolean;
+    reason?: string;
+} {
+    if (!targetCard || materialCards.length === 0) {
+        return { can: false, reason: '강화할 카드와 재료 카드를 선택해주세요.' };
+    }
+
+    // 최대 강화 레벨 체크 (숙달 2레벨당 +1 상한 돌파)
+    const baseMaxLevel = 10;
+    const bonusMaxLevel = Math.floor(masteryLevel / 2);
+    const currentMaxLevel = baseMaxLevel + bonusMaxLevel;
+
+    if ((targetCard.level || 1) >= currentMaxLevel) {
+        return { can: false, reason: `현재 최대 강화 레벨(${currentMaxLevel})에 도달했습니다.` };
     }
 
     // 재료 카드 개수 체크
     if (materialCards.length !== 10) {
-        return { canEnhance: false, reason: '재료 카드가 10장 필요합니다.' };
+        return { can: false, reason: '재료 카드가 10장 필요합니다.' };
     }
 
     // 대상 카드가 재료에 포함되어 있는지 확인
     if (materialCards.some(card => card.id === targetCard.id)) {
-        return { canEnhance: false, reason: '강화 대상 카드는 재료로 사용할 수 없습니다.' };
+        return { can: false, reason: '강화 대상 카드는 재료로 사용할 수 없습니다.' };
     }
 
     // 토큰 체크
-    const cost = getEnhanceCost(targetCard.level);
-    if (userTokens < cost) {
-        return { canEnhance: false, reason: `토큰이 부족합니다. (필요: ${cost})` };
+    if (tokenBalance < getEnhanceCost(targetCard.level || 1)) {
+        return { can: false, reason: '토큰이 부족합니다.' };
     }
 
-    return { canEnhance: true };
+    return { can: true };
 }
 
 /**
  * 강화 시 스탯 증가량 계산
- * 레벨업 시 주요 스탯 (효율, 창의력, 기능) 각각 +1~3 랜덤 증가
+ * Mastery 레벨에 따라 높은 수치(+3)가 나올 확률이 증가함
  */
-export function calculateEnhancedStats(card: Card): Card['stats'] {
-    // 3개 스탯 각각 +1 ~ +3 랜덤 증가
-    const incEfficiency = Math.floor(Math.random() * 3) + 1;
-    const incCreativity = Math.floor(Math.random() * 3) + 1;
-    const incFunction = Math.floor(Math.random() * 3) + 1;
+export function calculateEnhancedStats(card: Card, masteryLevel: number = 0): Card['stats'] {
+    // Mastery 레벨에 따른 +3 가중치 계산 (Lv.0: 15% ~ Lv.9: 55%)
+    const p3 = 0.15 + (masteryLevel * 0.044); // 레벨당 약 4.4% 증가
+    const p2 = 0.35 - (masteryLevel * 0.01);  // 레벨당 1%씩 미세 조절
+    // p1 = 1 - p3 - p2 (나머지)
+
+    const getRandomStatInc = () => {
+        const rand = Math.random();
+        if (rand < p3) return 3;
+        if (rand < p3 + p2) return 2;
+        return 1;
+    };
+
+    const incEfficiency = getRandomStatInc();
+    const incCreativity = getRandomStatInc();
+    const incFunction = getRandomStatInc();
 
     const newEfficiency = (card.stats.efficiency || 0) + incEfficiency;
     const newCreativity = (card.stats.creativity || 0) + incCreativity;
     const newFunction = (card.stats.function || 0) + incFunction;
 
-    // Recalculate Total Power based on new stats
     const calculatedTotalPower = newEfficiency + newCreativity + newFunction;
 
     return {
+        ...card.stats,
         efficiency: newEfficiency,
         creativity: newCreativity,
         function: newFunction,
-
-        // Legacy stats support (maintain existing values)
-        accuracy: card.stats.accuracy || 0,
-        speed: card.stats.speed || 0,
-        stability: card.stats.stability || 0,
-        ethics: card.stats.ethics || 0,
-
-        // Use calculated total power
-        totalPower: calculatedTotalPower > 0 ? calculatedTotalPower : (card.stats.totalPower + 3), // Fallback
-
-        cost: card.stats.cost || 0
+        totalPower: calculatedTotalPower
     };
 }
 
@@ -90,23 +101,25 @@ export function calculateEnhancedStats(card: Card): Card['stats'] {
  */
 export function enhanceCard(
     targetCard: Card,
-    materialCards: Card[]
+    materialCards: Card[],
+    masteryLevel: number = 0
 ): Card {
     const newLevel = (targetCard.level || 1) + 1;
-    const newStats = calculateEnhancedStats(targetCard);
+    // Mastery 레벨을 전달하여 가중치 적용된 스탯 계산
+    const newStats = calculateEnhancedStats(targetCard, masteryLevel);
 
     return {
         ...targetCard,
         level: newLevel,
         stats: newStats,
-        experience: 0 // 경험치 초기화
+        experience: 0
     };
 }
 
 /**
  * 강화 미리보기
  */
-export function getEnhancePreview(card: Card): {
+export function getEnhancePreview(card: Card, masteryLevel: number = 0): {
     currentLevel: number;
     nextLevel: number;
     currentStats: Card['stats'];
@@ -118,7 +131,7 @@ export function getEnhancePreview(card: Card): {
         currentLevel: card.level,
         nextLevel: card.level + 1,
         currentStats: card.stats,
-        nextStats: calculateEnhancedStats(card),
+        nextStats: calculateEnhancedStats(card, masteryLevel),
         cost: getEnhanceCost(card.level),
         materialsNeeded: 10
     };
@@ -161,15 +174,23 @@ export function validateMaterialCards(
 }
 
 /**
- * 강화 성공률 계산 (항상 100%, 하지만 확장 가능)
+ * 강화 성공률 계산
+ * 기본 성공률: 100% -> 90% (레벨 1->2) ~ 점차 감소
+ * 숙달 스탯 보너스 합산
  */
-export function getEnhanceSuccessRate(targetCard: Card, materialCards: Card[]): number {
-    // 기본 100% 성공
-    let baseRate = 100;
+export function getEnhanceSuccessRate(
+    targetCard: Card,
+    materialCards: Card[],
+    masteryBonusPercentage: number = 0
+): number {
+    const currentLevel = targetCard.level || 1;
 
-    // 재료 카드의 평균 레벨이 높으면 보너스 (미래 확장용)
-    const avgLevel = materialCards.reduce((sum, card) => sum + card.level, 0) / materialCards.length;
-    const levelBonus = Math.min(avgLevel * 0.5, 5); // 최대 +5%
+    // 기본 성공률 (레벨이 높을수록 실패 확률 증가)
+    // Lv 1: 100%, Lv 2: 95%, Lv 3: 90%, ... Lv 9: 60%
+    let baseRate = 100 - (currentLevel - 1) * 5;
 
-    return Math.min(baseRate + levelBonus, 100);
+    // 숙달 연구 보너스 적용
+    const totalRate = Math.min(baseRate + masteryBonusPercentage, 100);
+
+    return totalRate;
 }

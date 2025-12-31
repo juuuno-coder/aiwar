@@ -19,10 +19,10 @@ export interface CardPack {
 
 export const CARD_PACKS: CardPack[] = [
     {
-        id: 'starter',
-        name: '스타터 팩',
-        description: '기본 카드 3장을 획득합니다',
-        price: 100,
+        id: 'standard',
+        name: 'Standard Supply',
+        description: '보급형 카드 팩 (3장)',
+        price: 200,
         cardCount: 3,
         icon: '📦',
         rarityWeights: {
@@ -33,45 +33,31 @@ export const CARD_PACKS: CardPack[] = [
         },
     },
     {
-        id: 'premium',
-        name: '프리미엄 팩',
-        description: '고급 카드 5장을 획득합니다',
-        price: 300,
+        id: 'elite',
+        name: 'Elite Supply',
+        description: '정예 카드 팩 (5장)',
+        price: 500,
         cardCount: 5,
-        icon: '🎁',
+        icon: '💼',
         rarityWeights: {
-            common: 50,
-            rare: 30,
+            common: 40,
+            rare: 40,
             epic: 15,
             legendary: 5,
         },
     },
     {
-        id: 'elite',
-        name: '엘리트 팩',
-        description: '최상급 카드 7장을 획득합니다',
-        price: 500,
-        cardCount: 7,
-        icon: '💎',
-        rarityWeights: {
-            common: 40,
-            rare: 30,
-            epic: 20,
-            legendary: 10,
-        },
-    },
-    {
-        id: 'legendary',
-        name: '레전더리 팩',
-        description: '전설 카드 10장을 획득합니다',
+        id: 'commander',
+        name: 'Commander Supply',
+        description: '지휘관용 최상급 팩 (10장)',
         price: 1000,
         cardCount: 10,
         icon: '👑',
         rarityWeights: {
-            common: 0,
-            rare: 40,
-            epic: 35,
-            legendary: 20,
+            common: 20,
+            rare: 30,
+            epic: 30,
+            legendary: 15,
             unique: 5,
         },
     },
@@ -80,12 +66,39 @@ export const CARD_PACKS: CardPack[] = [
 /**
  * 카드팩을 개봉하여 랜덤 카드들을 생성합니다
  */
-export function openCardPack(pack: CardPack, userId: string): Card[] {
+export function openCardPack(pack: CardPack, userId: string, insightLevel: number = 0): Card[] {
     const cards: Card[] = [];
 
+    // 통찰력 보너스 계산 (정의서 v2.0 테이블 반영)
+    let insightRareBonus = 0;
+    let insightEpicBonus = 0;
+    let insightLegendaryBonus = 0;
+
+    if (insightLevel > 0) {
+        const rareMap = [0, 2, 4, 6, 8, 12, 15, 18, 22, 30];
+        const epicMap = [0, 1, 2, 3.5, 5, 7, 9, 12, 15, 20];
+        const legMap = [0, 0.2, 0.4, 0.7, 1.0, 1.5, 2.0, 2.5, 3.2, 5.0];
+
+        const idx = Math.min(insightLevel, 9);
+        insightRareBonus = rareMap[idx];
+        insightEpicBonus = epicMap[idx];
+        insightLegendaryBonus = legMap[idx];
+    }
+
+    const totalBonus = insightRareBonus + insightEpicBonus + insightLegendaryBonus;
+
+    // 카드팩 기본 확률에 통찰력 보너스 합산
+    const adjustedWeights = {
+        ...pack.rarityWeights,
+        common: Math.max(0, pack.rarityWeights.common - totalBonus),
+        rare: (pack.rarityWeights.rare || 0) + insightRareBonus,
+        epic: (pack.rarityWeights.epic || 0) + insightEpicBonus,
+        legendary: (pack.rarityWeights.legendary || 0) + insightLegendaryBonus
+    };
+
     for (let i = 0; i < pack.cardCount; i++) {
-        // 등급 선택
-        const rarity = selectRarityFromWeights(pack.rarityWeights);
+        // 보정된 가중치로 등급 선택
+        const rarity = selectRarityFromWeights(adjustedWeights);
 
         // 해당 등급의 랜덤 카드 생성
         const card = generateCardByRarity(rarity as Rarity, userId);

@@ -60,7 +60,7 @@ export default function NotificationPanel({ isOpen, onClose }: NotificationPanel
                         initial={{ opacity: 0, y: -20, scale: 0.95 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: -20, scale: 0.95 }}
-                        className="fixed top-16 right-4 md:right-20 z-50 w-[360px] max-w-[90vw] bg-black/90 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[80vh]"
+                        className="fixed top-16 right-4 md:right-20 z-[100] w-[360px] max-w-[90vw] bg-black/90 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[80vh]"
                     >
                         {/* Header */}
                         <div className="p-4 border-b border-white/10 flex items-center justify-between bg-white/5">

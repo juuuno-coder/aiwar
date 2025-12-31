@@ -169,7 +169,7 @@ export default function CyberPageLayout({
 
                     {/* Description */}
                     {description && (
-                        <p className="text-sm text-white/40 max-w-2xl leading-relaxed pl-5 border-l border-white/10">
+                        <p className="text-sm text-white/40 max-w-4xl leading-relaxed pl-5 border-l border-white/10">
                             {description}
                         </p>
                     )}

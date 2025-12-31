@@ -34,7 +34,7 @@ export default function StoryPage() {
     const handleSelectSeason = (season: Season) => {
         if (!season.isOpened) {
             // 잠금 효과 (흔들림 등) 또는 알림
-            alert(`🔒 [${season.title}] 시즌은 ${season.openDate}에 오픈됩니다.`);
+            alert(`🔒 [${season.title_ko || season.title}] 시즌은 ${season.openDate}에 오픈됩니다.`);
             return;
         }
         setSelectedSeason(season);
@@ -48,8 +48,6 @@ export default function StoryPage() {
         const result = claimSeasonReward(chapterId);
         if (result.success) {
             alert(`🎉 보상 획득 완료!\n${result.message}`);
-            // 상태 갱신 로직 (간단히 현재 상태에서 완료 처리된 것처럼 보이게 하거나 리로드)
-            // 여기서는 전체 리로드 대신 알림만 띄움
         } else {
             alert(result.message);
         }
@@ -57,11 +55,12 @@ export default function StoryPage() {
 
     if (loading) return null;
 
+    // Use Korean title primarily, English as subtitle in CyberPageLayout
     return (
         <CyberPageLayout
-            title={selectedSeason ? selectedSeason.title : "스토리 모드"}
-            englishTitle={selectedSeason ? `SEASON ${selectedSeason.number}` : "CAMPAIGN SEASONS"}
-            description={selectedSeason ? selectedSeason.description : "인류와 AI의 거대한 전쟁, 그 서막을 여는 이야기"}
+            title={selectedSeason ? (selectedSeason.title_ko || selectedSeason.title) : "스토리 모드"}
+            englishTitle={selectedSeason ? selectedSeason.title : "CAMPAIGN SEASONS"}
+            description={selectedSeason ? (selectedSeason.description_ko || selectedSeason.description) : "인류와 AI의 거대한 전쟁, 그 서막을 여는 이야기"}
             backPath={selectedSeason ? "/story" : "/main"}
             showBack={true}
         >
@@ -99,54 +98,33 @@ export default function StoryPage() {
                                 {/* 오버레이 */}
                                 <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-colors" />
 
-                                {/* 콘텐츠 */}
-                                <div className="absolute inset-0 p-8 flex flex-col justify-between z-10">
-                                    {/* 상단 뱃지 */}
+                                {/* 컨텐츠 */}
+                                <div className="absolute inset-0 p-8 flex flex-col justify-between">
                                     <div className="flex justify-between items-start">
-                                        <div className="bg-black/50 backdrop-blur-md px-3 py-1 rounded-full border border-white/10 text-xs font-bold font-mono text-white/70">
-                                            SEASON {String(season.number).padStart(2, '0')}
+                                        <div className="bg-black/50 backdrop-blur-sm px-3 py-1 rounded-full border border-white/10 text-xs font-mono text-cyan-400">
+                                            SEASON {season.number}
                                         </div>
                                         {season.isOpened ? (
-                                            <div className="bg-cyan-500/20 px-3 py-1 rounded-full border border-cyan-500/50 text-cyan-400 text-xs font-bold animate-pulse">
-                                                Active
+                                            <div className="bg-cyan-500/20 px-3 py-1 rounded-full border border-cyan-500/50 text-xs font-bold text-cyan-300 flex items-center gap-1">
+                                                <Play size={10} /> OPEN
                                             </div>
                                         ) : (
-                                            <div className="bg-white/10 px-3 py-1 rounded-full border border-white/20 text-white/50 text-xs font-bold flex items-center gap-1">
-                                                <Lock size={10} /> Locked
+                                            <div className="bg-red-500/20 px-3 py-1 rounded-full border border-red-500/50 text-xs font-bold text-red-300 flex items-center gap-1">
+                                                <Lock size={10} /> LOCKED
                                             </div>
                                         )}
                                     </div>
 
-                                    {/* 중앙 타이틀 */}
-                                    <div className="text-center space-y-4">
-                                        <h2 className="text-3xl font-black text-white orbitron tracking-tighter group-hover:text-cyan-400 transition-colors">
-                                            {season.title}
-                                        </h2>
-                                        {!season.isOpened && season.openDate && (
-                                            <div className="inline-flex items-center gap-2 bg-black/60 px-3 py-1.5 rounded text-xs text-yellow-500 font-mono border border-yellow-500/30">
-                                                <Clock size={12} />
-                                                COMING {season.openDate}
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    {/* 하단 설명 */}
                                     <div>
-                                        <p className="text-sm text-gray-300 line-clamp-2 mb-4 opacity-80 group-hover:opacity-100 transition-opacity">
-                                            {season.description}
+                                        <h3 className="text-3xl font-black text-white mb-2 italic">
+                                            {season.title_ko || season.title}
+                                        </h3>
+                                        <p className="text-white/60 text-sm line-clamp-2 mb-4 font-mono text-[10px] uppercase tracking-wider text-cyan-600">
+                                            {season.title}
                                         </p>
-                                        <button className={cn(
-                                            "w-full py-3 rounded-xl font-bold font-mono transition-all flex items-center justify-center gap-2",
-                                            season.isOpened
-                                                ? "bg-cyan-500/20 text-cyan-400 border border-cyan-500/50 group-hover:bg-cyan-500 group-hover:text-black"
-                                                : "bg-white/5 text-white/30 border border-white/5 cursor-not-allowed"
-                                        )}>
-                                            {season.isOpened ? (
-                                                <>ENTER SEASON <ChevronLeft className="rotate-180" size={16} /></>
-                                            ) : (
-                                                <>LOCKED SEASON</>
-                                            )}
-                                        </button>
+                                        <p className="text-gray-300 text-sm line-clamp-3">
+                                            {season.description_ko || season.description}
+                                        </p>
                                     </div>
                                 </div>
                             </motion.div>
@@ -154,109 +132,85 @@ export default function StoryPage() {
                     </motion.div>
                 )}
 
-                {/* 2. 시즌 상세 (챕터 리스트) 화면 */}
+                {/* 2. 챕터 선택 화면 */}
                 {selectedSeason && (
                     <motion.div
-                        initial={{ opacity: 0, x: 50 }}
+                        key="chapter-list"
+                        initial={{ opacity: 0, x: 20 }}
                         animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: 50 }}
-                        className="relative"
+                        exit={{ opacity: 0, x: -20 }}
+                        className="flex flex-col gap-6"
                     >
-                        {/* 챕터 리스트 */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-20">
-                            {selectedSeason.chapters.map((chapter, index) => {
-                                // loadSeasonsWithProgress에서 이미 상태가 계산됨
-                                const unlocked = chapter.unlocked;
-                                const completed = chapter.completed;
+                        <div className="flex items-center gap-4 mb-4">
+                            <Button
+                                variant="ghost"
+                                className="text-gray-400 hover:text-white p-0 mr-2"
+                                onClick={handleBackToSeasons}
+                            >
+                                <ChevronLeft size={24} />
+                            </Button>
+                            <h2 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">
+                                {selectedSeason.title_ko || selectedSeason.title} <span className="text-sm text-gray-500 font-normal ml-2">CHAPTER SELECT</span>
+                            </h2>
+                        </div>
 
-                                return (
-                                    <motion.div
-                                        key={chapter.id}
-                                        initial={{ opacity: 0, y: 20 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        transition={{ delay: index * 0.1 }}
-                                        className={cn(
-                                            "relative bg-white/5 border rounded-2xl p-6 overflow-hidden transition-all group",
-                                            unlocked
-                                                ? "border-white/10 hover:border-cyan-500/30 hover:bg-white/5"
-                                                : "border-white/5 opacity-50 grayscale"
-                                        )}
-                                    >
-                                        {/* 챕터 번호 배경 */}
-                                        <div className="absolute right-0 top-0 text-[100px] font-black text-white/5 orbitron -translate-y-8 translate-x-8 pointer-events-none">
-                                            {chapter.number}
-                                        </div>
-
-                                        <div className="flex justify-between items-start mb-4 relative z-10">
-                                            <div className="flex items-center gap-3">
-                                                <div className={cn(
-                                                    "w-12 h-12 rounded-xl flex items-center justify-center text-2xl bg-gradient-to-br",
-                                                    unlocked
-                                                        ? "from-cyan-900 to-blue-900 text-white shadow-lg shadow-cyan-900/50"
-                                                        : "from-gray-800 to-gray-900 text-white/30"
-                                                )}>
-                                                    {chapter.icon}
-                                                </div>
-                                                <div>
-                                                    <h4 className="text-xs font-mono text-cyan-400 font-bold mb-0.5">
-                                                        CHAPTER {String(chapter.number).padStart(2, '0')}
-                                                    </h4>
-                                                    <h3 className="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">
-                                                        <EncryptedText text={chapter.title} />
-                                                    </h3>
-                                                </div>
+                        <div className="grid grid-cols-1 gap-4">
+                            {selectedSeason.chapters.map((chapter) => (
+                                <div key={chapter.id} className="relative group">
+                                    <Link href={chapter.unlocked ? `/story/${chapter.id}` : '#'} className="block">
+                                        <div className={cn(
+                                            "relative bg-zinc-900/50 border rounded-2xl p-6 transition-all duration-300 flex items-center gap-6 overflow-hidden",
+                                            chapter.unlocked
+                                                ? "border-white/10 hover:border-cyan-500/50 hover:bg-zinc-800/80 cursor-pointer"
+                                                : "border-white/5 opacity-50 cursor-not-allowed"
+                                        )}>
+                                            {/* 아이콘 */}
+                                            <div className="w-16 h-16 rounded-xl bg-black/50 flex items-center justify-center text-4xl shadow-inner border border-white/5">
+                                                {chapter.icon}
                                             </div>
-                                            <div>
-                                                {completed && <div className="text-green-500 bg-green-500/10 p-1.5 rounded-full"><Award size={18} /></div>}
-                                                {unlocked && !completed && <div className="text-cyan-500 bg-cyan-500/10 p-1.5 rounded-full animate-pulse"><Play size={18} fill="currentColor" /></div>}
-                                                {!unlocked && <Lock size={18} className="text-gray-500" />}
+
+                                            {/* 텍스트 정보 */}
+                                            <div className="flex-1">
+                                                <div className="flex items-center gap-3 mb-1">
+                                                    <span className="text-xs font-mono text-cyan-500">CHAPTER {chapter.number}</span>
+                                                    {!chapter.unlocked && <Lock size={12} className="text-red-500" />}
+                                                </div>
+                                                <h3 className="text-xl font-bold text-white mb-1 group-hover:text-cyan-400 transition-colors">
+                                                    {chapter.title_ko || chapter.title}
+                                                </h3>
+                                                <p className="text-gray-400 text-sm">
+                                                    {chapter.description_ko || chapter.description}
+                                                </p>
                                             </div>
-                                        </div>
 
-                                        <p className="text-sm text-gray-400 mb-6 relative z-10 min-h-[40px]">
-                                            {chapter.description}
-                                        </p>
-
-                                        {/* 스테이지 목록 (간략히) */}
-                                        <div className="space-y-2 mb-6">
-                                            {chapter.stages.slice(0, 3).map(stage => (
-                                                <div key={stage.id} className="flex items-center gap-2 text-xs text-gray-500">
-                                                    <div className={cn(
-                                                        "w-1.5 h-1.5 rounded-full",
-                                                        stage.isCleared ? "bg-green-500" : "bg-gray-700"
-                                                    )} />
-                                                    <span className={cn(stage.isCleared && "text-gray-400 line-through")}>
-                                                        {stage.title}
-                                                    </span>
+                                            {/* 진행도/보상 버튼 */}
+                                            <div className="flex flex-col items-end gap-3 z-10">
+                                                {/* 진행률 바 (간략) */}
+                                                <div className="w-32 h-1.5 bg-gray-800 rounded-full overflow-hidden">
+                                                    {/* Mock progress based on completedStages */}
+                                                    <div className="h-full bg-cyan-500 w-[0%]" />
                                                 </div>
-                                            ))}
-                                            {chapter.stages.length > 3 && (
-                                                <div className="text-xs text-gray-600">
-                                                    +{chapter.stages.length - 3} more stages
-                                                </div>
-                                            )}
-                                        </div>
 
-                                        {/* 액션 버튼 */}
-                                        <div className="flex items-center gap-3 mt-auto">
-                                            {unlocked ? (
-                                                <Link href={`/story/${chapter.id}`} className="flex-1">
-                                                    <Button
-                                                        variant="flat"
-                                                        className="w-full bg-white/5 hover:bg-cyan-500/20 border-white/10 hover:border-cyan-500/50"
-                                                    >
-                                                        {completed ? "REPLAY MISSION" : "START MISSION"}
-                                                    </Button>
-                                                </Link>
-                                            ) : (
-                                                <Button disabled variant="ghost" className="w-full opacity-50">
-                                                    LOCKED
+                                                {/* 보상 버튼 (완료 시) */}
+                                                <Button
+                                                    size="sm"
+                                                    variant="ghost"
+                                                    className={cn(
+                                                        "text-xs px-3 h-8",
+                                                        chapter.completed ? "border-yellow-500/50 text-yellow-500 hover:bg-yellow-500/10" : "opacity-0 pointer-events-none"
+                                                    )}
+                                                    onClick={(e) => {
+                                                        e.preventDefault();
+                                                        handleClaimRewards(chapter.id);
+                                                    }}
+                                                >
+                                                    <Award size={14} className="mr-1" /> 보상 받기
                                                 </Button>
-                                            )}
+                                            </div>
                                         </div>
-                                    </motion.div>
-                                );
-                            })}
+                                    </Link>
+                                </div>
+                            ))}
                         </div>
                     </motion.div>
                 )}

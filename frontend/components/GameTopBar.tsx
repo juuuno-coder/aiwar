@@ -84,7 +84,7 @@ export default function GameTopBar({ sidebarCollapsed = false }: GameTopBarProps
 
                 {/* Left - Logo */}
                 <div className="flex items-center gap-4">
-                    <Link href={isAuthenticated ? "/main" : "/intro"} className="group flex items-center gap-2">
+                    <Link href="/main" className="group flex items-center gap-2">
                         <span className="text-2xl font-black italic text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500 group-hover:scale-105 transition-transform font-orbitron">
                             AI WAR
                         </span>

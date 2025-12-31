@@ -13,6 +13,8 @@ import { Progress } from "@/components/ui/custom/Progress";
 import { Divider } from "@/components/ui/custom/Divider";
 import { Chip } from "@/components/ui/custom/Chip";
 import { motion, AnimatePresence } from "framer-motion";
+import { Input } from "@/components/ui/custom/Input";
+import { updateNickname } from '@/lib/firebase-db';
 import {
     User,
     Shield,
@@ -23,7 +25,9 @@ import {
     Settings,
     Star,
     Sparkles,
-    Clock
+    Clock,
+    Check,
+    X
 } from "lucide-react";
 import { useUser } from '@/context/UserContext';
 import { gameStorage } from '@/lib/game-storage';
@@ -40,7 +44,7 @@ interface CommanderProfileModalProps {
 }
 
 export default function CommanderProfileModal({ isOpen, onClose }: CommanderProfileModalProps) {
-    const { level, experience, coins, tokens } = useUser();
+    const { level, experience, coins, tokens, refreshData } = useUser();
     const { state: footerState } = useFooter();
     const { profile } = useUserProfile();
     const { user } = useFirebase();
@@ -49,6 +53,10 @@ export default function CommanderProfileModal({ isOpen, onClose }: CommanderProf
     const [hoveredStat, setHoveredStat] = useState<string | null>(null);
     const [commanderAvatar, setCommanderAvatar] = useState<string>('/assets/commander/default.png');
     const [showAvatarSelect, setShowAvatarSelect] = useState(false);
+
+    // Nickname Editing State
+    const [isEditingName, setIsEditingName] = useState(false);
+    const [editName, setEditName] = useState('');
 
     // ESC key handler
     const handleEscKey = useCallback((e: KeyboardEvent) => {
@@ -70,10 +78,29 @@ export default function CommanderProfileModal({ isOpen, onClose }: CommanderProf
                     setResearch(state.research);
                 }
                 setLoading(false);
+                if (profile?.nickname) {
+                    setEditName(profile.nickname);
+                }
             };
             loadData();
         }
-    }, [isOpen, user?.uid]);
+    }, [isOpen, user?.uid, profile?.nickname]);
+
+    const handleSaveNickname = async () => {
+        if (!editName.trim()) {
+            alert('닉네임을 입력해주세요.');
+            return;
+        }
+
+        try {
+            await updateNickname(editName.trim(), user?.uid);
+            await refreshData();
+            setIsEditingName(false);
+            // alert('닉네임이 변경되었습니다.'); // Optional: Less intrusive UI preferred
+        } catch (error: any) {
+            alert(error.message || '닉네임 변경에 실패했습니다.');
+        }
+    };
 
     // 아바타 선택 옵션 (카드 이미지 포함)
     const avatarOptions = [
@@ -169,13 +196,41 @@ export default function CommanderProfileModal({ isOpen, onClose }: CommanderProf
                                 <span className="text-[10px] text-cyan-400 font-black uppercase tracking-[0.4em] orbitron">Commander Profile Terminal</span>
                             </div>
                             <div className="flex items-center justify-between w-full">
-                                <h2 className="text-4xl font-black text-white orbitron tracking-tighter italic">
-                                    {profile?.nickname || '지휘관'}
-                                </h2>
+                                {isEditingName ? (
+                                    <div className="flex items-center gap-2 w-full max-w-md">
+                                        <Input
+                                            value={editName}
+                                            onChange={(e) => setEditName(e.target.value)}
+                                            className="bg-black/50 border-cyan-500/50 text-2xl font-black orbitron h-12"
+                                            placeholder="Enter Commander Name"
+                                            maxLength={12}
+                                            autoFocus
+                                        />
+                                        <Button size="lg" onClick={handleSaveNickname} className="p-0 h-12 w-12 bg-green-500/20 hover:bg-green-500/40 text-green-400 border border-green-500/50">
+                                            <Check size={20} />
+                                        </Button>
+                                        <Button size="lg" onClick={() => setIsEditingName(false)} className="p-0 h-12 w-12 bg-red-500/20 hover:bg-red-500/40 text-red-400 border border-red-500/50">
+                                            <X size={20} />
+                                        </Button>
+                                    </div>
+                                ) : (
+                                    <div className="flex items-center gap-4 group">
+                                        <h2 className="text-4xl font-black text-white orbitron tracking-tighter italic">
+                                            {profile?.nickname || 'COMMANDER'}
+                                        </h2>
+                                        <button
+                                            onClick={() => setIsEditingName(true)}
+                                            className="opacity-0 group-hover:opacity-100 transition-opacity p-2 hover:bg-white/10 rounded-full text-cyan-400"
+                                            title="Change Nickname"
+                                        >
+                                            <Edit3 size={20} />
+                                        </button>
+                                    </div>
+                                )}
                             </div>
                         </ModalHeader>
 
-                        <ModalBody className="p-6 relative z-10 grid md:grid-cols-12 gap-6 overflow-hidden">
+                        <ModalBody className="p-6 relative z-10 grid md:grid-cols-12 gap-6">
                             {/* 좌측: 아바타 및 기본 정보 */}
                             <div className="md:col-span-4 space-y-4">
                                 {/* 아바타 섹션 - 크게 */}
@@ -206,10 +261,6 @@ export default function CommanderProfileModal({ isOpen, onClose }: CommanderProf
                                         <div className="absolute bottom-0 left-0 right-0 p-4">
                                             <div className="flex items-center justify-between mb-2">
                                                 <span className="text-2xl text-white font-black orbitron">Lv.{level}</span>
-                                                <div className="flex items-center gap-1 bg-cyan-500/20 px-2 py-1 rounded-full">
-                                                    <Edit3 size={12} className="text-cyan-400" />
-                                                    <span className="text-[10px] text-cyan-400 font-bold">EDIT</span>
-                                                </div>
                                             </div>
                                             <Progress
                                                 value={(experience / (level * 100)) * 100}

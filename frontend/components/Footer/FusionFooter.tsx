@@ -32,8 +32,8 @@ export default function FusionFooter({
 
             {/* 메인 푸터 */}
             <div className="absolute inset-0 bg-gradient-to-t from-black via-purple-900/10 to-transparent backdrop-blur-md">
-                {/* 왼쪽 정렬 컨테이너 */}
-                <div className="h-full px-6 py-3 flex items-center gap-6">
+                {/* 중앙 정렬 컨테이너 (70% 너비) - Space Between 복구 */}
+                <div className="h-full px-6 py-3 flex items-center gap-6 mx-auto w-[70%] max-w-[70%]">
                     {/* 재료 슬롯 */}
                     <div className="flex items-center gap-4">
                         <p className="text-[10px] font-mono text-purple-400 uppercase whitespace-nowrap">

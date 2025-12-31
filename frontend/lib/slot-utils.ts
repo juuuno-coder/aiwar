@@ -231,8 +231,19 @@ export function getGenerationProgress(slotIndex: number): number {
 
     // 시너지 효과로 시간 감소 적용
     const synergy = calculateSynergy();
+
+    // 효율성(Efficiency) 연구 보너스 (마스터 데이터 연동)
+    let efficiencyReduction = 0;
+    const state = getGameState();
+    if (state.research?.stats?.efficiency) {
+        const { getResearchBonus } = require('./research-system');
+        const level = state.research.stats.efficiency.currentLevel;
+        efficiencyReduction = getResearchBonus('efficiency', level) / 100;
+    }
+
     const baseIntervalMinutes = faction.generationInterval || 180; // 기본 3시간
-    const reducedIntervalMinutes = baseIntervalMinutes * (1 - synergy.timeReduction);
+    const totalReduction = Math.min(synergy.timeReduction + efficiencyReduction, 0.95); // 최대 95% 단축
+    const reducedIntervalMinutes = baseIntervalMinutes * (1 - totalReduction);
     const intervalMs = reducedIntervalMinutes * 60 * 1000;
 
     const elapsed = Date.now() - (slot.lastCollectedAt || slot.placedAt);
@@ -257,28 +268,39 @@ export async function collectCard(slotIndex: number): Promise<{ success: boolean
     const faction = getFaction(slot.factionId);
     if (!faction) return { success: false, message: '군단 정보 없음' };
 
-    // 카드 생성 로직 (확률 기반 등급)
-    const synergy = calculateSynergy();
-    // TODO: 실제 카드 생성 함수 호출 (game-storage 등에서)
-    // 여기서는 간단히 모의 객체 반환
-    const newCard = {
-        name: `${faction.displayName} 카드`,
-        rarity: Math.random() > 0.9 ? 'legendary' : (Math.random() > 0.7 ? 'epic' : 'rare'),
-        factionId: faction.id
+    // 실제 카드 생성 시스템 연동
+    const { generateRandomCard } = await import('./card-generation-system');
+
+    // 지휘관의 통찰력/숙달 등 보너스를 가져옴
+    const state = getGameState();
+    const research = state.research?.stats;
+    const researchBonuses = {
+        efficiency: research?.efficiency?.currentLevel || 1,
+        creativity: research?.insight?.currentLevel || 1,
+        function: research?.mastery?.currentLevel || 1
     };
 
+    // 해당 군단의 티어(구독여부) 확인
+    const isSubscribed = state.unlockedFactions?.includes(faction.id);
+    const tier = isSubscribed ? 'ultra' : 'free';
+
+    const synergy = calculateSynergy(); // 시너지 계산은 이미 위에서 진행되었지만, 여기서는 카드 생성에 필요한 최신 시너지 값을 다시 가져옴
+    const newCard = generateRandomCard(tier, 0, synergy, researchBonuses);
+    newCard.aiFactionId = faction.id; // 군단 ID 강제 지정
+
+    // 레벨업 경험치 지급 로직 등 추가 가능
+
     // 슬롯 타이머 리셋
-    const state = getGameState();
     if (state.slots && state.slots[slotIndex]) {
         state.slots[slotIndex].lastCollectedAt = Date.now();
         saveGameState(state);
     }
 
-    // 실제로는 인벤토리에 추가해야 함 (game-storage 호출 필요)
-    // const { gameStorage } = await import('@/lib/game-storage');
-    // await gameStorage.addCardToInventory(newCard);
-
-    return { success: true, card: newCard, message: `${newCard.rarity} 등급 카드를 획득했습니다!` };
+    return {
+        success: true,
+        card: newCard,
+        message: `${newCard.rarity} 등급 카드가 생성되었습니다!`
+    };
 }
 
 /**

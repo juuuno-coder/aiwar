@@ -83,10 +83,11 @@ export default function OneCardBattlePage() {
     const handleBattleComplete = async (result: any) => {
         setBattleResult(result);
 
-        // 보상 계산
-        const battleRewards = calculateBattleRewards(
+        // 보상 계산 (비동기 처리)
+        const battleRewards = await calculateBattleRewards(
             '1-card',
             result.winner,
+            playerCards[0]?.rarity || 'common',
             'normal',
             false
         );

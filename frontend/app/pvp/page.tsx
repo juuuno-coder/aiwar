@@ -21,7 +21,7 @@ import {
     checkPVPRequirements,
     PVP_REQUIREMENTS,
     PVP_REWARDS,
-    generateAIOpponent,
+    generateOpponentDeck,
     simulateBattle,
     applyBattleResult,
     getTypeEmoji,
@@ -30,7 +30,7 @@ import {
 import {
     Trophy, Swords, Shield, Eye, Zap, Clock, Target, Users,
     CheckCircle, XCircle, Award, Coins, TrendingUp, ArrowRight,
-    Shuffle, Play
+    Shuffle, Play, Crown, Star
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import RealtimeMatchingModal from '@/components/RealtimeMatchingModal';
@@ -44,6 +44,7 @@ type Phase =
     | 'deck-reveal'
     | 'card-placement'
     | 'battle'
+    | 'double-battle' // 복식승부 인터랙티브 페이즈
     | 'result';
 
 export default function PVPArenaPage() {
@@ -51,7 +52,7 @@ export default function PVPArenaPage() {
     const { showAlert } = useAlert();
 
     const [phase, setPhase] = useState<Phase>('stats');
-    const [selectedMode, setSelectedMode] = useState<BattleMode>('tactics');
+    const [selectedMode, setSelectedMode] = useState<BattleMode>('double');
     const [selectedMatchType, setSelectedMatchType] = useState<MatchType>('ai-training');
     const [playerDeck, setPlayerDeck] = useState<Card[]>([]);
     const [opponentDeck, setOpponentDeck] = useState<Card[]>([]);
@@ -61,6 +62,29 @@ export default function PVPArenaPage() {
     const [currentRound, setCurrentRound] = useState(0);
     const [animating, setAnimating] = useState(false);
     const [animationPhase, setAnimationPhase] = useState<'idle' | 'ready' | 'clash' | 'reveal'>('idle');
+
+    // 복식승부 전용 스테이트
+    const [doubleBattleState, setDoubleBattleState] = useState<{
+        round: number; // 1, 2, 3
+        phase: 'ready' | 'choice' | 'clash' | 'result';
+        timer: number;
+        playerSelection: Card | null;
+        opponentSelection: Card | null;
+        roundWinner: 'player' | 'opponent' | 'draw' | null;
+        playerWins: number;
+        opponentWins: number;
+        history: any[];
+    }>({
+        round: 1,
+        phase: 'ready',
+        timer: 3,
+        playerSelection: null,
+        opponentSelection: null,
+        roundWinner: null,
+        playerWins: 0,
+        opponentWins: 0,
+        history: []
+    });
 
     const [inventory, setInventory] = useState<Card[]>([]);
 
@@ -85,14 +109,14 @@ export default function PVPArenaPage() {
     // 모드 정보
     const modes = [
         {
-            id: 'sudden-death' as BattleMode,
-            name: '단판 승부',
-            nameEn: 'Sudden Death',
-            description: '1선승제 - 빠르고 강렬한 승부',
-            icon: Zap,
-            color: 'from-yellow-500 to-orange-500',
-            rounds: '1선승',
-            reward: `${PVP_REWARDS['sudden-death'].win} 코인`,
+            id: 'double' as BattleMode,
+            name: '복식 승부',
+            nameEn: 'Double Battle',
+            description: '6장 덱 - 한국형 "하나빼기" 심리전 전투',
+            icon: Users,
+            color: 'from-indigo-500 to-violet-500',
+            rounds: '6장 덱',
+            reward: `+${PVP_REWARDS.double.win} 코인`,
         },
         {
             id: 'tactics' as BattleMode,
@@ -102,17 +126,17 @@ export default function PVPArenaPage() {
             icon: Shield,
             color: 'from-blue-500 to-cyan-500',
             rounds: '3선승',
-            reward: `${PVP_REWARDS.tactics.win} 코인`,
+            reward: `+${PVP_REWARDS.tactics.win} 코인`,
         },
         {
             id: 'ambush' as BattleMode,
             name: '전략 승부',
-            nameEn: 'Strategic Duel',
-            description: '3선승제 - 변수 창출과 심리전을 통한 지략 대결',
+            nameEn: 'Ambush Strategy',
+            description: '6장 덱 - 3라운드 "매복" 시스템으로 일발역전',
             icon: Eye,
             color: 'from-purple-500 to-pink-500',
-            rounds: '3선승',
-            reward: `${PVP_REWARDS.ambush.win} 코인`,
+            rounds: '6장 덱',
+            reward: `+${PVP_REWARDS.ambush.win} 코인`,
         },
     ];
 
@@ -178,7 +202,10 @@ export default function PVPArenaPage() {
     // 덱 확정
     const handleDeckConfirm = () => {
         const selected = selectedCards;
-        const targetSize = selectedMode === 'ambush' ? 7 : 5;
+        let targetSize = 5;
+        if (selectedMode === 'ambush' || selectedMode === 'double') {
+            targetSize = 6;
+        }
 
         if (selected.length !== targetSize) {
             showAlert({ title: '덱 미완성', message: `${targetSize}장의 카드를 선택해주세요.`, type: 'warning' });
@@ -197,17 +224,17 @@ export default function PVPArenaPage() {
             // 실시간 매칭 모달 표시
             setShowMatchingModal(true);
             return;
-        }
-
-        if (type === 'ai-training') {
-            // AI 상대 생성
-            const aiOpponent = generateAIOpponent(state.level, [], stats.rating);
+        } else {
+            // AI 훈련: AI 덱 생성 및 애니메이션화
+            const targetSize = (selectedMode === 'ambush' || selectedMode === 'double') ? 6 : 5;
+            const aiOpponent = generateOpponentDeck(state.level, [], targetSize);
             setOpponentDeck(aiOpponent.deck);
-        }
+            setRevealTimer(20); // 타이머 초기화
+            setPhase('deck-reveal');
 
-        // 덱 공개 단계로
-        setRevealTimer(20);
-        setPhase('deck-reveal');
+            // AI 덱 생성 시뮬레이션 (카드 뒷면 -> 앞면)
+            // ...
+        }
     };
 
     // 매칭 성공 콜백
@@ -227,12 +254,12 @@ export default function PVPArenaPage() {
         handleStartBattle();
     };
 
-    // 전투 시작
-    const handleStartBattle = (overrideOrder?: number[]) => {
+    const handleStartBattle = (overrideOrder?: number[], overrideDeck?: Card[]) => {
+        const pDeck = overrideDeck || playerDeck;
         const player: BattleParticipant = {
             name: `Player_${state.level}`,
             level: state.level,
-            deck: playerDeck,
+            deck: pDeck,
             cardOrder: overrideOrder || cardOrder,
         };
 
@@ -240,14 +267,190 @@ export default function PVPArenaPage() {
             name: selectedMatchType === 'ai-training' ? `AI 훈련봇 Lv.${state.level}` : 'Opponent',
             level: state.level,
             deck: opponentDeck,
-            cardOrder: [0, 1, 2, 3, 4], // AI는 기본 순서
+            cardOrder: [0, 1, 2, 3, 4, 5], // AI Deck Order extended
         };
 
-        const result = simulateBattle(player, opponent, selectedMode);
+        if (selectedMode === 'double') {
+            // 복식승부는 별도 플로우
+            startDoubleBattle(player, opponent);
+        } else {
+            const result = simulateBattle(player, opponent, selectedMode);
+            setBattleResult(result);
+            setCurrentRound(0);
+            setPhase('battle');
+            runBattleAnimation(result);
+        }
+    };
+
+    // 복식승부 시작
+    const startDoubleBattle = (player: BattleParticipant, opponent: BattleParticipant) => {
+        setDoubleBattleState({
+            round: 1,
+            phase: 'ready',
+            timer: 3,
+            playerSelection: null,
+            opponentSelection: null,
+            roundWinner: null,
+            playerWins: 0,
+            opponentWins: 0,
+            history: []
+        });
+        setPhase('double-battle');
+        runDoubleBattleRound(1);
+    };
+
+    // 복식승부 라운드 진행
+    const runDoubleBattleRound = async (round: number) => {
+        // 1. Ready (설명)
+        setDoubleBattleState(prev => ({ ...prev, round, phase: 'ready', timer: 3, playerSelection: null, opponentSelection: null, roundWinner: null }));
+        await new Promise(r => setTimeout(r, 1500));
+
+        // 2. Choice (3초 타이머)
+        setDoubleBattleState(prev => ({ ...prev, phase: 'choice', timer: 3 }));
+
+        // 타이머 시작 (setInterval 대신 간단히 재귀 호출이나 useEffect 사용 가능하지만 여기선 루프 내에서 처리 힘들 수 있음)
+        // useEffect에서 deck-reveal 처럼 timer 줄이는 로직을 추가하거나, 여기서 비동기 루프로 처리
+        // 간단히 비동기로 처리
+        for (let i = 3; i > 0; i--) {
+            setDoubleBattleState(prev => ({ ...prev, timer: i }));
+            await new Promise(r => setTimeout(r, 1000));
+        }
+
+        // 시간 종료 후 자동 선택 (만약 선택 안했으면 랜덤)
+        handleDoubleBattleTimeout();
+    };
+
+    const handleDoubleBattleSelection = (card: Card) => {
+        if (doubleBattleState.phase !== 'choice') return;
+        setDoubleBattleState(prev => ({ ...prev, playerSelection: card }));
+    };
+
+    const handleDoubleBattleTimeout = async () => {
+        // use current state via functional update or ref logic needed? 
+        // In this loop-based approach, React state update is async. Typically handled via useEffect logic.
+        // For simplicity, we'll shift the timer logic to useEffect triggered by phase='double-battle' & subphase='choice'.
+    };
+
+    // useEffect for Double Battle Timer
+    useEffect(() => {
+        if (phase === 'double-battle' && doubleBattleState.phase === 'choice') {
+            if (doubleBattleState.timer > 0) {
+                const timerId = setTimeout(() => {
+                    setDoubleBattleState(prev => ({ ...prev, timer: prev.timer - 1 }));
+                }, 1000);
+                return () => clearTimeout(timerId);
+            } else {
+                // Time's up! Resolve round
+                resolveDoubleBattleRound();
+            }
+        }
+    }, [phase, doubleBattleState.phase, doubleBattleState.timer]);
+
+    const resolveDoubleBattleRound = async () => {
+        const state = doubleBattleState; // Note: closure might have stale state if used inside timeout
+        // But here we are called by useEffect when timer hits 0. We need access to LATEST selection.
+        // Effect dependency ensures we have it? No, standard closure trap.
+        // Better to use a ref or functional update inside setDoubleBattleState BUT applying logic is complex.
+
+        // Let's rely on setDoubleBattleState callback to get latest data and trigger next step physically.
+        setDoubleBattleState(prev => {
+            // AI Selection Logic (Always picks random or based on difficulty)
+            // Current Round Index: (round-1)*2 and (round-1)*2+1
+            const baseIdx = (prev.round - 1) * 2;
+            const aiCard1 = opponentDeck[baseIdx];
+            const aiCard2 = opponentDeck[baseIdx + 1];
+
+            // Simple AI: Random pick
+            const aiSelection = Math.random() > 0.5 ? aiCard1 : aiCard2;
+
+            // Player Selection (Random if null)
+            let playerSel = prev.playerSelection;
+            const myCard1 = playerDeck[baseIdx];
+            const myCard2 = playerDeck[baseIdx + 1];
+            if (!playerSel) {
+                playerSel = Math.random() > 0.5 ? myCard1 : myCard2;
+            }
+
+            // Determine Winner
+            const { determineRoundWinner } = require('@/lib/pvp-battle-system'); // Lazy import helper
+            const winner = determineRoundWinner(playerSel, aiSelection);
+
+            // Update State for Clash Phase
+            return {
+                ...prev,
+                playerSelection: playerSel,
+                opponentSelection: aiSelection,
+                roundWinner: winner,
+                phase: 'clash',
+                playerWins: prev.playerWins + (winner === 'player' ? 1 : 0),
+                opponentWins: prev.opponentWins + (winner === 'opponent' ? 1 : 0),
+            };
+        });
+
+        // 애니메이션 효과 후 다음 라운드 or 종료
+        await new Promise(r => setTimeout(r, 3000)); // Clash view duration
+
+        setDoubleBattleState(prev => {
+            if (prev.round >= 3) {
+                // End Battle
+                finishDoubleBattle(prev);
+                return prev;
+            }
+            // Next Round
+            return {
+                ...prev,
+                round: prev.round + 1,
+                phase: 'ready',
+                timer: 3,
+                playerSelection: null,
+                opponentSelection: null,
+                roundWinner: null
+            };
+        });
+
+        // If not ended, loop continues via useEffect (phase becomes 'ready' -> wait -> 'choice')
+        // We need a way to transition ready->choice automatically.
+        // Add another effect or logic.
+    };
+
+    // Auto transition Ready -> Choice
+    useEffect(() => {
+        if (phase === 'double-battle' && doubleBattleState.phase === 'ready') {
+            const timer = setTimeout(() => {
+                setDoubleBattleState(prev => ({ ...prev, phase: 'choice' }));
+            }, 2000);
+            return () => clearTimeout(timer);
+        }
+    }, [phase, doubleBattleState.phase, doubleBattleState.round]);
+
+    const finishDoubleBattle = (finalState: any) => {
+        // Construct BattleResult
+        let finalWinner: 'player' | 'opponent' = 'opponent';
+        if (finalState.playerWins > finalState.opponentWins) finalWinner = 'player';
+        else if (finalState.opponentWins > finalState.playerWins) finalWinner = 'opponent';
+
+        // 3승 전승 보너스
+        const perfectBonus = finalState.playerWins === 3 ? 100 : 0;
+
+        const result: BattleResult = {
+            winner: finalWinner,
+            rounds: [], // TODO: Fill with history if needed
+            playerWins: finalState.playerWins,
+            opponentWins: finalState.opponentWins,
+            rewards: {
+                coins: (finalWinner === 'player' ? PVP_REWARDS.double.win : 0) + perfectBonus,
+                experience: finalWinner === 'player' ? PVP_REWARDS.double.exp : 10,
+                ratingChange: finalWinner === 'player' ? PVP_REWARDS.double.rating : -10
+            }
+        };
+
+        if (perfectBonus > 0) {
+            showAlert({ title: '퍼펙트 승리!', message: '3라운드 전승으로 100 코인 보너스를 획득했습니다!', type: 'success' });
+        }
+
+        applyBattleResult(result, playerDeck, opponentDeck);
         setBattleResult(result);
-        setCurrentRound(0);
-        setPhase('battle');
-        runBattleAnimation(result);
+        setPhase('result');
     };
 
     // 전투 애니메이션
@@ -258,15 +461,15 @@ export default function PVPArenaPage() {
             // 1. 대기 (뒷면)
             setAnimationPhase('ready');
             setAnimating(true);
-            await new Promise(resolve => setTimeout(resolve, 500));
+            await new Promise(resolve => setTimeout(resolve, 1000));
 
             // 2. 충돌 (뒷면끼리 2번 부딪힘)
             setAnimationPhase('clash');
-            await new Promise(resolve => setTimeout(resolve, 1500));
+            await new Promise(resolve => setTimeout(resolve, 2000));
 
             // 3. 공개 (카드 뒤집힘 + 결과)
             setAnimationPhase('reveal');
-            await new Promise(resolve => setTimeout(resolve, 3000));
+            await new Promise(resolve => setTimeout(resolve, 4000));
 
             setAnimationPhase('idle');
             setAnimating(false);
@@ -298,6 +501,9 @@ export default function PVPArenaPage() {
             color="red"
         >
             <div className="max-w-7xl mx-auto">
+                {/* Season Banner */}
+
+
                 <AnimatePresence mode="wait">
                     {/* 1단계: 성적 확인 */}
                     {phase === 'stats' && (
@@ -346,33 +552,42 @@ export default function PVPArenaPage() {
                                 </div>
                             </div>
 
+                            {/* Season Banner (moved here) */}
+                            <div className="mb-8 text-center bg-gradient-to-r from-red-900/40 via-black to-red-900/40 border-y border-red-500/30 py-4">
+                                <h2 className="text-2xl font-black text-red-500 tracking-widest orbitron mb-1">WAR OF THE BEGINNING</h2>
+                                <div className="flex items-center justify-center gap-2 text-white/60 text-sm">
+                                    <span className="font-bold text-white">Season 1</span>
+                                    <span>|</span>
+                                    <span>2026. 1. 1 ~ 2026. 1. 31</span>
+                                </div>
+                            </div>
+
                             {/* 참가 조건 */}
-                            <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-6 mb-8">
-                                <h3 className="text-lg font-bold text-yellow-400 mb-4 flex items-center gap-2">
+                            <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4 mb-8 flex flex-col md:flex-row items-center justify-between gap-4">
+                                <h3 className="text-lg font-bold text-yellow-400 flex items-center gap-2 whitespace-nowrap">
                                     <Award size={20} />
                                     참가 조건
                                 </h3>
-                                <div className="grid grid-cols-3 gap-4 text-sm">
+                                <div className="flex flex-wrap items-center justify-center gap-6 text-sm">
                                     <div className="flex items-center gap-2">
                                         <CheckCircle className={cn(
                                             state.level >= PVP_REQUIREMENTS.minLevel ? 'text-green-400' : 'text-red-400'
                                         )} size={16} />
                                         <span className="text-white/80">레벨 {PVP_REQUIREMENTS.minLevel} 이상</span>
-                                        <span className="text-cyan-400 font-bold ml-auto">Lv.{state.level}</span>
                                     </div>
+                                    <div className="w-px h-3 bg-white/20 hidden md:block" />
                                     <div className="flex items-center gap-2">
                                         <CheckCircle className={cn(
                                             state.coins >= PVP_REQUIREMENTS.entryFee ? 'text-green-400' : 'text-red-400'
                                         )} size={16} />
                                         <span className="text-white/80">참가비 {PVP_REQUIREMENTS.entryFee} 코인</span>
-                                        <span className="text-yellow-400 font-bold ml-auto">{state.coins}</span>
                                     </div>
+                                    <div className="w-px h-3 bg-white/20 hidden md:block" />
                                     <div className="flex items-center gap-2">
                                         <CheckCircle className={cn(
-                                            inventory.length >= PVP_REQUIREMENTS.minCards ? 'text-green-400' : 'text-red-400'
+                                            inventory.length >= 5 ? 'text-green-400' : 'text-red-400'
                                         )} size={16} />
-                                        <span className="text-white/80">카드 {PVP_REQUIREMENTS.minCards}장 이상</span>
-                                        <span className="text-purple-400 font-bold ml-auto">{inventory.length}</span>
+                                        <span className="text-white/80">등급별 카드 보유 (5장+)</span>
                                     </div>
                                 </div>
                             </div>
@@ -467,7 +682,9 @@ export default function PVPArenaPage() {
                                                 whileTap={{ scale: 0.95 }}
                                                 className="cursor-pointer relative"
                                                 onClick={() => {
-                                                    const targetSize = selectedMode === 'ambush' ? 7 : 5;
+                                                    let targetSize = 5;
+                                                    if (selectedMode === 'ambush' || selectedMode === 'double') targetSize = 6;
+
                                                     const isSelected = selectedCards.find(c => c.id === card.id);
                                                     if (isSelected) {
                                                         setSelectedCards(prev => prev.filter(c => c.id !== card.id));
@@ -500,7 +717,9 @@ export default function PVPArenaPage() {
                                             whileTap={{ scale: 0.95 }}
                                             className="cursor-pointer"
                                             onClick={() => {
-                                                const targetSize = selectedMode === 'ambush' ? 7 : 5;
+                                                let targetSize = 5;
+                                                if (selectedMode === 'ambush' || selectedMode === 'double') targetSize = 6;
+
                                                 const isSelected = selectedCards.find(c => c.id === card.id);
                                                 if (isSelected) {
                                                     setSelectedCards(prev => prev.filter(c => c.id !== card.id));
@@ -520,9 +739,9 @@ export default function PVPArenaPage() {
                             {/* 버튼 영역 - 하단 고정 (덱 슬롯 포함) */}
                             <div className="fixed bottom-0 left-0 right-0 bg-gradient-to-t from-black via-black/95 to-transparent pt-8 pb-4 z-50">
                                 <div className="max-w-5xl mx-auto px-4">
-                                    {/* 덱 슬롯 (모드에 따라 5 or 7개) */}
-                                    <div className="flex justify-center gap-4 mb-4">
-                                        {Array.from({ length: selectedMode === 'ambush' ? 7 : 5 }).map((_, i) => {
+                                    {/* 덱 슬롯 (모드에 따라 5 or 6개) */}
+                                    <div className="flex justify-center gap-4 mb-4 overflow-x-auto pb-2">
+                                        {Array.from({ length: (selectedMode === 'ambush' || selectedMode === 'double') ? 6 : 5 }).map((_, i) => {
                                             const card = selectedCards[i];
                                             // 가위바위보 타입 결정
                                             const getTypeInfo = (c: Card) => {
@@ -592,7 +811,7 @@ export default function PVPArenaPage() {
                                                             {(() => {
                                                                 const rarityInfo: Record<string, { text: string; bg: string; border: string }> = {
                                                                     legendary: { text: '전설', bg: 'bg-gradient-to-r from-yellow-500 to-orange-500', border: 'border-yellow-300/50' },
-                                                                    commander: { text: '사령관', bg: 'bg-gradient-to-r from-purple-600 to-pink-600', border: 'border-purple-300/50' },
+                                                                    commander: { text: '군단장', bg: 'bg-gradient-to-r from-purple-600 to-pink-600', border: 'border-purple-300/50' },
                                                                     epic: { text: '영웅', bg: 'bg-gradient-to-r from-purple-500 to-indigo-500', border: 'border-purple-300/50' },
                                                                     rare: { text: '희귀', bg: 'bg-gradient-to-r from-blue-500 to-cyan-500', border: 'border-blue-300/50' },
                                                                     unique: { text: '유니크', bg: 'bg-gradient-to-r from-green-500 to-emerald-500', border: 'border-green-300/50' },
@@ -656,7 +875,9 @@ export default function PVPArenaPage() {
                                         <button
                                             onClick={() => {
                                                 // 자동 선택 - 등급별로 균형 잡힌 덱 구성 (주력카드 우선)
-                                                const targetSize = selectedMode === 'ambush' ? 7 : 5;
+                                                let targetSize = 5;
+                                                if (selectedMode === 'ambush' || selectedMode === 'double') targetSize = 6;
+
                                                 const balancedDeck = selectBalancedDeck(inventory, targetSize);
                                                 setSelectedCards(balancedDeck as Card[]);
                                             }}
@@ -669,27 +890,27 @@ export default function PVPArenaPage() {
                                         <div className="flex-1 text-center">
                                             <span className="text-2xl font-black orbitron">
                                                 <span className={cn(
-                                                    selectedCards.length === 5 ? "text-green-400" : "text-white/60"
+                                                    selectedCards.length === ((selectedMode === 'ambush' || selectedMode === 'double') ? 6 : 5) ? "text-green-400" : "text-white/60"
                                                 )}>{selectedCards.length}</span>
-                                                <span className="text-white/40">/5</span>
+                                                <span className="text-white/40">/{(selectedMode === 'ambush' || selectedMode === 'double') ? 6 : 5}</span>
                                             </span>
                                             <span className="text-white/40 ml-2">선택됨</span>
                                         </div>
 
                                         <button
                                             onClick={handleDeckConfirm}
-                                            disabled={selectedCards.length !== (selectedMode === 'ambush' ? 7 : 5)}
+                                            disabled={selectedCards.length !== ((selectedMode === 'ambush' || selectedMode === 'double') ? 6 : 5)}
                                             className={cn(
                                                 "px-10 py-3 rounded-xl font-bold flex items-center gap-2 transition-all",
-                                                selectedCards.length === (selectedMode === 'ambush' ? 7 : 5)
+                                                selectedCards.length === ((selectedMode === 'ambush' || selectedMode === 'double') ? 6 : 5)
                                                     ? "bg-gradient-to-r from-cyan-600 to-blue-600 text-white hover:shadow-lg hover:shadow-cyan-500/50"
                                                     : "bg-gray-700 text-gray-500 cursor-not-allowed"
                                             )}
                                         >
                                             <Swords size={20} />
-                                            {selectedCards.length === (selectedMode === 'ambush' ? 7 : 5)
+                                            {selectedCards.length === ((selectedMode === 'ambush' || selectedMode === 'double') ? 6 : 5)
                                                 ? "덱 확정 및 전투 참가"
-                                                : `${selectedCards.length}/${selectedMode === 'ambush' ? 7 : 5}장 선택`
+                                                : `${selectedCards.length}/${(selectedMode === 'ambush' || selectedMode === 'double') ? 6 : 5}장 선택`
                                             }
                                         </button>
                                     </div>
@@ -771,25 +992,39 @@ export default function PVPArenaPage() {
                                 </div>
                             </motion.div>
 
-                            {/* 전투준비 VS 타이머 (중간) */}
-                            <div className="flex items-center justify-center gap-6 my-4 py-4 bg-gradient-to-r from-transparent via-white/5 to-transparent">
-                                <span className="text-2xl font-bold text-white/60">전투준비</span>
-                                <motion.div
-                                    animate={{ scale: [1, 1.2, 1] }}
-                                    transition={{ duration: 1, repeat: Infinity }}
-                                    className="text-5xl font-black text-yellow-400 orbitron"
-                                >
-                                    VS
-                                </motion.div>
-                                <div className="flex items-center gap-2">
-                                    <motion.div
-                                        animate={{ scale: [1, 1.1, 1] }}
-                                        transition={{ duration: 0.5, repeat: Infinity }}
-                                        className="text-4xl font-black text-cyan-400 orbitron"
+                            <div className="flex flex-col items-center justify-center gap-4 my-4 py-4 bg-gradient-to-r from-transparent via-white/5 to-transparent">
+                                <div className="flex items-center gap-8">
+                                    <div className="flex items-center gap-6">
+                                        <span className="text-2xl font-bold text-white/60">전투준비</span>
+                                        <motion.div
+                                            animate={{ scale: [1, 1.2, 1] }}
+                                            transition={{ duration: 1, repeat: Infinity }}
+                                            className="text-5xl font-black text-yellow-400 orbitron"
+                                        >
+                                            VS
+                                        </motion.div>
+                                        <div className="flex items-center gap-2">
+                                            <motion.div
+                                                animate={{ scale: [1, 1.1, 1] }}
+                                                transition={{ duration: 0.5, repeat: Infinity }}
+                                                className="text-4xl font-black text-cyan-400 orbitron"
+                                            >
+                                                {revealTimer}
+                                            </motion.div>
+                                            <span className="text-lg text-white/40">초</span>
+                                        </div>
+                                    </div>
+
+                                    {/* Ready/Skip Button - Moved Here */}
+                                    <button
+                                        onClick={() => {
+                                            setRevealTimer(1);
+                                        }}
+                                        className="px-8 py-2 bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-500 hover:to-orange-500 text-white font-black italic rounded-full shadow-[0_0_20px_rgba(239,68,68,0.4)] hover:shadow-[0_0_30px_rgba(239,68,68,0.6)] transition-all transform hover:scale-105 active:scale-95 flex items-center gap-2 group text-sm"
                                     >
-                                        {revealTimer}
-                                    </motion.div>
-                                    <span className="text-lg text-white/40">초</span>
+                                        <Zap className="w-4 h-4 group-hover:text-yellow-300 transition-colors" />
+                                        BATTLE START!
+                                    </button>
                                 </div>
                             </div>
 
@@ -830,16 +1065,47 @@ export default function PVPArenaPage() {
                                 battleMode={selectedMode}
                                 opponentDeck={opponentDeck}
                                 onPlacementComplete={(placement: RoundPlacement) => {
-                                    // Convert placement to cardOrder array
-                                    const order = [
-                                        playerDeck.findIndex(c => c.id === placement.round1.id),
-                                        playerDeck.findIndex(c => c.id === placement.round2.main.id),
-                                        playerDeck.findIndex(c => c.id === placement.round3.id),
-                                        playerDeck.findIndex(c => c.id === placement.round4.main.id),
-                                        playerDeck.findIndex(c => c.id === placement.round5.id),
-                                    ];
+                                    let orderedDeck: Card[] = [];
+
+                                    if (selectedMode === 'double') {
+                                        orderedDeck = [
+                                            placement.round1.main, placement.round1.hidden,
+                                            placement.round2.main, placement.round2.hidden,
+                                            placement.round3.main, placement.round3.hidden
+                                        ].filter(Boolean);
+                                    } else if (selectedMode === 'ambush') {
+                                        // Ambush: 5 Main + 1 Hidden (at R3)
+                                        // Order for simulation: [R1, R2, R3, R4, R5, Hidden]
+                                        orderedDeck = [
+                                            placement.round1.main,
+                                            placement.round2.main,
+                                            placement.round3.main,
+                                            placement.round4.main,
+                                            placement.round5.main,
+                                            placement.round3.hidden
+                                        ].filter(Boolean);
+                                    } else {
+                                        // Tactics / Sudden Death
+                                        orderedDeck = [
+                                            placement.round1.main,
+                                            placement.round2.main,
+                                            placement.round3.main,
+                                            placement.round4.main,
+                                            placement.round5.main
+                                        ].filter(Boolean);
+                                    }
+
+                                    const order = orderedDeck.map((_, i) => i);
+                                    setPlayerDeck(orderedDeck);
                                     setCardOrder(order);
-                                    handleStartBattle(order);
+                                    // Pass ordered deck directly to battle handler via state update, 
+                                    // but state update is async.
+                                    // Only Double Battle logic uses state.playerDeck directly.
+                                    // Simulate logic uses arguments.
+                                    // For Double Battle, we must wait for state? 
+                                    // Actually handleStartBattle uses current 'playerDeck' state variable.
+                                    // Since setPlayerDeck is async, we should pass the new deck to handleStartBattle.
+                                    handleStartBattle(order, orderedDeck);
                                 }}
                             />
                         </motion.div>
@@ -920,48 +1186,56 @@ export default function PVPArenaPage() {
                                         {/* 타입 표시 - 카드 뒷면 중앙 오버레이 제거됨 */}
 
 
-                                        {/* 승리 표시 */}
+                                        {/* 승리 표시 - 위치 변경 (Top Center) */}
                                         {animationPhase === 'reveal' && round.winner === 'player' && (
                                             <motion.div
-                                                initial={{ scale: 0 }}
-                                                animate={{ scale: 1 }}
-                                                className="absolute -top-4 -right-4 w-12 h-12 bg-yellow-500 rounded-full flex items-center justify-center text-2xl shadow-lg"
+                                                initial={{ x: -20, opacity: 0 }}
+                                                animate={{ x: 0, opacity: 1 }}
+                                                className="absolute -left-48 top-1/2 -translate-y-1/2 z-50 pointer-events-none"
                                             >
-                                                👑
+                                                <div className="flex items-center gap-3 bg-gradient-to-r from-yellow-500/40 via-yellow-900/40 to-transparent border-l-4 border-yellow-400 pl-6 pr-12 py-4 shadow-[0_0_20px_rgba(234,179,8,0.3)] backdrop-blur-sm transform -skew-x-12">
+                                                    <div className="transform skew-x-12 flex items-center gap-3">
+                                                        <Trophy className="w-10 h-10 text-yellow-400 drop-shadow-md" />
+                                                        <div className="flex flex-col">
+                                                            <span className="text-yellow-400 font-black text-3xl leading-none italic tracking-wider">VICTORY</span>
+                                                            <span className="text-yellow-200/60 text-xs font-bold tracking-[0.2em]">ROUND WINNER</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
                                             </motion.div>
                                         )}
                                         {animationPhase === 'reveal' && round.winner === 'opponent' && (
-                                            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                                                <span className="text-8xl text-red-500 font-black drop-shadow-lg">✕</span>
+                                            <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-50">
+                                                <span className="text-9xl text-red-600/80 font-black drop-shadow-[0_0_10px_rgba(0,0,0,0.8)] animate-pulse">✕</span>
                                             </div>
                                         )}
                                     </motion.div>
 
                                     {/* VS */}
-                                    <div className="text-center">
+                                    <div className="text-center w-24">
                                         <motion.div
-                                            animate={animationPhase === 'clash' ? { scale: [1, 1.5, 1, 1.5, 1], color: '#ff0000' } : {}}
-                                            transition={{ duration: 1 }}
+                                            animate={animationPhase === 'clash' ? { scale: [1, 2, 1], color: '#ff0000' } : {}}
+                                            transition={{ duration: 0.4 }}
                                             className="text-6xl font-black text-white/30 orbitron"
                                         >
                                             VS
                                         </motion.div>
 
-                                        {/* 승패 결과 (공개 단계에서만) */}
+                                        {/* 승패 결과 */}
                                         {animationPhase === 'reveal' && (
                                             <motion.div
                                                 initial={{ scale: 0, opacity: 0 }}
                                                 animate={{ scale: 1, opacity: 1 }}
-                                                className="mt-4"
+                                                className="mt-6"
                                             >
                                                 {round.winner === 'player' && (
-                                                    <div className="text-3xl text-green-400 font-bold">🎉 WIN!</div>
+                                                    <div className="text-3xl text-green-400 font-bold drop-shadow-lg">WIN!</div>
                                                 )}
                                                 {round.winner === 'opponent' && (
-                                                    <div className="text-3xl text-red-400 font-bold">😢 LOSE</div>
+                                                    <div className="text-3xl text-red-500 font-bold drop-shadow-lg">LOSE</div>
                                                 )}
                                                 {round.winner === 'draw' && (
-                                                    <div className="text-3xl text-yellow-400 font-bold">🤝 DRAW</div>
+                                                    <div className="text-3xl text-yellow-400 font-bold drop-shadow-lg">DRAW</div>
                                                 )}
                                             </motion.div>
                                         )}
@@ -971,18 +1245,18 @@ export default function PVPArenaPage() {
                                     <motion.div
                                         initial={{ x: 100, opacity: 0 }}
                                         animate={{
-                                            x: animationPhase === 'clash' ? [0, -50, 0, -50, 0] : 0, // 2번 충돌 (반대 방향)
+                                            x: animationPhase === 'clash' ? [0, -20, 0] : 0,
                                             scale: animationPhase === 'reveal' && round.winner === 'opponent' ? 1.1 :
                                                 animationPhase === 'reveal' && round.winner === 'player' ? 0.9 : 1,
                                             opacity: 1
                                         }}
                                         transition={{
-                                            x: { duration: 1, times: [0, 0.2, 0.5, 0.7, 1] }, // 충돌 타이밍
-                                            duration: 0.3
+                                            x: { duration: 0.4, times: [0, 0.5, 1] },
+                                            duration: 0.5
                                         }}
                                         className="text-center relative"
                                     >
-                                        {/* 카드 뒷면 (ready, clash 단계) or 앞면 (reveal 단계) */}
+                                        {/* 카드 뒷면 or 앞면 */}
                                         {animationPhase !== 'reveal' ? (
                                             <div className="w-[180px] h-[270px] relative rounded-xl overflow-hidden border-4 border-red-500/50 shadow-2xl">
                                                 <div className="absolute inset-0">
@@ -999,8 +1273,8 @@ export default function PVPArenaPage() {
                                             </div>
                                         ) : (
                                             <div className={cn(
-                                                "transition-all duration-500",
-                                                round.winner === 'player' && "grayscale opacity-60"
+                                                "transition-all duration-1000",
+                                                round.winner === 'player' && "grayscale opacity-50 blur-[1px]"
                                             )}>
                                                 <GameCard card={round.opponentCard} />
                                             </div>
@@ -1013,13 +1287,23 @@ export default function PVPArenaPage() {
 
 
                                         {/* 승리 표시 */}
+                                        {/* 승리 표시 */}
+                                        {/* 승리 표시 - 오른쪽 사이드 (Opponent) */}
                                         {animationPhase === 'reveal' && round.winner === 'opponent' && (
                                             <motion.div
-                                                initial={{ scale: 0 }}
-                                                animate={{ scale: 1 }}
-                                                className="absolute -top-4 -right-4 w-12 h-12 bg-red-500 rounded-full flex items-center justify-center text-2xl shadow-lg"
+                                                initial={{ x: 20, opacity: 0 }}
+                                                animate={{ x: 0, opacity: 1 }}
+                                                className="absolute -right-48 top-1/2 -translate-y-1/2 z-50 pointer-events-none"
                                             >
-                                                👑
+                                                <div className="flex flex-row-reverse items-center gap-3 bg-gradient-to-l from-red-600/40 via-red-900/40 to-transparent border-r-4 border-red-500 pr-6 pl-12 py-4 shadow-[0_0_20px_rgba(220,38,38,0.3)] backdrop-blur-sm transform skew-x-12">
+                                                    <div className="transform -skew-x-12 flex flex-row-reverse items-center gap-3">
+                                                        <Trophy className="w-10 h-10 text-red-500 drop-shadow-md" />
+                                                        <div className="flex flex-col items-end">
+                                                            <span className="text-red-500 font-black text-3xl leading-none italic tracking-wider">VICTORY</span>
+                                                            <span className="text-red-300/60 text-xs font-bold tracking-[0.2em]">ENEMY WIN</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
                                             </motion.div>
                                         )}
                                         {animationPhase === 'reveal' && round.winner === 'player' && (
@@ -1146,6 +1430,131 @@ export default function PVPArenaPage() {
                                     </button>
                                 </div>
                             </div>
+                        </motion.div>
+                    )}
+                    {/* 복식 승부 인터랙티브 화면 */}
+                    {phase === 'double-battle' && doubleBattleState && (
+                        <motion.div
+                            key="double-battle"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/90"
+                        >
+                            {/* Round Indicator */}
+                            <div className="absolute top-8 text-4xl font-black text-white orbitron">
+                                ROUND {doubleBattleState.round} / 3
+                            </div>
+
+                            {/* Score */}
+                            <div className="absolute top-20 flex gap-12 text-2xl font-bold">
+                                <div className="text-cyan-400">YOU: {doubleBattleState.playerWins}</div>
+                                <div className="text-red-400">ENEMY: {doubleBattleState.opponentWins}</div>
+                            </div>
+
+                            {/* Opponent Cards (Top) - Hidden unless revealed */}
+                            <div className="flex justify-center gap-8 mb-12">
+                                {opponentDeck.slice((doubleBattleState.round - 1) * 2, (doubleBattleState.round - 1) * 2 + 2).map((card, i) => {
+                                    const isRevealed = doubleBattleState.phase === 'clash';
+                                    const isSelected = doubleBattleState.opponentSelection?.id === card.id;
+
+                                    return (
+                                        <motion.div
+                                            key={`opp-${i}`}
+                                            animate={{
+                                                y: isSelected && isRevealed ? 50 : 0,
+                                                scale: isSelected && isRevealed ? 1.2 : 1,
+                                                opacity: isRevealed && !isSelected ? 0.3 : 1
+                                            }}
+                                            className="relative"
+                                        >
+                                            <div className={cn(
+                                                "w-48 h-64 rounded-xl border-2 transition-all overflow-hidden",
+                                                isRevealed && isSelected ? "border-red-500 shadow-[0_0_30px_rgba(239,68,68,0.5)]" : "border-white/20"
+                                            )}>
+                                                {isRevealed && isSelected || doubleBattleState.phase === 'choice' ? (
+                                                    <GameCard card={card} /> // Show card during choice or if selected & revealed
+                                                ) : (
+                                                    // Card Back
+                                                    <div className="w-full h-full bg-slate-900 bg-[repeating-linear-gradient(45deg,transparent,transparent_10px,#333_10px,#333_20px)] flex items-center justify-center">
+                                                        <span className="text-4xl">👹</span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </motion.div>
+                                    );
+                                })}
+                            </div>
+
+                            {/* Timer / VS Status */}
+                            <div className="my-8 h-24 flex items-center justify-center">
+                                {doubleBattleState.phase === 'ready' && (
+                                    <div className="text-3xl text-white/50 animate-pulse">준비하세요...</div>
+                                )}
+                                {doubleBattleState.phase === 'choice' && (
+                                    <div className="text-6xl font-black text-yellow-400 orbitron animate-ping">
+                                        {doubleBattleState.timer}
+                                    </div>
+                                )}
+                                {doubleBattleState.phase === 'clash' && (
+                                    <div className="text-5xl font-black text-white orbitron">
+                                        {doubleBattleState.roundWinner === 'player' ?
+                                            <span className="text-cyan-400">WIN!</span> :
+                                            doubleBattleState.roundWinner === 'opponent' ?
+                                                <span className="text-red-400">LOSE!</span> :
+                                                <span className="text-gray-400">DRAW</span>
+                                        }
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Player Cards (Bottom) - Choice */}
+                            <div className="flex justify-center gap-8 mt-4">
+                                {playerDeck.slice((doubleBattleState.round - 1) * 2, (doubleBattleState.round - 1) * 2 + 2).map((card, i) => {
+                                    const isSelected = doubleBattleState.playerSelection?.id === card.id;
+                                    const isPhaseChoice = doubleBattleState.phase === 'choice';
+                                    const isRevealed = doubleBattleState.phase === 'clash';
+
+                                    return (
+                                        <motion.div
+                                            key={`player-${i}`}
+                                            whileHover={isPhaseChoice ? { scale: 1.05, y: -20 } : {}}
+                                            whileTap={isPhaseChoice ? { scale: 0.95 } : {}}
+                                            animate={{
+                                                y: isRevealed && isSelected ? -50 : 0,
+                                                scale: isRevealed && isSelected ? 1.2 : 1,
+                                                opacity: isRevealed && !isSelected ? 0.3 : 1,
+                                                filter: isPhaseChoice && doubleBattleState.playerSelection && !isSelected ? 'grayscale(100%)' : 'none'
+                                            }}
+                                            className={cn(
+                                                "cursor-pointer transition-all",
+                                                isSelected ? "ring-4 ring-cyan-400 rounded-xl" : ""
+                                            )}
+                                            onClick={() => handleDoubleBattleSelection(card)}
+                                        >
+                                            <div className="w-48 h-64 pointer-events-none">
+                                                <GameCard card={card} />
+                                            </div>
+                                            {isPhaseChoice && (
+                                                <div className="mt-4 text-center">
+                                                    <span className={cn(
+                                                        "px-4 py-2 rounded-full font-bold",
+                                                        isSelected ? "bg-cyan-500 text-white" : "bg-white/10 text-white/50"
+                                                    )}>
+                                                        {isSelected ? "선택됨" : "선택"}
+                                                    </span>
+                                                </div>
+                                            )}
+                                        </motion.div>
+                                    );
+                                })}
+                            </div>
+
+                            {/* Instruction Text */}
+                            {doubleBattleState.phase === 'choice' && (
+                                <div className="absolute bottom-10 text-white/60 animate-bounce">
+                                    카드를 선택하여 하나빼기 승부!
+                                </div>
+                            )}
                         </motion.div>
                     )}
                 </AnimatePresence>

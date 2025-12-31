@@ -1,13 +1,13 @@
 // PVP 전투 시스템
 // 가위바위보 기반 전투 로직 및 보상 계산
 
-import { Card } from './types';
+import { Card, BattleMode, Stats, Rarity } from './types';
 import { getGameState, updateGameState } from './game-state';
 import { gameStorage } from './game-storage';
 import { BattleMode as BaseBattleMode } from './battle-modes';
 import { generateRandomCard } from './card-generation-system';
 
-export type BattleMode = 'sudden-death' | 'tactics' | 'ambush';
+export type { BattleMode } from './types';
 export type MatchType = 'realtime' | 'ai-training';
 
 export interface PVPStats {
@@ -29,12 +29,21 @@ export interface BattleParticipant {
 }
 
 export interface RoundResult {
-    round: number;
+    round: number | string;
     playerCard: Card;
     opponentCard: Card;
     winner: 'player' | 'opponent' | 'draw';
     playerType: 'efficiency' | 'creativity' | 'function';
     opponentType: 'efficiency' | 'creativity' | 'function';
+}
+
+export interface RoundPlacement {
+    round1: Card | null;
+    round2Main: Card | null;
+    round3Main: Card | null;
+    round3Hidden: Card | null;
+    round4Main: Card | null;
+    round5: Card | null;
 }
 
 export interface BattleResult {
@@ -65,6 +74,7 @@ export const PVP_REWARDS = {
     'sudden-death': { win: 100, exp: 30, rating: 15 },
     'tactics': { win: 100, exp: 50, rating: 25 },
     'ambush': { win: 100, exp: 70, rating: 35 },
+    'double': { win: 100, exp: 60, rating: 30 },
     loss: { coins: 0, exp: 10, rating: -10 },
 };
 
@@ -268,7 +278,7 @@ export function determineRoundWinner(
     const playerRank = getRarityRank(playerCard.rarity);
     const opponentRank = getRarityRank(opponentCard.rarity);
     if (playerRank > opponentRank) return 'player';
-    if (opponentRank > playerRank) return 'opponent';
+    if (opponentRank > opponentRank) return 'opponent';
 
     return 'draw';
 }
@@ -276,135 +286,79 @@ export function determineRoundWinner(
 /**
  * AI 상대 생성 (더미 지휘관 시스템 적용)
  */
-export function generateAIOpponent(playerLevel: number = 1, cardPool: Card[] = [], playerRating: number = 0): BattleParticipant {
-    // 1. 랜덤 지휘관 선택
-    const commander = DUMMY_COMMANDERS[Math.floor(Math.random() * DUMMY_COMMANDERS.length)];
-    const displayName = `${commander.title} ${commander.name}`;
+export function generateOpponentDeck(
+    playerLevel: number,
+    cardPool?: Card[],
+    targetSize: number = 5
+): BattleParticipant {
+    // Determine AI Difficulty based on Level (can replace with Rating if passed)
+    // Level 1-3: Easy (Common/Rare, unoptimized)
+    // Level 4+: Hard (Higher rarity, optimized stats)
+    const isEasyMode = playerLevel < 4;
+
+    const COMMANDER_TYPES = [
+        { name: '맹장형', description: '공격적인 성향의 지휘관', preferredType: 'EFFICIENCY' },
+        { name: '지장형', description: '창의적인 전술의 지휘관', preferredType: 'CREATIVITY' },
+        { name: '덕장형', description: '기능성을 중시하는 지휘관', preferredType: 'FUNCTION' },
+        { name: '운장형', description: '밸런스를 중시하는 지휘관', preferredType: 'BALANCED' }
+    ];
+
+    const commander = COMMANDER_TYPES[Math.floor(Math.random() * COMMANDER_TYPES.length)];
+    const displayName = `[AI] ${commander.name} ${commander.preferredType === 'BALANCED' ? '' : commander.preferredType} `;
 
     let aiCards: Card[] = [];
 
-    // 0. 초보자 배려 모드 (레이팅 1100 미만, 레이팅 정보 없으면 기본 1000으로 간주)
-    // 패턴: 보(Paper) 4개, 가위(Scissors) 1개 (보보보보가위)
-    const currentRating = playerRating !== undefined ? playerRating : 1000;
+    // Generator Helper
+    const generateAICard = (index: number): Card => {
+        // Easy Mode: Common (70%), Rare (30%)
+        // Hard Mode: Rare (40%), Epic (40%), Legendary/Commander (20%)
+        const roll = Math.random();
+        let rarity: Rarity = 'common';
 
-    if (currentRating < 1100) {
-        console.log("👶 Easy Mode AI Activated (Rating < 1100)");
-
-        // 보 (Paper) = CREATIVITY
-        const paperCard = {
-            id: 'easy-paper',
-            name: '초보자용 보',
-            rarity: 'common',
-            type: 'CREATIVITY',
-            level: Math.max(1, playerLevel - 1), // 플레이어보다 낮은 레벨
-            stats: { efficiency: 0, creativity: 10, function: 0, totalPower: 10 }
-        };
-
-        // 가위 (Scissors) = FUNCTION
-        const scissorsCard = {
-            id: 'easy-scissors',
-            name: '초보자용 가위',
-            rarity: 'common',
-            type: 'FUNCTION',
-            level: Math.max(1, playerLevel - 1),
-            stats: { efficiency: 0, creativity: 0, function: 10, totalPower: 10 }
-        };
-
-        // 4 Paper + 1 Scissors
-        aiCards = [
-            { ...paperCard, id: `ai-easy-1` },
-            { ...paperCard, id: `ai-easy-2` },
-            { ...paperCard, id: `ai-easy-3` },
-            { ...paperCard, id: `ai-easy-4` },
-            { ...scissorsCard, id: `ai-easy-5` }
-        ] as any; // Cast to satisfy specific card properties if needed
-
-        return {
-            name: "초보자 도우미 봇",
-            level: Math.max(1, playerLevel - 1),
-            deck: aiCards,
-            style: "초보자를 위해 단순한 패턴(보보보보가위)을 사용합니다."
-        };
-    }
-
-    // 2. 덱 구성 시도 (기존 풀 활용)
-    // 풀이 충분하다면 지휘관 성향에 맞는 카드 위주로 선택
-    if (cardPool && Array.isArray(cardPool) && cardPool.length >= 10) {
-        // 10장 이상이어야 성향 선택 여지가 있음
-        const validPool = cardPool.filter(c => c && c.stats);
-
-        if (commander.preferredType !== 'BALANCED') {
-            // 선호 타입 우선 필터링
-            const preferredCards = validPool.filter(c => getCardType(c).toUpperCase() === commander.preferredType);
-            // 나머지는 일반
-            const otherCards = validPool.filter(c => getCardType(c).toUpperCase() !== commander.preferredType);
-
-            // 선호 카드에서 3~4장 선택, 나머지에서 채우기
-            const targetPreferredCount = 3 + Math.floor(Math.random() * 2);
-
-            const selectedPreferred = [...preferredCards].sort(() => Math.random() - 0.5).slice(0, targetPreferredCount);
-            const selectedOther = [...otherCards].sort(() => Math.random() - 0.5).slice(0, 5 - selectedPreferred.length);
-
-            aiCards = [...selectedPreferred, ...selectedOther];
+        if (isEasyMode) {
+            rarity = roll > 0.7 ? 'rare' : 'common';
         } else {
-            // 밸런스형: 완전 랜덤
-            aiCards = [...validPool].sort(() => Math.random() - 0.5).slice(0, 5);
+            if (roll > 0.8) rarity = 'legendary';
+            else if (roll > 0.4) rarity = 'epic';
+            else rarity = 'rare';
         }
-    }
 
-    // 풀이 5장 미만이거나, 위 로직에서 5장을 못 채웠다면 풀 전체 랜덤 사용 시도
-    if (aiCards.length < 5 && cardPool && cardPool.length >= 5) {
-        aiCards = [...cardPool].sort(() => Math.random() - 0.5).slice(0, 5);
-    }
+        const card = generateRandomCard(rarity);
+        card.id = `ai - gen - ${Date.now()} -${index} `;
+        card.ownerId = 'ai-bot';
 
-    // AI 카드 ID 및 속성 정규화
-    if (aiCards.length === 5) {
-        aiCards = aiCards.map((card, index) => {
-            let aiType = card.type;
-            if (!aiType) {
-                const typeStr = getCardType(card);
-                if (typeStr === 'efficiency') aiType = 'EFFICIENCY';
-                else if (typeStr === 'creativity') aiType = 'CREATIVITY';
-                else aiType = 'FUNCTION';
-            }
-            return {
-                ...card,
-                id: `ai-${card.id}-${Date.now()}-${index}`,
-                name: `AI ${card.name || 'Unit'}`,
-                ownerId: 'ai-bot',
-                type: aiType
-            };
-        });
-    } else {
-        // 3. 풀이 아예 없거나 부족하면 순수 랜덤 생성 (Fallback)
-        aiCards = Array.from({ length: 5 }).map((_, i) => {
-            const card = generateRandomCard('pro'); // AI는 항상 Pro 등급 이상의 카드 사용
-            card.id = `ai-gen-${Date.now()}-${i}`;
-            card.ownerId = 'ai-bot';
-            card.level = playerLevel || 1;
+        // Level Scaling
+        // Easy: Player Level or -1
+        // Hard: Player Level + Random(0~2)
+        const levelOffset = isEasyMode ? -1 : Math.floor(Math.random() * 3);
+        card.level = Math.max(1, playerLevel + levelOffset);
 
-            // 지휘관 성향 반영하여 스탯 보정 (가상)
-            const statMultiplier = 1 + (Math.max(1, playerLevel) - 1) * 0.1; // 레벨당 10% 증가
+        // Stat Multiplier based on Level
+        // Base stats are usually low (5-10). We scale them up.
+        const statMultiplier = 1 + (card.level - 1) * 0.15;
 
-            if (commander.preferredType === 'EFFICIENCY') card.stats.efficiency = (card.stats.efficiency || 0) + 10;
-            if (commander.preferredType === 'CREATIVITY') card.stats.creativity = (card.stats.creativity || 0) + 10;
-            if (commander.preferredType === 'FUNCTION') card.stats.function = (card.stats.function || 0) + 10;
+        // Apply Commander Preference (Bonus Stats)
+        if (commander.preferredType === 'EFFICIENCY') card.stats.efficiency = (card.stats.efficiency || 5) + (isEasyMode ? 5 : 15);
+        if (commander.preferredType === 'CREATIVITY') card.stats.creativity = (card.stats.creativity || 5) + (isEasyMode ? 5 : 15);
+        if (commander.preferredType === 'FUNCTION') card.stats.function = (card.stats.function || 5) + (isEasyMode ? 5 : 15);
 
-            // 레벨 스케일링 적용
-            card.stats.efficiency = Math.floor((card.stats.efficiency || 5) * statMultiplier);
-            card.stats.creativity = Math.floor((card.stats.creativity || 5) * statMultiplier);
-            card.stats.function = Math.floor((card.stats.function || 5) * statMultiplier);
-            card.stats.totalPower = card.stats.efficiency + card.stats.creativity + card.stats.function;
+        // Finalize Stats
+        card.stats.efficiency = Math.floor((card.stats.efficiency || 5) * statMultiplier);
+        card.stats.creativity = Math.floor((card.stats.creativity || 5) * statMultiplier);
+        card.stats.function = Math.floor((card.stats.function || 5) * statMultiplier);
+        card.stats.totalPower = card.stats.efficiency + card.stats.creativity + card.stats.function;
 
-            // 타입 재설정
-            const maxStat = Math.max(card.stats.efficiency || 0, card.stats.creativity || 0, card.stats.function || 0);
-            if (maxStat === (card.stats.efficiency || 0)) card.type = 'EFFICIENCY';
-            else if (maxStat === (card.stats.creativity || 0)) card.type = 'CREATIVITY';
-            else card.type = 'FUNCTION';
+        // Determine Type based on highest stat
+        const maxStat = Math.max(card.stats.efficiency, card.stats.creativity, card.stats.function);
+        if (maxStat === card.stats.efficiency) card.type = 'EFFICIENCY';
+        else if (maxStat === card.stats.creativity) card.type = 'CREATIVITY';
+        else card.type = 'FUNCTION';
 
-            return card;
-        });
-    }
+        return card;
+    };
+
+    // Generate Deck
+    aiCards = Array.from({ length: targetSize }).map((_, i) => generateAICard(i));
 
     return {
         name: displayName,
@@ -436,7 +390,7 @@ export function simulateBattle(
         // 단판승부: R1 ~ R5 순차 진행 (기존 [0, 1, 3, 4] -> [0, 1, 2, 3, 4]로 수정하여 UI 순서와 일치시킴)
         const roundSequence = [0, 1, 2, 3, 4];
 
-        console.log(`⚙️ Sudden Death: Sequential rounds [1-5]:`, roundSequence);
+        console.log(`⚙️ Sudden Death: Sequential rounds[1 - 5]: `, roundSequence);
 
         for (const roundIndex of roundSequence) {
             const playerIndex = playerOrder[roundIndex];
@@ -485,14 +439,96 @@ export function simulateBattle(
 
             // 승자가 결정되면 즉시 종료
             if (winner !== 'draw') {
-                console.log(`✅ Winner in Round ${roundIndex + 1}: ${winner}`);
+                console.log(`✅ Winner in Round ${roundIndex + 1}: ${winner} `);
                 break;
             }
 
             console.log(`⚖️ Round ${roundIndex + 1}: Draw, next card...`);
         }
+    } else if (mode === 'ambush') {
+        // 전략승부: 5라운드, R3에 히든 카드(매복) 사용 (총 6장)
+        // 덱 구성: 0~4(메인), 5(R3히든)
+        // R3에서 메인과 히든이 각각 전투를 치름 (최대 2승 가능)
+        const winsNeeded = 4; // 총 승점 6점(R1,2,4,5 + R3x2) 중 과반? 혹은 그냥 승수 체크
+        // R1(1) + R2(1) + R3(2) + R4(1) + R5(1) = 6 points total. Need > 3?
+
+        console.log(`⚙️ Ambush: 5 rounds(R3 Dual Battle)`);
+
+        for (let i = 0; i < 5; i++) {
+            const playerIndex = playerOrder[i];
+            const opponentIndex = opponentOrder[i];
+
+            if (playerIndex === undefined || opponentIndex === undefined) continue;
+
+            const playerCard = player.deck[playerIndex];
+            const opponentCard = opponent.deck[opponentIndex];
+
+            // 1차 전투 판정 (모든 라운드 공통)
+            let winner = determineRoundWinner(playerCard, opponentCard);
+
+            if (winner === 'player') playerWins++;
+            if (winner === 'opponent') opponentWins++;
+
+            rounds.push({
+                round: i === 2 ? '3-1' : i + 1,
+                playerCard,
+                opponentCard,
+                winner,
+                playerType: getCardType(playerCard),
+                opponentType: getCardType(opponentCard),
+            });
+
+            // R3 Special Logic: Dual Battle
+            if (i === 2) { // Round 3 (Index 2)
+                const hiddenIndex = 5; // 6th card
+                if (player.deck[hiddenIndex]) {
+                    const hiddenCard = player.deck[hiddenIndex];
+                    console.log(`🥷 Ambush Dual Battle in Round 3!`);
+
+                    // 2차 전투 판정 (히든 카드 vs 상대 R3 카드)
+                    // 상대는 R3 카드를 2번 상대함
+                    const hiddenWinner = determineRoundWinner(hiddenCard, opponentCard);
+
+                    rounds.push({
+                        round: '3-2', // Round 3-2 (Hidden)
+                        playerCard: hiddenCard,
+                        opponentCard: opponentCard, // Same opponent card
+                        winner: hiddenWinner,
+                        playerType: getCardType(hiddenCard),
+                        opponentType: getCardType(opponentCard),
+                    });
+
+                    // Scoring Logic with Negation
+                    if (hiddenWinner === 'player') {
+                        playerWins++;
+                        // Ambush Success: If player wins 3-2, opponent's 3-1 win is negated (0 points)
+                        if (winner === 'opponent') {
+                            opponentWins--; // Cancel point
+                            console.log('✅ Ambush Correction: Opponent R3-1 win negated by R3-2 Player Win');
+                        }
+                    } else if (hiddenWinner === 'opponent') {
+                        opponentWins++;
+                    }
+                }
+            }
+
+            // Ambush Early Exit: 3점 선취 시 종료 (퍼펙트 승리 등)
+            if (playerWins >= 3 || opponentWins >= 3) {
+                console.log(`✅ Ambush: ${playerWins >= 3 ? 'Player' : 'Opponent'} reached 3 wins! Early exit.`);
+                break;
+            }
+        }
+    } else if (mode === 'double') {
+        // 복식승부: UI 상호작용으로 진행되므로 시뮬레이션에서는 빈 결과 반환
+        return {
+            winner: 'player',
+            rounds: [],
+            playerWins: 0,
+            opponentWins: 0,
+            rewards: { coins: 0, experience: 0, ratingChange: 0 }
+        };
     } else {
-        // 전술승부: 5라운드 진행, 비기면 전투력 비교
+        // 전술승부 (Tactics): 5라운드 정공법
         const winsNeeded = 3;
         console.log(`⚙️ Tactics: 5 rounds, 3 wins needed`);
 
@@ -522,7 +558,7 @@ export function simulateBattle(
             if (winner === 'opponent') opponentWins++;
 
             rounds.push({
-                round: i + 1,
+                round: i === 2 ? '3-1' : i + 1,
                 playerCard,
                 opponentCard,
                 winner,
@@ -607,7 +643,7 @@ function processCardExchange(
             .slice(0, CARD_EXCHANGE.cardsToExchange)
             .map((c, i) => ({
                 ...c,
-                id: `loot-${Date.now()}-${i}`,
+                id: `loot - ${Date.now()} -${i} `,
                 ownerId: 'player',
                 acquiredAt: new Date()
             }));
@@ -672,7 +708,7 @@ export async function applyBattleResult(
     // 2. 글로벌 랭킹 업데이트 (실패해도 계속 진행)
     try {
         const state = getGameState();
-        const playerName = `Player_${state.level}`;
+        const playerName = `Player_${state.level} `;
         await updateGlobalRanking(playerName, newRating, updatedStats);
         console.log("✅ Global ranking updated");
     } catch (error) {
@@ -687,7 +723,7 @@ export async function applyBattleResult(
         }
         if (result.rewards.experience > 0) {
             const { leveledUp } = await gameStorage.addExperience(result.rewards.experience);
-            console.log(`✨ Added ${result.rewards.experience} exp (Level Up: ${leveledUp})`);
+            console.log(`✨ Added ${result.rewards.experience} exp(Level Up: ${leveledUp})`);
         }
     } catch (error) {
         console.error("❌ Failed to apply rewards:", error);

@@ -22,7 +22,7 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
         toggleMute
     } = useSound();
     const { user } = useFirebase();
-    const { applyAdminCheat } = useUser();
+    // const { applyAdminCheat } = useUser();
 
     const isAdmin = user?.email === 'nerounni@gmail.com';
 
@@ -110,31 +110,7 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                             </div>
                         </div>
 
-                        {/* Admin Section */}
-                        {isAdmin && (
-                            <div className="space-y-6 pt-4 border-t border-white/5">
-                                <div className="flex items-center gap-2 mb-2">
-                                    <Zap size={14} className="text-yellow-500" />
-                                    <span className="text-[11px] font-black orbitron text-yellow-400 tracking-widest uppercase">Admin Terminal</span>
-                                </div>
-                                <div className="p-4 rounded-2xl bg-yellow-500/5 border border-yellow-500/10 flex flex-col gap-4">
-                                    <p className="text-[10px] text-yellow-500/70 font-bold orbitron">Unauthorized override of neural credits and rank.</p>
-                                    <Button
-                                        color="warning"
-                                        variant="shadow"
-                                        onPress={async () => {
-                                            if (confirm('모든 자원과 레벨을 최대치로 수정하시겠습니까?')) {
-                                                await applyAdminCheat();
-                                                alert('관리자 수정 완료!');
-                                            }
-                                        }}
-                                        className="w-full font-black orbitron text-[10px] tracking-widest h-10 shadow-[0_0_15px_rgba(234,179,8,0.2)]"
-                                    >
-                                        MAXIMIZE RESOURCES
-                                    </Button>
-                                </div>
-                            </div>
-                        )}
+                        {/* Admin Section (Removed) */}
                     </ModalBody>
 
                     <ModalFooter className="border-t border-white/5 pt-4">

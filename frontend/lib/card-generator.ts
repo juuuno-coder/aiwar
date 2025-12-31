@@ -56,22 +56,21 @@ export function generateRandomCard(ownerId: string, forcedRarity?: Rarity, insig
     }
 
     const statRanges: Record<Rarity, { min: number, max: number }> = {
-        common: { min: 10, max: 40 },
-        rare: { min: 41, max: 60 },
-        epic: { min: 61, max: 75 },
-        legendary: { min: 76, max: 90 },
-        unique: { min: 91, max: 100 },
-        commander: { min: 100, max: 120 }
+        common: { min: 40, max: 60 },
+        rare: { min: 50, max: 70 },
+        epic: { min: 60, max: 80 },
+        legendary: { min: 70, max: 90 },
+        unique: { min: 80, max: 100 },
+        commander: { min: 80, max: 100 }
     };
-
     const range = statRanges[rarity];
+    const totalPower = range.min + Math.floor(Math.random() * (range.max - range.min + 1));
     const stats: Stats = {
-        efficiency: range.min + Math.floor(Math.random() * (range.max - range.min + 1)),
-        creativity: range.min + Math.floor(Math.random() * (range.max - range.min + 1)),
-        function: range.min + Math.floor(Math.random() * (range.max - range.min + 1)),
-        totalPower: 0
+        efficiency: Math.floor(totalPower * 0.35 + Math.random() * 5),
+        creativity: Math.floor(totalPower * 0.35 + Math.random() * 5),
+        function: Math.floor(totalPower * 0.30 + Math.random() * 5),
+        totalPower: totalPower
     };
-    stats.totalPower = (stats.efficiency || 0) + (stats.creativity || 0) + (stats.function || 0);
 
     const types: AIType[] = ['EFFICIENCY', 'CREATIVITY', 'COST'];
     const type = types[Math.floor(Math.random() * types.length)];

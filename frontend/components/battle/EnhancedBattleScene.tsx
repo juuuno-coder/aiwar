@@ -2,17 +2,19 @@
 
 import { motion, AnimatePresence } from 'framer-motion';
 import { useBattleAnimation } from '@/hooks/useBattleAnimation';
-import { BattleType } from '@/lib/battle-victory-system';
+// import { BattleType } from '@/lib/types';
+import { BattleResult } from '@/lib/pvp-battle-system';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
 
 interface EnhancedBattleSceneProps {
     playerCards: any[];
     enemyCards: any[];
-    battleType?: BattleType;
-    playerHiddenCards?: { round2?: any; round4?: any };
-    enemyHiddenCards?: { round2?: any; round4?: any };
+    battleType?: string;
+    playerHiddenCards?: { round2?: any; round3?: any; round4?: any };
+    enemyHiddenCards?: { round2?: any; round3?: any; round4?: any };
     onBattleEnd: (victory: boolean) => void;
+    battleResult?: BattleResult;
 }
 
 export default function EnhancedBattleScene({
@@ -22,6 +24,7 @@ export default function EnhancedBattleScene({
     playerHiddenCards,
     enemyHiddenCards,
     onBattleEnd,
+    battleResult
 }: EnhancedBattleSceneProps) {
     const { state } = useBattleAnimation(
         playerCards,
@@ -29,7 +32,8 @@ export default function EnhancedBattleScene({
         battleType,
         playerHiddenCards,
         enemyHiddenCards,
-        onBattleEnd
+        onBattleEnd,
+        battleResult
     );
 
     const getCardImage = (card: any) => {

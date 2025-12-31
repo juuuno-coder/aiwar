@@ -22,8 +22,8 @@ export default function UnitReceiptModal({ isOpen, onClose, units }: UnitReceipt
         <Modal
             isOpen={isOpen}
             onClose={onClose}
-            size={units.length > 5 ? 'full' : units.length > 3 ? 'xl' : 'lg'}
-            className="bg-[#050505]/95 backdrop-blur-2xl border-white/10 shadow-[0_0_100px_rgba(0,0,0,1)] max-h-[95vh]"
+            size={units.length >= 5 ? '2xl' : units.length > 3 ? 'xl' : 'lg'} // Force larger size for 5 cards
+            className="bg-[#050505]/95 backdrop-blur-2xl border-white/10 shadow-[0_0_100px_rgba(0,0,0,1)] max-h-[95vh] w-[95vw] max-w-7xl" // Added explicit width overrides
         >
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_var(--tw-gradient-stops))] from-blue-500/10 via-transparent to-transparent pointer-events-none" />
 
@@ -45,7 +45,7 @@ export default function UnitReceiptModal({ isOpen, onClose, units }: UnitReceipt
 
             <ModalBody className="py-8">
                 <div className={cn(
-                    "grid gap-6 items-center justify-center auto-rows-auto",
+                    "grid gap-4 md:gap-8 items-center justify-center auto-rows-auto", // Increased gap
                     units.length === 1 ? "grid-cols-1 max-w-[280px] mx-auto" :
                         units.length <= 3 ? "grid-cols-2 md:grid-cols-3" :
                             "grid-cols-2 md:grid-cols-3 lg:grid-cols-5"
@@ -75,7 +75,7 @@ export default function UnitReceiptModal({ isOpen, onClose, units }: UnitReceipt
                     className="h-14 px-16 bg-white text-black font-black orbitron rounded-2xl hover:bg-gray-200 transition-all shadow-[0_10px_40px_rgba(255,255,255,0.1)] group"
                     startContent={<Sparkles size={18} className="group-hover:animate-spin" />}
                 >
-                    {language === 'ko' ? '데이터 동기화 완료' : 'COMPLETE SYNC'}
+                    {language === 'ko' ? '카드 받기' : 'RECEIVE CARDS'}
                 </Button>
             </ModalFooter>
         </Modal>

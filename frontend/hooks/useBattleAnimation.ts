@@ -1,13 +1,21 @@
 import { useState, useCallback, useEffect } from 'react';
-import { RoundResult, VictoryState, calculateVictoryPoints, BattleType } from '@/lib/battle-victory-system';
+import { determineRoundWinner, BattleResult, RoundResult } from '@/lib/pvp-battle-system';
+// import { BattleType } from '@/lib/types';
 
 export type AnimationPhase = 'idle' | 'draw' | 'clash' | 'result' | 'hidden-draw' | 'hidden-clash' | 'hidden-result' | 'victory';
 
 export interface BattleAnimationState {
     currentRound: number;
     animationPhase: AnimationPhase;
-    results: RoundResult[];
-    victoryState: VictoryState;
+    results: RoundResult[]; // Uses PVP RoundResult
+    victoryState: {
+        playerScore: number;
+        enemyScore: number;
+        playerWonCards: any[];
+        enemyWonCards: any[];
+        isGameOver: boolean;
+        finalWinner: 'player' | 'opponent' | null;
+    };
     activePlayerCard: any | null;
     activeEnemyCard: any | null;
     activePlayerHiddenCard: any | null;
@@ -17,10 +25,11 @@ export interface BattleAnimationState {
 export function useBattleAnimation(
     playerCards: any[],
     enemyCards: any[],
-    battleType: BattleType = 'tactical',
-    playerHiddenCards?: { round2?: any; round4?: any },
-    enemyHiddenCards?: { round2?: any; round4?: any },
-    onBattleEnd?: (victory: boolean) => void
+    battleType: string = 'tactics',
+    playerHiddenCards?: { round2?: any; round3?: any; round4?: any },
+    enemyHiddenCards?: { round2?: any; round3?: any; round4?: any },
+    onBattleEnd?: (victory: boolean) => void,
+    precalculatedResult?: BattleResult // Optional: Use simulation result
 ) {
     const [state, setState] = useState<BattleAnimationState>({
         currentRound: 0,
@@ -41,146 +50,205 @@ export function useBattleAnimation(
     });
 
     /**
-     * 가위바위보 판정
-     */
-    const determineWinner = useCallback((playerCard: any, enemyCard: any): 'player' | 'enemy' | 'draw' => {
-        const playerType = playerCard.type || 'EFFICIENCY';
-        const enemyType = enemyCard.type || 'EFFICIENCY';
-
-        if (playerType === enemyType) return 'draw';
-
-        const winConditions: Record<string, string> = {
-            'EFFICIENCY': 'CREATIVITY',  // 바위 > 가위
-            'CREATIVITY': 'FUNCTION',    // 가위 > 보
-            'FUNCTION': 'EFFICIENCY',    // 보 > 바위
-        };
-
-        return winConditions[playerType] === enemyType ? 'player' : 'enemy';
-    }, []);
-
-    /**
      * 라운드 실행
      */
     const playRound = useCallback(async () => {
-        const roundNumber = state.currentRound + 1;
+        const roundIndex = state.currentRound; // 0-based index
+        const roundNumber = roundIndex + 1; // 1-based round number
 
-        if (roundNumber > playerCards.length) return;
+        // Check bounds
+        if (!precalculatedResult && roundIndex >= playerCards.length) return;
+        if (precalculatedResult && roundIndex >= 5) return; // Should not exceed 5 rounds
         if (state.victoryState.isGameOver) return;
 
-        const playerCard = playerCards[roundNumber - 1];
-        const enemyCard = enemyCards[roundNumber - 1];
-        const isHiddenRound = battleType === 'strategic' && (roundNumber === 2 || roundNumber === 4);
+        // Determine if this round has hidden phase
+        const isAmbushRound = battleType === 'ambush' && roundNumber === 3;
 
-        // 히든 카드 가져오기
-        const playerHiddenCard = isHiddenRound
-            ? (roundNumber === 2 ? playerHiddenCards?.round2 : playerHiddenCards?.round4)
-            : null;
-        const enemyHiddenCard = isHiddenRound
-            ? (roundNumber === 2 ? enemyHiddenCards?.round2 : enemyHiddenCards?.round4)
-            : null;
+        // Get cards
+        const playerCard = playerCards[roundIndex];
+        const enemyCard = enemyCards[roundIndex];
 
-        // Phase 1: 메인 카드 뽑기
+        if (!playerCard || !enemyCard) {
+            // Safety check
+            if (precalculatedResult && precalculatedResult.winner) {
+                // Force finish if cards missing but result exists (early win reached)
+                setState(prev => ({
+                    ...prev,
+                    animationPhase: 'victory',
+                    victoryState: {
+                        ...prev.victoryState,
+                        isGameOver: true,
+                        finalWinner: precalculatedResult.winner
+                    }
+                }));
+            }
+            return;
+        }
+
+        // START ANIMATION SEQUENCE
+
+        // Phase 1: Draw Main Cards
         setState(prev => ({
             ...prev,
             animationPhase: 'draw',
             activePlayerCard: playerCard,
             activeEnemyCard: enemyCard,
         }));
-
         await new Promise(resolve => setTimeout(resolve, 500));
 
-        // Phase 2: 메인 카드 충돌
+        // Phase 2: Clash
         setState(prev => ({ ...prev, animationPhase: 'clash' }));
         await new Promise(resolve => setTimeout(resolve, 1000));
 
-        // Phase 3: 메인 카드 결과
-        const mainWinner = determineWinner(playerCard, enemyCard);
+        // Phase 3: Result
+        // Use precalculated result if available
+        let mainWinner: 'player' | 'opponent' | 'draw' = 'draw';
+        let hiddenWinner: 'player' | 'opponent' | 'draw' | undefined;
+        let roundRes: RoundResult | undefined;
+
+        if (precalculatedResult) {
+            // Logic for finding main result:
+            // Ambush Round 3 Main is '3-1', others are numbers
+            const targetRoundLabel = battleType === 'ambush' && roundNumber === 3 ? '3-1' : roundNumber;
+            // Loose matching: round might be number or string in result
+            roundRes = precalculatedResult.rounds.find(r => r.round == targetRoundLabel);
+            mainWinner = roundRes?.winner || 'draw';
+        } else {
+            mainWinner = determineRoundWinner(playerCard, enemyCard);
+        }
 
         setState(prev => ({ ...prev, animationPhase: 'result' }));
         await new Promise(resolve => setTimeout(resolve, 800));
 
-        let hiddenWinner: 'player' | 'enemy' | 'draw' | undefined;
+        // Handling Hidden Phase (Ambush R3)
+        if (isAmbushRound) {
+            const playerHidden = playerHiddenCards?.round3;
+            const enemyHidden = enemyHiddenCards?.round3;
 
-        // 히든 라운드 처리
-        if (isHiddenRound && playerHiddenCard && enemyHiddenCard) {
-            // Phase 4: 히든 카드 뽑기
-            setState(prev => ({
-                ...prev,
-                animationPhase: 'hidden-draw',
-                activePlayerHiddenCard: playerHiddenCard,
-                activeEnemyHiddenCard: enemyHiddenCard,
-            }));
+            if (playerHidden && enemyHidden) {
+                // Phase 4: Draw Hidden
+                setState(prev => ({
+                    ...prev,
+                    animationPhase: 'hidden-draw',
+                    activePlayerHiddenCard: playerHidden,
+                    activeEnemyHiddenCard: enemyHidden,
+                }));
+                await new Promise(resolve => setTimeout(resolve, 500));
 
-            await new Promise(resolve => setTimeout(resolve, 500));
+                // Phase 5: Hidden Clash
+                setState(prev => ({ ...prev, animationPhase: 'hidden-clash' }));
+                await new Promise(resolve => setTimeout(resolve, 1000));
 
-            // Phase 5: 히든 카드 충돌
-            setState(prev => ({ ...prev, animationPhase: 'hidden-clash' }));
-            await new Promise(resolve => setTimeout(resolve, 1000));
+                // Phase 6: Hidden Result
+                if (precalculatedResult) {
+                    const hiddenRes = precalculatedResult.rounds.find(r => r.round == '3-2');
+                    hiddenWinner = hiddenRes?.winner;
+                } else {
+                    hiddenWinner = determineRoundWinner(playerHidden, enemyHidden);
+                }
 
-            // Phase 6: 히든 카드 결과
-            hiddenWinner = determineWinner(playerHiddenCard, enemyHiddenCard);
-
-            setState(prev => ({ ...prev, animationPhase: 'hidden-result' }));
-            await new Promise(resolve => setTimeout(resolve, 800));
+                setState(prev => ({ ...prev, animationPhase: 'hidden-result' }));
+                await new Promise(resolve => setTimeout(resolve, 800));
+            }
         }
 
-        // 최종 라운드 결과 생성
-        const roundResult: RoundResult = {
-            roundNumber,
-            winner: mainWinner,
-            isHiddenRound,
-            playerCard,
-            enemyCard,
-            hiddenCardWinner: hiddenWinner,
-            playerHiddenCard,
-            enemyHiddenCard,
-        };
+        // UPDATE STATE
+        setState(prev => {
+            const newResults = [...prev.results];
+            if (roundRes) newResults.push(roundRes); // Store if available
 
-        const newResults = [...state.results, roundResult];
-        const newVictoryState = calculateVictoryPoints(newResults, battleType);
+            // Calculate Score Updates from previous state
+            let newPlayerScore = prev.victoryState.playerScore;
+            let newEnemyScore = prev.victoryState.enemyScore;
+            const newPlayerWonCards = [...prev.victoryState.playerWonCards];
+            const newEnemyWonCards = [...prev.victoryState.enemyWonCards];
 
-        setState(prev => ({
-            ...prev,
-            results: newResults,
-            victoryState: newVictoryState,
-            currentRound: roundNumber,
-        }));
+            // Main Round Scoring
+            if (mainWinner === 'player') {
+                newPlayerScore += 1;
+                newPlayerWonCards.push(playerCard);
+            } else if (mainWinner === 'opponent') {
+                newEnemyScore += 1;
+                newEnemyWonCards.push(enemyCard);
+            }
 
-        await new Promise(resolve => setTimeout(resolve, 500));
+            // Hidden Round Scoring (Ambush)
+            if (isAmbushRound && hiddenWinner) {
+                if (hiddenWinner === 'player') {
+                    // Ambush Negation Logic: If Player wins hidden, Enemy loses '3-1' point
+                    if (mainWinner === 'opponent') {
+                        newEnemyScore = Math.max(0, newEnemyScore - 1);
+                        // Also consider removing won card? Logic too complex for visual.
+                        // Just updating score is enough for user feedback.
+                    }
+                    newPlayerScore += 1;
+                    if (playerHiddenCards?.round3) newPlayerWonCards.push(playerHiddenCards.round3);
+                } else if (hiddenWinner === 'opponent') {
+                    newEnemyScore += 1;
+                    if (enemyHiddenCards?.round3) newEnemyWonCards.push(enemyHiddenCards.round3);
+                }
+            }
 
-        // Phase 7: 승리 체크
-        if (newVictoryState.isGameOver) {
-            setState(prev => ({ ...prev, animationPhase: 'victory' }));
-            setTimeout(() => {
-                onBattleEnd?.(newVictoryState.finalWinner === 'player');
-            }, 2000);
-        } else {
-            // 다음 라운드 준비
-            setState(prev => ({
+            // Check Game Over
+            let isGameOver = false;
+            let finalWinner = prev.victoryState.finalWinner;
+
+            if (precalculatedResult) {
+                // Check if score threshold reached OR roundIndex is 4 (end)
+                // Ambush early win: 3 points
+                if (newPlayerScore >= 3 || newEnemyScore >= 3 || roundIndex === 4) {
+                    // Trust precalculated winner if available, else derive
+                    if (precalculatedResult.winner) {
+                        isGameOver = true;
+                        finalWinner = precalculatedResult.winner;
+                    }
+                }
+            } else {
+                // Legacy check
+                if (newPlayerScore >= 3) { isGameOver = true; finalWinner = 'player'; }
+                else if (newEnemyScore >= 3) { isGameOver = true; finalWinner = 'opponent'; }
+                else if (roundIndex === 4) {
+                    isGameOver = true;
+                    finalWinner = newPlayerScore > newEnemyScore ? 'player' : newPlayerScore < newEnemyScore ? 'opponent' : 'draw' as any;
+                }
+            }
+
+            return {
                 ...prev,
-                animationPhase: 'idle',
+                currentRound: roundIndex + 1,
+                results: newResults,
+                victoryState: {
+                    playerScore: newPlayerScore,
+                    enemyScore: newEnemyScore,
+                    playerWonCards: newPlayerWonCards,
+                    enemyWonCards: newEnemyWonCards,
+                    isGameOver,
+                    finalWinner,
+                },
+                animationPhase: isGameOver ? 'victory' : 'idle',
                 activePlayerCard: null,
                 activeEnemyCard: null,
                 activePlayerHiddenCard: null,
                 activeEnemyHiddenCard: null,
-            }));
-        }
-    }, [state, playerCards, enemyCards, battleType, playerHiddenCards, enemyHiddenCards, determineWinner, onBattleEnd]);
+            };
+        });
 
-    /**
-     * 자동 진행
-     */
+    }, [state, playerCards, enemyCards, battleType, playerHiddenCards, enemyHiddenCards, precalculatedResult]);
+
+    // Auto-play effect
     useEffect(() => {
         if (state.animationPhase === 'idle' && !state.victoryState.isGameOver) {
             const timer = setTimeout(() => {
                 playRound();
             }, 1000);
             return () => clearTimeout(timer);
+        } else if (state.animationPhase === 'victory') {
+            const timer = setTimeout(() => {
+                onBattleEnd?.(state.victoryState.finalWinner === 'player');
+            }, 2000);
+            return () => clearTimeout(timer);
         }
-    }, [state.animationPhase, state.victoryState.isGameOver, playRound]);
+    }, [state.animationPhase, state.victoryState.isGameOver, playRound, onBattleEnd, state.victoryState.finalWinner]);
 
-    return {
-        state,
-        playRound,
-    };
+    return { state, playRound };
 }

@@ -187,73 +187,7 @@ export const signInAsGuest = startAsGuest;
  * 테스트 군단장으로 로그인 (개발/테스트용)
  * 모든 자원을 풍족하게 설정하여 시작
  */
-export function loginAsTestCommander(): { success: boolean; session: AuthSession } {
-    const testUser: User = {
-        id: `test-commander-${Date.now()}`,
-        username: 'test_commander',
-        nickname: '테스트 군단장',
-        createdAt: Date.now()
-    };
-
-    const session: AuthSession = {
-        user: testUser,
-        token: `test-token-${Date.now()}`,
-        expiresAt: Date.now() + (7 * 24 * 60 * 60 * 1000) // 7일
-    };
-
-    // 1. 세션 저장
-    localStorage.setItem('auth-session', JSON.stringify(session));
-
-    // 2. 게임 상태 초기화 (풍족한 자원)
-    // game-state.ts의 형식을 따름 (MainPage에서 사용)
-    const cheatGameState = {
-        userId: testUser.id,
-        nickname: testUser.nickname,
-        level: 50,
-        experience: 0,
-        tokens: 99999999,      // 9999만 토큰
-        coins: 99999999,       // 9999만 코인
-        inventory: [],
-        unlockedFactions: ['human', 'machine', 'alien', 'gemini', 'trinity'], // 모든 팩션 활성화
-        storyProgress: {
-            currentChapter: 10,
-            completedMissions: [],
-            claimedRewards: []
-        },
-        stats: {
-            totalBattles: 0,
-            wins: 0,
-            losses: 0,
-            winStreak: 0,
-            currentStreak: 0,
-            pvpMatches: 0,
-            cardsEnhanced: 0,
-            cardsFused: 0
-        },
-        completedAchievements: [],
-        dailyMissions: [],
-        lastFactionGeneration: {},
-        lastDailyReset: Date.now(),
-        createdAt: Date.now(),
-        lastSaved: Date.now(),
-
-        // game-storage.ts 호환성 (레거시/백업용)
-
-        research: {
-            tier: 5,
-            techPoints: 9999,
-            unlockedNodes: []
-        }
-    };
-
-    // game-state.ts에서 사용하는 키
-    localStorage.setItem('game-state', JSON.stringify(cheatGameState));
-
-    // game-storage.ts에서 사용하는 키 (호환성 유지)
-    localStorage.setItem('gameState', JSON.stringify(cheatGameState));
-
-    return { success: true, session };
-}
+// function loginAsTestCommander removed
 
 /**
  * 모든 사용자 가져오기

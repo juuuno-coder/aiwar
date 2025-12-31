@@ -8,12 +8,13 @@ import GameCard from '@/components/GameCard';
 import { useFooter } from '@/context/FooterContext';
 import { useUser } from '@/context/UserContext';
 import { useAlert } from '@/context/AlertContext';
-import { loadInventory, InventoryCard, filterCards, sortCards, getInventoryStats } from '@/lib/inventory-system';
+import { loadInventory, InventoryCard, filterCards, sortCards, getInventoryStats, updateInventoryCard } from '@/lib/inventory-system';
 import { SortAsc, SortDesc, Grid3X3, LayoutList, Lock } from 'lucide-react';
 import { cn, storage } from '@/lib/utils';
 import { useTranslation } from '@/context/LanguageContext';
-import { rerollCardStats } from '@/lib/card-generation-system'; // Import reroll function
+// rerollCardStats import removed
 import { useFirebase } from '@/components/FirebaseProvider';
+import { CARD_DATABASE } from '@/data/card-database';
 import { gameStorage } from '@/lib/game-storage';
 import { getCardName } from '@/data/card-translations';
 import { useCardModal } from '@/components/CardModalContext';
@@ -48,67 +49,7 @@ export default function MyCardsPage() {
     const [sortBy, setSortBy] = useState<SortOption>('rarity'); // Default by rarity
     const [sortAsc, setSortAsc] = useState(true); // Low to High (Common to Commander)
     const [filterRarity, setFilterRarity] = useState<FilterOption>('all');
-    const [isRerollConfirmOpen, setIsRerollConfirmOpen] = useState(false);
 
-    // 스탯 재설정 핸들러
-    // 스탯 재설정 핸들러 (모달 열기)
-    const handleRerollAll = () => {
-        setIsRerollConfirmOpen(true);
-    };
-
-    // 실제 실행 로직
-    const executeReroll = async () => {
-        setIsRerollConfirmOpen(false);
-
-        try {
-            const updatedCards = cards.map(c => {
-                const rerolled = rerollCardStats(c as any); // Bypass strict Type check for acquiredAt (Date vs Timestamp)
-
-                // InventoryCard requires instanceId. Preserve it.
-                // Ensure acquiredAt is a valid Date object
-                let acquiredAtDate: Date = new Date();
-                try {
-                    const rawDate = c.acquiredAt as any;
-                    if (rawDate instanceof Date) {
-                        acquiredAtDate = rawDate;
-                    } else if (rawDate && typeof rawDate.seconds === 'number') {
-                        acquiredAtDate = new Date(rawDate.seconds * 1000);
-                    } else if (rawDate) {
-                        acquiredAtDate = new Date(rawDate);
-                    }
-                } catch (e) {
-                    console.warn('Date conversion failed', e);
-                }
-
-                return {
-                    ...rerolled,
-                    instanceId: c.instanceId,
-                    acquiredAt: acquiredAtDate
-                } as InventoryCard;
-            });
-
-            setCards(updatedCards);
-
-            // GameStorage (IndexedDB/LocalStorage) 저장 시도
-            const { gameStorage } = await import('@/lib/game-storage');
-            for (const card of updatedCards) {
-                await gameStorage.updateCard(card.id, card, user?.uid);
-            }
-
-            showAlert({
-                title: language === 'ko' ? '성공' : 'Success',
-                message: language === 'ko' ? '모든 카드의 능력치가 성공적으로 재설정되었습니다.' : 'All card stats have been successfully rerolled.',
-                type: 'success'
-            });
-        } catch (e) {
-            console.error(e);
-            showAlert({
-                title: language === 'ko' ? '오류' : 'Error',
-                message: language === 'ko' ? '재설정 중 오류가 발생했습니다.' : 'An error occurred during reroll.',
-                type: 'error'
-            });
-        }
-    };
 
     useEffect(() => {
         setMounted(true);
@@ -118,7 +59,21 @@ export default function MyCardsPage() {
     const loadCards = async (uid?: string) => {
         setLoading(true);
         try {
-            const inventory = await loadInventory(uid);
+            const rawInventory = await loadInventory(uid);
+
+            // [Sync] 최신 DB 데이터로 카드 정보(이미지 등) 동기화
+            const inventory = rawInventory.map(card => {
+                const template = CARD_DATABASE.find(t => t.id === card.templateId || t.id === card.id);
+                if (template) {
+                    return {
+                        ...card,
+                        imageUrl: template.imageUrl || card.imageUrl,
+                        name: template.name || card.name,
+                        description: template.description || card.description
+                    };
+                }
+                return card;
+            });
 
             // Ultra 티어 구독 시 군단장 카드 추가
             try {
@@ -213,10 +168,10 @@ export default function MyCardsPage() {
             {/* Stats Overview */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
                 {[
-                    { label: 'TOTAL_UNITS', value: statsOverview.total, color: 'text-white' },
-                    { label: 'COMMANDER', value: statsOverview.byRarity['commander'] || 0, color: 'text-red-500' },
-                    { label: 'UNIQUE', value: statsOverview.byRarity['unique'] || 0, color: 'text-pink-500' },
-                    { label: 'LEGENDARY', value: statsOverview.byRarity['legendary'] || 0, color: 'text-amber-400' },
+                    { label: '전체 보유량', value: statsOverview.total, color: 'text-white' },
+                    { label: '군단장', value: statsOverview.byRarity['commander'] || 0, color: 'text-red-500' },
+                    { label: '유니크', value: statsOverview.byRarity['unique'] || 0, color: 'text-pink-500' },
+                    { label: '전설', value: statsOverview.byRarity['legendary'] || 0, color: 'text-amber-400' },
                 ].map((stat, i) => (
                     <motion.div
                         key={stat.label}
@@ -226,21 +181,12 @@ export default function MyCardsPage() {
                         className="bg-white/5 border border-white/10 rounded-lg p-4 text-center"
                     >
                         <p className={cn("text-2xl font-black orbitron", stat.color)}>{stat.value}</p>
-                        <p className="text-[9px] font-mono text-white/40 uppercase tracking-widest mt-1">{stat.label}</p>
+                        <p className="text-xs font-bold text-white/40 uppercase tracking-widest mt-1">{stat.label}</p>
                     </motion.div>
                 ))}
             </div>
 
-            {/* Reroll Button (Top Right Actions) */}
-            <div className="flex justify-end mb-4">
-                <button
-                    onClick={handleRerollAll}
-                    className="px-4 py-2 rounded-lg bg-red-900/50 border border-red-500 text-red-200 text-sm hover:bg-red-800/50 transition-colors font-bold flex items-center gap-2"
-                >
-                    <span className="text-lg">⚡️</span>
-                    {language === 'ko' ? '스탯 리롤 (Dev)' : 'Reroll Stats (Dev)'}
-                </button>
-            </div>
+            {/* Dev Buttons Removed */}
 
             {/* Main Cards Section - 주력카드 */}
             {!loading && cards.length > 0 && (
@@ -383,49 +329,7 @@ export default function MyCardsPage() {
                 </div>
             )}
 
-            {/* Confirmation Modal for Reroll */}
-            <AnimatePresence>
-                {isRerollConfirmOpen && (
-                    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-                        <motion.div
-                            initial={{ scale: 0.9, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            exit={{ scale: 0.9, opacity: 0 }}
-                            className="bg-gray-900 border border-red-500/30 rounded-2xl w-full max-w-md p-6 shadow-[0_0_50px_rgba(239,68,68,0.2)] relative overflow-hidden"
-                        >
-                            <div className="absolute top-0 right-0 p-4 opacity-50">
-                                <span className="text-4xl text-red-500/10 font-black">WARNING</span>
-                            </div>
 
-                            <h3 className="text-xl font-bold text-red-400 mb-2 font-orbitron flex items-center gap-2">
-                                <span className="text-2xl">⚠️</span> WARNING
-                            </h3>
-
-                            <p className="text-gray-300 mb-6 leading-relaxed">
-                                {language === 'ko'
-                                    ? '모든 카드의 능력치가 새로운 균형 로직으로 재설정됩니다. 등급 간 갭이 좁아져 레벨업이 더 중요해집니다. (일반: 40~60, 희귀: 50~70, 영웅: 60~80, 전설: 70~90, 유니크/군단장: 80~90) 이 작업은 되돌릴 수 없습니다.'
-                                    : 'All card stats will be rerolled with new balanced ranges. Gaps between rarities are narrower, making level-ups more important. (Common: 40~60, Rare: 50~70, Epic: 60~80, Legendary: 70~90, Unique/Commander: 80~90) This action cannot be undone.'}
-                            </p>
-
-                            <div className="flex gap-3 justify-end">
-                                <button
-                                    onClick={() => setIsRerollConfirmOpen(false)}
-                                    className="px-4 py-2 rounded-lg bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-white transition-colors font-bold text-sm"
-                                >
-                                    {language === 'ko' ? '취소' : 'CANCEL'}
-                                </button>
-                                <button
-                                    onClick={executeReroll}
-                                    className="px-6 py-2 rounded-lg bg-red-600 hover:bg-red-500 text-white shadow-lg shadow-red-600/30 transition-all font-bold text-sm flex items-center gap-2"
-                                >
-                                    <span>⚡️</span>
-                                    {language === 'ko' ? '실행' : 'EXECUTE'}
-                                </button>
-                            </div>
-                        </motion.div>
-                    </div>
-                )}
-            </AnimatePresence>
         </CyberPageLayout>
     );
 }

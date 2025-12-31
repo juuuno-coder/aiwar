@@ -113,7 +113,7 @@ function RoundPlacementSlot({
                         {(() => {
                             const rarityInfo: Record<string, { text: string; bg: string }> = {
                                 legendary: { text: '전설', bg: 'bg-gradient-to-r from-yellow-500 to-orange-500' },
-                                commander: { text: '사령관', bg: 'bg-gradient-to-r from-purple-600 to-pink-600' },
+                                commander: { text: '군단장', bg: 'bg-gradient-to-r from-purple-600 to-pink-600' },
                                 epic: { text: '영웅', bg: 'bg-gradient-to-r from-purple-500 to-indigo-500' },
                                 rare: { text: '희귀', bg: 'bg-gradient-to-r from-blue-500 to-cyan-500' },
                                 unique: { text: '유니크', bg: 'bg-gradient-to-r from-green-500 to-emerald-500' },

@@ -39,7 +39,21 @@ export async function trainCommander(card: InventoryCard): Promise<TrainingResul
 
         // 1. Calculate Affinity Gain
         // Random gain 5-15 based on "interaction"
-        const affinityGain = Math.floor(Math.random() * 11) + 5;
+        let affinityGain = Math.floor(Math.random() * 11) + 5;
+
+        // 리더십 연구 보너스 적용
+        try {
+            const { gameStorage } = await import('./game-storage');
+            const { getResearchBonus } = await import('./research-system');
+            const state = await gameStorage.loadGameState();
+            if (state.research?.stats?.leadership) {
+                const bonus = getResearchBonus('leadership', state.research.stats.leadership.currentLevel);
+                affinityGain = Math.floor(affinityGain * (1 + bonus / 100));
+            }
+        } catch (e) {
+            console.warn('Failed to load leadership bonus', e);
+        }
+
         let newAffinity = (card.affinity || 0) + affinityGain;
         let levelUp = false;
         let statIncreases: any = {};

@@ -36,32 +36,29 @@ export async function generateStarterPack(userId: string = 'player'): Promise<In
             continue;
         }
 
-        // 스탯 생성 (범위 내 랜덤)
-        const stats = {
-            creativity: Math.floor(
-                template.baseStats.creativity.min +
-                Math.random() * (template.baseStats.creativity.max - template.baseStats.creativity.min)
-            ),
-            accuracy: Math.floor(
-                template.baseStats.accuracy.min +
-                Math.random() * (template.baseStats.accuracy.max - template.baseStats.accuracy.min)
-            ),
-            speed: Math.floor(
-                template.baseStats.speed.min +
-                Math.random() * (template.baseStats.speed.max - template.baseStats.speed.min)
-            ),
-            stability: Math.floor(
-                template.baseStats.stability.min +
-                Math.random() * (template.baseStats.stability.max - template.baseStats.stability.min)
-            ),
-            ethics: Math.floor(
-                template.baseStats.ethics.min +
-                Math.random() * (template.baseStats.ethics.max - template.baseStats.ethics.min)
-            ),
-            totalPower: 0
+        const rarity = template.rarity || 'common';
+        const RARITY_POWER_RANGES: Record<string, { min: number, max: number }> = {
+            common: { min: 40, max: 60 },
+            rare: { min: 50, max: 70 },
+            epic: { min: 60, max: 80 },
+            legendary: { min: 70, max: 90 },
+            unique: { min: 80, max: 100 },
+            commander: { min: 80, max: 100 }
         };
+        const range = RARITY_POWER_RANGES[rarity.toLowerCase()] || RARITY_POWER_RANGES.common;
+        const totalPower = Math.floor(Math.random() * (range.max - range.min + 1)) + range.min;
 
-        stats.totalPower = stats.creativity + stats.accuracy + stats.speed + stats.stability + stats.ethics;
+        // 스탯 생성 (총 전투력 기반 분배)
+        const stats = {
+            efficiency: Math.floor(totalPower * 0.35),
+            creativity: Math.floor(totalPower * 0.35),
+            function: Math.floor(totalPower * 0.30),
+            accuracy: Math.floor(totalPower / 5),
+            speed: Math.floor(totalPower / 5),
+            stability: Math.floor(totalPower / 5),
+            ethics: Math.floor(totalPower / 5),
+            totalPower
+        };
 
         // InventoryCard 생성
         const card: InventoryCard = {
@@ -113,12 +110,12 @@ async function generateBasicCards(userId: string, acquiredAt: Date): Promise<Inv
         level: 1,
         experience: 0,
         stats: {
-            creativity: 40,
-            accuracy: 40,
-            speed: 40,
-            stability: 40,
-            ethics: 40,
-            totalPower: 200
+            creativity: 15,
+            accuracy: 15,
+            speed: 15,
+            stability: 5,
+            ethics: 5,
+            totalPower: 55 // Common Range: 40-60
         },
         rarity: 'common',
         type: 'CREATIVITY',
@@ -138,12 +135,12 @@ async function generateBasicCards(userId: string, acquiredAt: Date): Promise<Inv
         level: 1,
         experience: 0,
         stats: {
-            creativity: 55,
-            accuracy: 55,
-            speed: 55,
-            stability: 55,
-            ethics: 55,
-            totalPower: 275
+            creativity: 25,
+            accuracy: 20,
+            speed: 10,
+            stability: 5,
+            ethics: 5,
+            totalPower: 65 // Rare Range: 50-70
         },
         rarity: 'rare',
         type: 'EFFICIENCY',

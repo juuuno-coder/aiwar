@@ -38,8 +38,8 @@ export default function EnhanceFooter({
 
             {/* 메인 푸터 */}
             <div className="absolute inset-0 bg-gradient-to-t from-black via-zinc-900/95 to-transparent backdrop-blur-md">
-                {/* 왼쪽 정렬 컨테이너 (페이지 컨텐츠와 정렬) */}
-                <div className="h-full px-6 py-3 flex items-center gap-6">
+                {/* 중앙 정렬 컨테이너 (70% 너비) - Space Between 복구 */}
+                <div className="h-full px-6 py-3 flex items-center gap-6 mx-auto w-[70%] max-w-[70%]">
                     {/* 타겟 슬롯 */}
                     <div className="flex flex-col items-center gap-1">
                         <p className="text-[10px] font-mono text-cyan-400 uppercase">🎯 Target</p>

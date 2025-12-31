@@ -81,7 +81,10 @@ export default function FusionPage() {
     // 자동 선택 (같은 등급 3개)
     const handleAutoSelect = async () => {
         const rarityGroups: Record<string, InventoryCard[]> = {};
-        allCards.forEach(card => {
+        // Filter for Level 1 cards only
+        const levelOneCards = allCards.filter(c => c.level === 1 || c.level === undefined);
+
+        levelOneCards.forEach(card => {
             const rarity = card.rarity || 'Common';
             if (!rarityGroups[rarity]) {
                 rarityGroups[rarity] = [];
@@ -161,19 +164,21 @@ export default function FusionPage() {
     const filledCount = materialSlots.filter(c => c !== null).length;
     const canFuseNow = filledCount === 3;
 
+    // Filter cards: Match rarity AND must be Level 1 (unenhanced)
     const displayCards = allCards.filter(c =>
-        selectedRarity === 'all' || (c.rarity || 'common') === selectedRarity
+        (selectedRarity === 'all' || (c.rarity || 'common') === selectedRarity) &&
+        (c.level === 1 || c.level === undefined) // Only Level 1
     );
 
     return (
         <CyberPageLayout
             title="융합 실험실"
             englishTitle="CARD SYNTHESIS"
-            description="같은 등급 카드 3장을 합성하여 상위 등급 카드를 획득합니다."
+            description="같은 등급 카드(Lv.1) 3장을 합성하여 상위 등급 카드를 획득합니다."
             color="purple"
         >
             {/* 메인 영역: 카드 목록 */}
-            <div className="p-6 pb-[140px]"> {/* 푸터 높이 120px + 여유 */}
+            <div className="p-6 pb-[140px] w-full mx-auto"> {/* 푸터 높이 120px + 여유 */}
                 {/* Main Cards Section - 주력카드 */}
                 {allCards.length > 0 && (
                     <div className="mb-6">

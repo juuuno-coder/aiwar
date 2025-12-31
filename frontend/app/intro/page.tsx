@@ -9,7 +9,7 @@ import { HoverBorderGradient } from '@/components/ui/aceternity/hover-border-gra
 import { DraggableCard } from '@/components/ui/aceternity/draggable-card';
 import GoogleLoginButton from '@/components/GoogleLoginButton';
 
-import { login, signInAsGuest, loginAsTestCommander } from '@/lib/auth-utils';
+import { login, signInAsGuest } from '@/lib/auth-utils';
 
 export default function IntroPage() {
     const router = useRouter();
@@ -70,10 +70,10 @@ export default function IntroPage() {
     }, [isLoaded]);
 
     const floatingCards = [
-        { id: 1, name: 'GPT-4', faction: 'OpenAI', power: 95, x: 15, y: 20 },
-        { id: 2, name: 'Claude', faction: 'Anthropic', power: 92, x: 75, y: 15 },
-        { id: 3, name: 'Gemini', faction: 'DeepMind', power: 94, x: 85, y: 60 },
-        { id: 4, name: 'Llama', faction: 'Meta AI', power: 88, x: 10, y: 70 },
+        { id: 1, name: 'GPT-5', faction: 'OpenAI', power: 97, x: 15, y: 20, img: '/images/cards/real/gpt5-omni.png' },
+        { id: 2, name: 'Claude', faction: 'Anthropic', power: 92, x: 75, y: 15, img: '/images/cards/real/epic-code-warrior.png' },
+        { id: 3, name: 'Gemini', faction: 'DeepMind', power: 94, x: 85, y: 60, img: '/images/cards/real/legendary-metatron-core.png' },
+        { id: 4, name: 'Llama', faction: 'Meta AI', power: 88, x: 10, y: 70, img: '/images/cards/real/unique-project-2501.png' },
     ];
 
     return (
@@ -114,18 +114,35 @@ export default function IntroPage() {
                             y: { duration: 4, repeat: Infinity, ease: "easeInOut" }
                         }}
                     >
-                        <DraggableCard className="w-48 transform hover:scale-110 transition-transform duration-300">
-                            <div className="bg-black/20 backdrop-blur-sm border border-cyan-500/20 rounded-xl p-4 hover:border-cyan-400/60 hover:bg-black/40 transition-all group shadow-[0_0_15px_rgba(6,182,212,0.1)] hover:shadow-[0_0_25px_rgba(6,182,212,0.2)]">
-                                <div className="h-24 bg-gradient-to-br from-cyan-500/5 to-purple-500/5 rounded-lg mb-3 flex items-center justify-center border border-white/5 relative overflow-hidden">
-                                    <div className="absolute inset-0 bg-cyan-500/5 animate-pulse" />
-                                    <span className="text-4xl opacity-70 filter drop-shadow-[0_0_10px_rgba(6,182,212,0.4)]">🤖</span>
+                        <DraggableCard className="w-56 transform hover:scale-110 transition-transform duration-300">
+                            <div className="bg-black/80 backdrop-blur-md border border-cyan-500/30 rounded-xl p-3 hover:border-cyan-400/80 hover:bg-black/90 transition-all group shadow-[0_0_20px_rgba(6,182,212,0.15)] hover:shadow-[0_0_35px_rgba(6,182,212,0.3)]">
+                                <div className="aspect-[3/4] rounded-lg mb-3 flex items-center justify-center border border-white/10 relative overflow-hidden bg-gray-900">
+                                    <img
+                                        src={card.img}
+                                        alt={card.name}
+                                        draggable={false}
+                                        className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity select-none pointer-events-none"
+                                        onError={(e) => {
+                                            // Fallback if image missing
+                                            (e.target as HTMLImageElement).style.display = 'none';
+                                            (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden');
+                                        }}
+                                    />
+                                    {/* Fallback Icon */}
+                                    <div className="absolute inset-0 hidden flex items-center justify-center bg-cyan-900/20">
+                                        <div className="absolute inset-0 bg-cyan-500/5 animate-pulse" />
+                                        <span className="text-4xl opacity-70 filter drop-shadow-[0_0_10px_rgba(6,182,212,0.4)]">🤖</span>
+                                    </div>
+
+                                    {/* Scanline overlay on image */}
+                                    <div className="absolute inset-0 bg-[linear-gradient(transparent_0%,rgba(6,182,212,0.1)_50%,transparent_100%)] bg-[length:100%_4px] opacity-30 pointer-events-none" />
                                 </div>
-                                <div className="flex justify-between items-end mb-1">
+                                <div className="flex justify-between items-end mb-1 px-1">
                                     <div className="text-xs font-mono text-cyan-400/80">{card.faction}</div>
                                     <div className="text-[9px] font-mono text-white/30">ID: {card.id.toString().padStart(3, '0')}</div>
                                 </div>
-                                <div className="text-lg font-bold text-white orbitron tracking-wide">{card.name}</div>
-                                <div className="mt-3 flex items-center justify-between text-[10px]">
+                                <div className="text-lg font-bold text-white orbitron tracking-wide px-1">{card.name}</div>
+                                <div className="mt-2 flex items-center justify-between text-[10px] px-1 pb-1">
                                     <span className="text-white/40 font-mono">POWER</span>
                                     <div className="flex items-center gap-1">
                                         <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
@@ -358,28 +375,9 @@ export default function IntroPage() {
                                                                 setTimeout(() => window.location.href = '/', 500);
                                                             }
                                                         }}
-                                                        className="py-2 bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white rounded border border-white/10 font-mono text-[10px] uppercase tracking-wider transition-colors"
+                                                        className="col-span-2 py-2 bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white rounded border border-white/10 font-mono text-[10px] uppercase tracking-wider transition-colors"
                                                     >
-                                                        GUEST_LOGIN
-                                                        <br />
-                                                        (익명 접속)
-                                                    </button>
-
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => {
-                                                            const result = loginAsTestCommander();
-                                                            if (result.success) {
-                                                                setSystemStatus(prev => [...prev, 'TEST_COMMANDER_ACCESS', 'OVERRIDING_RESOURCES...', 'REDIRECTING...']);
-                                                                // Force hard reload to ensure all contexts pick up the new session
-                                                                setTimeout(() => window.location.href = '/', 800);
-                                                            }
-                                                        }}
-                                                        className="py-2 bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-500/70 hover:text-yellow-400 rounded border border-yellow-500/20 font-mono text-[10px] uppercase tracking-wider transition-colors"
-                                                    >
-                                                        TEST_MODE
-                                                        <br />
-                                                        (테스트 계정)
+                                                        GUEST_LOGIN (익명 접속)
                                                     </button>
                                                 </div>
                                             </div>
