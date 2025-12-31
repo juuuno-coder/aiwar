@@ -300,7 +300,7 @@ export default function CommanderProfileModal({ isOpen, onClose }: CommanderProf
                                                     {avatarOptions.map(avatar => (
                                                         <div
                                                             key={avatar.id}
-                                                            onClick={() => handleAvatarChange(avatar.src)}
+                                                            onClick={() => handleAvatarChange(avatar.src || '/assets/commander/default.png')}
                                                             className={cn(
                                                                 "aspect-square rounded-lg overflow-hidden cursor-pointer border-2 transition-all hover:scale-105",
                                                                 commanderAvatar === avatar.src ? "border-cyan-500" : "border-transparent"
