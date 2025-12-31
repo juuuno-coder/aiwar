@@ -25,11 +25,11 @@ export function getNextRarity(currentRarity: Rarity): Rarity | null {
  */
 export function getFusionCost(rarity: Rarity, discountPercentage: number = 0): number {
     const costs: Record<Rarity, number> = {
-        common: 100,
-        rare: 200,
-        epic: 500,
-        legendary: 1000,
-        unique: 2000,
+        common: 500,
+        rare: 2000,
+        epic: 5000,
+        legendary: 9900, // Max Cost for getting Unique
+        unique: 0, // Cannot fuse Unique
         commander: 0 // 군단장은 합성 불가
     };
     const baseCost = costs[rarity] || 0;

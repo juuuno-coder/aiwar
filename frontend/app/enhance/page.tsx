@@ -170,7 +170,8 @@ export default function EnhancePage() {
             return;
         }
 
-        const cost = getEnhanceCost(targetCard.level || 1, discount);
+
+        const cost = getEnhanceCost(targetCard.level || 1, targetCard.rarity || 'common', discount);
 
         if (userTokens < cost) {
             showAlert({ title: '토큰 부족', message: `토큰이 부족합니다. (필요: ${cost})`, type: 'error' });
@@ -218,102 +219,104 @@ export default function EnhancePage() {
         nextLevel: preview.nextLevel,
         currentPower: targetCard.stats.totalPower || 0,
         nextPower: preview.nextStats.totalPower || 0,
-        cost: getEnhanceCost(targetCard.level || 1, discount)
+        nextPower: preview.nextStats.totalPower || 0,
+        cost: getEnhanceCost(targetCard.level || 1, targetCard.rarity || 'common', discount)
     } : undefined;
+} : undefined;
 
-    // 모든 카드 표시
-    const displayCards = allCards.filter(c =>
-        c.instanceId !== targetCard?.instanceId &&
-        !materialSlots.some(s => s?.instanceId === c.instanceId) &&
-        (selectedRarity === 'all' || (c.rarity || 'common') === selectedRarity)
-    );
+// 모든 카드 표시
+const displayCards = allCards.filter(c =>
+    c.instanceId !== targetCard?.instanceId &&
+    !materialSlots.some(s => s?.instanceId === c.instanceId) &&
+    (selectedRarity === 'all' || (c.rarity || 'common') === selectedRarity)
+);
 
-    return (
-        <CyberPageLayout
-            title="강화 프로토콜"
-            englishTitle="UNIT UPGRADE"
-            description="인벤토리의 유닛을 선택하여 강화합니다. 숙달 연구 레벨에 따라 고성장 확률이 증가하며, 협상력 레벨에 따라 비용이 할인됩니다."
-            color="amber"
-        >
-            {/* 메인 영역: 카드 목록 */}
-            <div className="p-6 pb-[140px] w-full mx-auto overflow-auto custom-scrollbar h-[calc(100vh-80px)]">
-                {/* 인벤토리 헤더 및 필터 */}
-                <div className="mb-6 flex flex-col gap-4">
-                    <div className="flex items-center justify-between">
-                        <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                            내 유닛 보관함 <span className="text-sm text-zinc-500 font-normal">({displayCards.length}장)</span>
-                        </h2>
-                    </div>
-
-                    <div className="flex flex-wrap gap-2">
-                        {['all', 'common', 'rare', 'epic', 'legendary', 'unique'].map(rarity => (
-                            <button
-                                key={rarity}
-                                onClick={() => setSelectedRarity(rarity)}
-                                className={cn(
-                                    "px-3 py-1.5 rounded-lg text-xs font-bold uppercase transition-all border",
-                                    selectedRarity === rarity
-                                        ? "bg-amber-500 text-black border-amber-400"
-                                        : "bg-black/40 text-white/60 border-white/10 hover:bg-white/10"
-                                )}
-                            >
-                                {rarity === 'all' ? '전체' : rarity}
-                            </button>
-                        ))}
-                    </div>
+return (
+    <CyberPageLayout
+        title="강화 프로토콜"
+        englishTitle="UNIT UPGRADE"
+        description="인벤토리의 유닛을 선택하여 강화합니다. 숙달 연구 레벨에 따라 고성장 확률이 증가하며, 협상력 레벨에 따라 비용이 할인됩니다."
+        color="amber"
+    >
+        {/* 메인 영역: 카드 목록 */}
+        <div className="p-6 pb-[140px] w-full mx-auto overflow-auto custom-scrollbar h-[calc(100vh-80px)]">
+            {/* 인벤토리 헤더 및 필터 */}
+            <div className="mb-6 flex flex-col gap-4">
+                <div className="flex items-center justify-between">
+                    <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                        내 유닛 보관함 <span className="text-sm text-zinc-500 font-normal">({displayCards.length}장)</span>
+                    </h2>
                 </div>
 
-                {/* 카드 그리드 */}
-                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-                    {displayCards.map(card => {
-                        const isSelected =
-                            card.instanceId === targetCard?.instanceId ||
-                            materialSlots.some(s => s?.instanceId === card.instanceId);
-
-                        return (
-                            <div
-                                key={card.instanceId}
-                                onClick={() => handleCardClick(card)}
-                                className={cn(
-                                    "cursor-pointer transition-all hover:scale-105",
-                                    isSelected && "opacity-50 ring-2 ring-amber-500 rounded-xl"
-                                )}
-                            >
-                                <GameCard card={card as any} />
-                            </div>
-                        );
-                    })}
+                <div className="flex flex-wrap gap-2">
+                    {['all', 'common', 'rare', 'epic', 'legendary', 'unique'].map(rarity => (
+                        <button
+                            key={rarity}
+                            onClick={() => setSelectedRarity(rarity)}
+                            className={cn(
+                                "px-3 py-1.5 rounded-lg text-xs font-bold uppercase transition-all border",
+                                selectedRarity === rarity
+                                    ? "bg-amber-500 text-black border-amber-400"
+                                    : "bg-black/40 text-white/60 border-white/10 hover:bg-white/10"
+                            )}
+                        >
+                            {rarity === 'all' ? '전체' : rarity}
+                        </button>
+                    ))}
                 </div>
-
-                {displayCards.length === 0 && (
-                    <div className="flex flex-col items-center justify-center py-20 text-zinc-600">
-                        <p>해당하는 카드가 없습니다.</p>
-                    </div>
-                )}
             </div>
 
-            {/* 하단 푸터 슬롯 (강화 UI 핵심) */}
-            <EnhanceFooter
-                targetCard={targetCard as any}
-                materialSlots={materialSlots as any}
-                onTargetDrop={handleTargetDrop as any}
-                onMaterialDrop={handleMaterialDrop as any}
-                onTargetRemove={handleTargetRemove}
-                onMaterialRemove={handleMaterialRemove}
-                onClear={handleClear}
-                onAutoSelect={handleAutoSelect}
-                onEnhance={handleEnhance}
-                canEnhance={canEnhance}
-            />
+            {/* 카드 그리드 */}
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+                {displayCards.map(card => {
+                    const isSelected =
+                        card.instanceId === targetCard?.instanceId ||
+                        materialSlots.some(s => s?.instanceId === card.instanceId);
 
-            {/* 결과 모달 */}
-            <CardRewardModal
-                isOpen={rewardModalOpen}
-                onClose={() => setRewardModalOpen(false)}
-                cards={enhancedResult ? [enhancedResult] : []}
-                title="강화 프로토콜 완료"
-                previousStats={previousStats}
-            />
-        </CyberPageLayout>
-    );
+                    return (
+                        <div
+                            key={card.instanceId}
+                            onClick={() => handleCardClick(card)}
+                            className={cn(
+                                "cursor-pointer transition-all hover:scale-105",
+                                isSelected && "opacity-50 ring-2 ring-amber-500 rounded-xl"
+                            )}
+                        >
+                            <GameCard card={card as any} />
+                        </div>
+                    );
+                })}
+            </div>
+
+            {displayCards.length === 0 && (
+                <div className="flex flex-col items-center justify-center py-20 text-zinc-600">
+                    <p>해당하는 카드가 없습니다.</p>
+                </div>
+            )}
+        </div>
+
+        {/* 하단 푸터 슬롯 (강화 UI 핵심) */}
+        <EnhanceFooter
+            targetCard={targetCard as any}
+            materialSlots={materialSlots as any}
+            onTargetDrop={handleTargetDrop as any}
+            onMaterialDrop={handleMaterialDrop as any}
+            onTargetRemove={handleTargetRemove}
+            onMaterialRemove={handleMaterialRemove}
+            onClear={handleClear}
+            onAutoSelect={handleAutoSelect}
+            onEnhance={handleEnhance}
+            canEnhance={canEnhance}
+        />
+
+        {/* 결과 모달 */}
+        <CardRewardModal
+            isOpen={rewardModalOpen}
+            onClose={() => setRewardModalOpen(false)}
+            cards={enhancedResult ? [enhancedResult] : []}
+            title="강화 프로토콜 완료"
+            previousStats={previousStats}
+        />
+    </CyberPageLayout>
+);
 }

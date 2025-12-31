@@ -10,11 +10,34 @@ import { Card } from './types';
 
 /**
  * 강화 비용 계산 (토큰)
- * 레벨에 따라 증가
+ * 등급과 레벨에 따라 증가 (100 ~ 9,900)
  */
-export function getEnhanceCost(level: number, discountPercentage: number = 0): number {
-    const baseCost = level * 50;
-    return Math.floor(baseCost * (1 - discountPercentage / 100));
+export function getEnhanceCost(level: number, rarity: string = 'common', discountPercentage: number = 0): number {
+    const rarityMultipliers: Record<string, number> = {
+        common: 1,
+        rare: 3,
+        epic: 10,
+        legendary: 30,
+        unique: 60,
+        commander: 100
+    };
+
+    const multiplier = rarityMultipliers[rarity] || 1;
+
+    // Base Calculation: (100 * Multiplier) + (Level * 10 * Multiplier)
+    // Common Lv.1: 100 + 10 = 110
+    // Unique Lv.1: 6000 + 600 = 6600
+    // Unique Lv.9: 6000 + 5400 = 11400 (Max 9900 cap logic below)
+
+    let baseCost = 100 * multiplier;
+    let levelCost = level * 10 * multiplier;
+
+    let totalCost = baseCost + levelCost;
+
+    // Cap at 9900
+    if (totalCost > 9900) totalCost = 9900;
+
+    return Math.floor(totalCost * (1 - discountPercentage / 100));
 }
 
 /**
@@ -53,7 +76,7 @@ export function canEnhance(
     }
 
     // 토큰 체크
-    if (tokenBalance < getEnhanceCost(targetCard.level || 1)) {
+    if (tokenBalance < getEnhanceCost(targetCard.level || 1, targetCard.rarity || 'common')) {
         return { can: false, reason: '토큰이 부족합니다.' };
     }
 
@@ -132,7 +155,9 @@ export function getEnhancePreview(card: Card, masteryLevel: number = 0): {
         nextLevel: card.level + 1,
         currentStats: card.stats,
         nextStats: calculateEnhancedStats(card, masteryLevel),
-        cost: getEnhanceCost(card.level),
+        nextStats: calculateEnhancedStats(card, masteryLevel),
+        cost: getEnhanceCost(card.level || 1, card.rarity || 'common'),
+        materialsNeeded: 10
         materialsNeeded: 10
     };
 }
