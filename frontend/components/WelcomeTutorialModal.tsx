@@ -18,12 +18,15 @@ import {
 import { cn } from '@/lib/utils';
 import { HoverBorderGradient } from '@/components/ui/aceternity/hover-border-gradient';
 import { useTranslation } from '@/context/LanguageContext';
+import { useEscapeKey } from '@/hooks/useEscapeKey';
 
 interface WelcomeTutorialModalProps {
     onClose: () => void;
 }
 
 export default function WelcomeTutorialModal({ onClose }: WelcomeTutorialModalProps) {
+    useEscapeKey(true, onClose);
+
     const { t } = useTranslation();
     const [step, setStep] = useState(0);
 

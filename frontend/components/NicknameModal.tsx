@@ -7,6 +7,7 @@ import { HoverBorderGradient } from '@/components/ui/aceternity/hover-border-gra
 import { validateNickname } from '@/lib/auth-utils';
 import { checkNicknameUnique } from '@/lib/firebase-db';
 import { useFirebase } from '@/components/FirebaseProvider';
+import { useEscapeKey } from '@/hooks/useEscapeKey';
 
 interface NicknameModalProps {
     onComplete: (nickname: string) => void;

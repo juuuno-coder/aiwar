@@ -6,6 +6,7 @@ import { Card as CardType, Rarity } from '@/lib/types';
 import GameCard from './GameCard';
 import { cn } from '@/lib/utils';
 import { Sparkles, Trophy, Star, Zap, Package } from 'lucide-react';
+import { useEscapeKey } from '@/hooks/useEscapeKey';
 
 interface GachaRevealModalProps {
     isOpen: boolean;
@@ -36,6 +37,8 @@ const RARITY_GRADIENTS = {
 };
 
 export default function GachaRevealModal({ isOpen, onClose, cards, packType, bonusReward }: GachaRevealModalProps) {
+    useEscapeKey(isOpen, onClose);
+
     const [phase, setPhase] = useState<'opening' | 'revealing' | 'complete'>('opening');
     const [currentCardIndex, setCurrentCardIndex] = useState(0);
     const [revealedCards, setRevealedCards] = useState<CardType[]>([]);

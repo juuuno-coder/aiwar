@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils';
 import { createTicket } from '@/lib/firebase-db';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useAlert } from '@/context/AlertContext';
+import { useEscapeKey } from '@/hooks/useEscapeKey';
 
 interface SupportFormModalProps {
     isOpen: boolean;
@@ -16,6 +17,8 @@ interface SupportFormModalProps {
 }
 
 export default function SupportFormModal({ isOpen, onClose, type, title }: SupportFormModalProps) {
+    useEscapeKey(isOpen, onClose);
+
     const [subject, setSubject] = useState('');
     const [description, setDescription] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);

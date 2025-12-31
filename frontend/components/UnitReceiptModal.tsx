@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, PackageCheck } from 'lucide-react';
 import { useTranslation } from '@/context/LanguageContext';
 import { cn } from '@/lib/utils';
+import { useEscapeKey } from '@/hooks/useEscapeKey';
 
 interface UnitReceiptModalProps {
     isOpen: boolean;
@@ -16,6 +17,8 @@ interface UnitReceiptModalProps {
 }
 
 export default function UnitReceiptModal({ isOpen, onClose, units }: UnitReceiptModalProps) {
+    useEscapeKey(isOpen, onClose);
+
     const { t, language } = useTranslation();
 
     return (

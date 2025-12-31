@@ -10,6 +10,7 @@ import { Slider } from '@/components/ui/custom/Slider';
 import { Volume2, VolumeX, Music, Bell, Settings2, Sliders, ShieldCheck, Zap } from 'lucide-react';
 import { useFirebase } from '@/components/FirebaseProvider';
 import { useUser } from '@/context/UserContext';
+import { useEscapeKey } from '@/hooks/useEscapeKey';
 
 interface SettingsModalProps {
     isOpen: boolean;
@@ -17,6 +18,8 @@ interface SettingsModalProps {
 }
 
 export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
+    useEscapeKey(isOpen, onClose);
+
     const {
         isMuted,
         toggleMute

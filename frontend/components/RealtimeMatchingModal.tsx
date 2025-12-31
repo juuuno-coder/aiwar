@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Users, Loader2, Copy, Check, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/custom/Button';
+import { useEscapeKey } from '@/hooks/useEscapeKey';
 
 interface RealtimeMatchingModalProps {
     isOpen: boolean;
@@ -23,6 +24,8 @@ export default function RealtimeMatchingModal({
     playerName,
     playerLevel
 }: RealtimeMatchingModalProps) {
+    useEscapeKey(isOpen, onClose);
+
     const [mode, setMode] = useState<'select' | 'random' | 'friend-create' | 'friend-join'>('select');
     const [waitTime, setWaitTime] = useState(0);
     const [roomCode, setRoomCode] = useState('');

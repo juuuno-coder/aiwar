@@ -7,6 +7,7 @@ import { LevelReward, LEVEL_REWARDS, getNextFactionUnlock, getNextSlotUnlock } f
 import { getLevelReward, LevelRewardExtended } from '@/lib/level-rewards';
 import Image from 'next/image';
 import { getCardCharacterImage, getFactionIcon } from '@/lib/card-images';
+import { useEscapeKey } from '@/hooks/useEscapeKey';
 
 interface LevelUpModalProps {
     isOpen: boolean;
@@ -40,6 +41,8 @@ const factionKoreanNames: Record<string, string> = {
 };
 
 export default function LevelUpModal({ isOpen, onClose, newLevel, reward }: LevelUpModalProps) {
+    useEscapeKey(isOpen, onClose);
+
     const nextFaction = getNextFactionUnlock(newLevel);
     const nextSlot = getNextSlotUnlock(newLevel);
     const levelReward = getLevelReward(newLevel);

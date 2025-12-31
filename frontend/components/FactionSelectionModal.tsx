@@ -8,6 +8,7 @@ import { useTranslation } from '@/context/LanguageContext';
 import { cn } from '@/lib/utils';
 import { Search, Info } from 'lucide-react';
 import { useState } from 'react';
+import { useEscapeKey } from '@/hooks/useEscapeKey';
 
 interface FactionSelectionModalProps {
     isOpen: boolean;
@@ -30,6 +31,8 @@ const categoryIcons: Record<string, string> = {
 };
 
 export default function FactionSelectionModal({ isOpen, onClose, factions, onSelect, subscribedFactionIds }: FactionSelectionModalProps) {
+    useEscapeKey(isOpen, onClose);
+
     const { t, language } = useTranslation();
     const [searchTerm, setSearchTerm] = useState('');
 

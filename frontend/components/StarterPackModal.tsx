@@ -7,9 +7,12 @@ import { Button } from '@/components/ui/custom/Button';
 import { X } from 'lucide-react';
 import GachaRevealModal from './GachaRevealModal';
 import { Card } from '@/lib/types';
+import { useEscapeKey } from '@/hooks/useEscapeKey';
 
 export default function StarterPackModal() {
     const { starterPackAvailable, claimStarterPack, hideStarterPack } = useUser();
+    useEscapeKey(starterPackAvailable, hideStarterPack);
+
     const [isClaiming, setIsClaiming] = useState(false);
     const [revealedCards, setRevealedCards] = useState<Card[]>([]);
     const [showReveal, setShowReveal] = useState(false);

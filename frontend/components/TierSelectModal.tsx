@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Check, Zap, Star, Crown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { SubscriptionTier, TIER_CONFIGS, TierConfig } from '@/lib/faction-subscription';
+import { useEscapeKey } from '@/hooks/useEscapeKey';
 
 interface TierSelectModalProps {
     isOpen: boolean;
@@ -29,6 +30,7 @@ export default function TierSelectModal({
     onSelect,
     userCoins
 }: TierSelectModalProps) {
+    useEscapeKey(isOpen, onClose);
     const [selectedTier, setSelectedTier] = useState<SubscriptionTier>(currentTier || 'basic');
 
     const handleConfirm = () => {

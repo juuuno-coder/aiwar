@@ -2,6 +2,7 @@ import { Card, AIType, Rarity } from '@/lib/types';
 import { InventoryCard } from '@/lib/inventory-system';
 import GameCard from '@/components/GameCard';
 import { motion } from 'framer-motion';
+import { useEscapeKey } from '@/hooks/useEscapeKey';
 
 interface CardDetailModalProps {
     card: Card | InventoryCard | null;
@@ -10,6 +11,8 @@ interface CardDetailModalProps {
 }
 
 export default function CardDetailModal({ card, isOpen, onClose }: CardDetailModalProps) {
+    useEscapeKey(isOpen, onClose);
+
     if (!isOpen || !card) return null;
 
     const getCardRarity = (card: Card | InventoryCard): string => {
