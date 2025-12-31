@@ -29,7 +29,7 @@ import { // [NEW]
     TIER_MULTIPLIER // [NEW]
 } from '@/lib/token-constants'; // [NEW]
 import { SubscriptionTier, UserSubscription } from '@/lib/faction-subscription'; // [NEW]
-import { User, UserProfile } from '@/lib/firebase-db'; // [NEW]
+import { User, UserProfile, fetchUserSubscriptions } from '@/lib/firebase-db'; // [NEW] Updated import
 
 interface UserContextType {
     coins: number;
@@ -272,6 +272,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
                 // TODO: Active Subscriptions fetch from DB
                 // 임시: 빈 배열 (구독 기능 완성 시 여기에 fetch 로직 추가 필요)
                 // const subscriptions = await fetchUserSubscriptions(user.uid);
+                // fetchUserSubscriptions is now imported from firebase-db
                 const fetchedSubscriptions = await fetchUserSubscriptions(user.uid); // [NEW]
                 setSubscriptions(fetchedSubscriptions); // [NEW]
 

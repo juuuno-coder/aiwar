@@ -5,6 +5,16 @@
 // ============================================
 export type SubscriptionTier = 'basic' | 'pro' | 'ultra';
 
+export interface UserSubscription {
+    id?: string;
+    factionId: string;
+    tier: SubscriptionTier;
+    status: 'active' | 'expired' | 'canceled';
+    startDate: any;
+    nextPaymentDate: any;
+    autoRenew: boolean;
+}
+
 export interface TierConfig {
     name: string;
     koreanName: string;

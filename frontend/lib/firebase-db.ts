@@ -14,7 +14,6 @@ import {
     addDoc,
     orderBy,
     collectionGroup,
-    collectionGroup,
     limit
 } from 'firebase/firestore';
 import { createUniqueCardFromApplication } from './unique-card-factory';
@@ -70,6 +69,25 @@ function calculateTokenBonuses(subscriptions: { factionId: string; tier: Subscri
     });
 
     return { bonusRecharge, bonusMaxCap, bonusSpeedMinutes };
+}
+
+/**
+ * 유저의 활성 구독 목록 조회
+ */
+export async function fetchUserSubscriptions(userId: string): Promise<any[]> {
+    try {
+        const subscriptionsRef = collection(db!, 'users', userId, 'subscriptions');
+        const q = query(subscriptionsRef, where('status', '==', 'active'));
+        const querySnapshot = await getDocs(q);
+
+        return querySnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+        }));
+    } catch (error) {
+        console.error('Error fetching subscriptions:', error);
+        return [];
+    }
 }
 
 /**
