@@ -31,12 +31,25 @@ export default function SupportFormModal({ isOpen, onClose, type, title }: Suppo
 
         setIsSubmitting(true);
         try {
-            await createTicket({
+            const ticketId = await createTicket({
                 type,
                 title: subject,
                 description,
                 userNickname: profile?.nickname || 'Unknown User'
             });
+
+            // [NEW] Send Email Notification (Non-blocking)
+            fetch('/api/contact', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    type,
+                    title: subject,
+                    description,
+                    userNickname: profile?.nickname || 'Unknown User',
+                    referenceId: ticketId
+                })
+            }).catch(err => console.error('Email trigger failed:', err));
 
             showAlert({
                 title: '접수 완료',

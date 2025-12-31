@@ -551,17 +551,20 @@ export interface SupportTicket {
 /**
  * 티켓 생성 (오류 제보 / 아이디어)
  */
-export async function createTicket(data: { type: 'error' | 'idea', title: string, description: string, userNickname: string }): Promise<void> {
+/**
+ * 티켓 생성 (오류 제보 / 아이디어)
+ */
+export async function createTicket(data: { type: 'error' | 'idea', title: string, description: string, userNickname: string }): Promise<string> {
     if (!isFirebaseConfigured || !db) {
         console.warn('Firebase가 설정되지 않았습니다.');
-        return;
+        return 'local-id-' + Date.now();
     }
 
     try {
         const userId = await getUserId();
         const ticketsRef = collection(db, 'support_tickets');
 
-        await addDoc(ticketsRef, {
+        const docRef = await addDoc(ticketsRef, {
             ...data,
             userId,
             status: 'open',
@@ -569,6 +572,7 @@ export async function createTicket(data: { type: 'error' | 'idea', title: string
         });
 
         console.log('✅ 티켓 생성 성공:', data.title);
+        return docRef.id;
     } catch (error) {
         console.error('❌ 티켓 생성 실패:', error);
         throw error;

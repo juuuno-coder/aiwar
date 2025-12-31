@@ -49,7 +49,7 @@ export default function SupportPage() {
             icon: <Coffee size={32} />,
             color: "pink",
             actionText: "Buy Me a Coffee",
-            href: "https://buymeacoffee.com",
+            href: "https://buymeacoffee.com/bababapet",
             borderColor: "border-pink-500/50",
             glowColor: "shadow-pink-500/20",
             bgGradient: "from-pink-900/10 to-transparent",

@@ -137,17 +137,34 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                                     <ShieldCheck size={14} className="text-red-500" />
                                     <span className="text-[11px] font-black orbitron text-red-500 tracking-widest uppercase">Admin Override</span>
                                 </div>
-                                <div className="p-4 rounded-2xl bg-red-500/5 border border-red-500/10 flex items-center justify-between">
-                                    <div>
-                                        <p className="text-xs text-red-400 font-bold mb-1">스타터팩 상태 초기화</p>
-                                        <p className="text-[10px] text-zinc-500">수령 기록을 삭제하고 재지급을 활성화합니다.</p>
+                                <div className="p-4 rounded-2xl bg-red-500/5 border border-red-500/10 flex flex-col gap-4">
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <p className="text-xs text-red-400 font-bold mb-1">관리자 대시보드</p>
+                                            <p className="text-[10px] text-zinc-500">제보 및 유니크 신청 관리</p>
+                                        </div>
+                                        <Button
+                                            onClick={() => window.location.href = '/admin'}
+                                            className="bg-red-500/10 text-red-500 border border-red-500/20 hover:bg-red-500/20 text-xs px-3 py-1 h-8"
+                                        >
+                                            GO TO ADMIN
+                                        </Button>
                                     </div>
-                                    <Button
-                                        onClick={handleResetStarterPack}
-                                        className="bg-red-500/10 text-red-500 border border-red-500/20 hover:bg-red-500/20 text-xs px-3 py-1 h-8"
-                                    >
-                                        RESET
-                                    </Button>
+
+                                    <div className="w-full h-px bg-red-500/10" />
+
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <p className="text-xs text-red-400 font-bold mb-1">스타터팩 상태 초기화</p>
+                                            <p className="text-[10px] text-zinc-500">수령 기록 삭제 및 재지급 활성화</p>
+                                        </div>
+                                        <Button
+                                            onClick={handleResetStarterPack}
+                                            className="bg-red-500/10 text-red-500 border border-red-500/20 hover:bg-red-500/20 text-xs px-3 py-1 h-8"
+                                        >
+                                            RESET
+                                        </Button>
+                                    </div>
                                 </div>
                             </div>
                         )}
