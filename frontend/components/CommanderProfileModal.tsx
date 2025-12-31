@@ -14,7 +14,7 @@ import { Divider } from "@/components/ui/custom/Divider";
 import { Chip } from "@/components/ui/custom/Chip";
 import { motion, AnimatePresence } from "framer-motion";
 import { Input } from "@/components/ui/custom/Input";
-import { updateNickname } from '@/lib/firebase-db';
+import { updateNickname, saveUserProfile } from '@/lib/firebase-db';
 import {
     User,
     Shield,
@@ -44,7 +44,7 @@ interface CommanderProfileModalProps {
 }
 
 export default function CommanderProfileModal({ isOpen, onClose }: CommanderProfileModalProps) {
-    const { level, experience, coins, tokens, refreshData } = useUser();
+    const { level, experience, coins, tokens, inventory, refreshData } = useUser();
     const { state: footerState } = useFooter();
     const { profile } = useUserProfile();
     const { user } = useFirebase();
@@ -102,35 +102,44 @@ export default function CommanderProfileModal({ isOpen, onClose }: CommanderProf
         }
     };
 
-    // 아바타 선택 옵션 (카드 이미지 포함)
+    // 아바타 선택 옵션 (카드 이미지 및 기본 포함)
     const avatarOptions = [
-        { id: 'default', src: '/assets/commander/default.png', name: '기본' },
-        { id: 'gemini', src: '/assets/factions/gemini.png', name: 'Gemini' },
-        { id: 'gpt', src: '/assets/factions/gpt.png', name: 'GPT' },
-        { id: 'claude', src: '/assets/factions/claude.png', name: 'Claude' },
-        { id: 'llama', src: '/assets/factions/llama.png', name: 'Llama' },
-        { id: 'deepseek', src: '/assets/factions/deepseek.png', name: 'DeepSeek' },
-        // Card-based avatars
-        { id: 'card-commander', src: '/images/cards/real/commander.png', name: 'Commander' },
-        { id: 'card-code-warrior', src: '/images/cards/real/epic-code-warrior.png', name: 'Code Warrior' },
-        { id: 'card-titan-walker', src: '/images/cards/real/epic-titan-walker.png', name: 'Titan Walker' },
-        { id: 'card-cyber-medic', src: '/images/cards/real/rare-cyber-medic.png', name: 'Cyber Medic' },
-        { id: 'card-ghost-sniper', src: '/images/cards/real/rare-ghost-sniper.png', name: 'Ghost Sniper' },
-        { id: 'card-glitch-entity', src: '/images/cards/real/unique-glitch-entity.png', name: 'Glitch Entity' },
+        { id: 'default', src: '/assets/commander/default.png', name: '기본 지휘관' },
+        ...inventory.map(card => ({
+            id: card.id,
+            src: card.imageUrl,
+            name: card.name
+        }))
     ];
 
-    const handleAvatarChange = (src: string) => {
+    const handleAvatarChange = async (src: string) => {
         setCommanderAvatar(src);
-        // Use same key as Sidebar for consistency
+
+        // Save to local for immediate UI persistence
         localStorage.setItem('user_avatar', src);
+
+        // Save to Cloud for cross-device persistence
+        if (user?.uid) {
+            try {
+                await saveUserProfile({ avatarUrl: src }, user.uid);
+                console.log("Avatar saved to cloud profile.");
+            } catch (err) {
+                console.error("Failed to save avatar to cloud:", err);
+            }
+        }
+
         setShowAvatarSelect(false);
     };
 
-    // 저장된 아바타 로드 (Sidebar와 동일한 키 사용)
+    // 저장된 아바타 로드 (Cloud > Local > Default)
     useEffect(() => {
-        const saved = localStorage.getItem('user_avatar');
-        if (saved) setCommanderAvatar(saved);
-    }, []);
+        if (profile?.avatarUrl) {
+            setCommanderAvatar(profile.avatarUrl);
+        } else {
+            const saved = localStorage.getItem('user_avatar');
+            if (saved) setCommanderAvatar(saved);
+        }
+    }, [profile?.avatarUrl]);
 
     // 랑킹/전적 데이터 (가상)
     const commanderStats = {
@@ -244,10 +253,14 @@ export default function CommanderProfileModal({ isOpen, onClose }: CommanderProf
                                             alt="Commander"
                                             className="w-full h-full object-cover transition-transform group-hover:scale-105"
                                             onError={(e) => {
-                                                (e.target as HTMLImageElement).src = '/assets/factions/gemini.png';
+                                                (e.target as HTMLImageElement).src = '/assets/commander/default.png';
                                             }}
                                         />
-                                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+
+                                        {/* Digital Scanline Effect Overlay */}
+                                        <div className="absolute inset-0 pointer-events-none opacity-20 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_2px,3px_100%] z-10" />
+
+                                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent z-20" />
 
                                         {/* 랑킨 배지 */}
                                         <div className="absolute top-3 left-3">
@@ -294,11 +307,11 @@ export default function CommanderProfileModal({ isOpen, onClose }: CommanderProf
                                                             )}
                                                         >
                                                             <img
-                                                                src={avatar.src}
+                                                                src={avatar.src || '/assets/commander/default.png'}
                                                                 alt={avatar.name}
                                                                 className="w-full h-full object-cover"
                                                                 onError={(e) => {
-                                                                    (e.target as HTMLImageElement).src = '/assets/factions/gemini.png';
+                                                                    (e.target as HTMLImageElement).src = '/assets/commander/default.png';
                                                                 }}
                                                             />
                                                         </div>

@@ -31,6 +31,7 @@ export interface UserProfile {
     tokens: number;
     level: number;
     exp: number;
+    avatarUrl?: string;
     hasReceivedStarterPack?: boolean;
     createdAt?: any;
     lastLogin?: any;
