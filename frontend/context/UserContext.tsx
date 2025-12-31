@@ -188,9 +188,12 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
                 }
 
                 // [Fix] Starter Pack Check - Only show if NO cards and NOT claimed in session
-                if (!isClaimingInSession && formattedCards.length === 0 && !profile.hasReceivedStarterPack) {
+                // AND tutorial is completed (otherwise TutorialManager handles it)
+                const isTutorialCompleted = localStorage.getItem(`tutorial_completed_${user.uid}`);
+
+                if (isTutorialCompleted && !isClaimingInSession && formattedCards.length === 0 && !profile.hasReceivedStarterPack) {
                     setStarterPackAvailable(true);
-                    console.log("[SafetySystem] Starter Pack is available.");
+                    console.log("[SafetySystem] Starter Pack is available (Rescue Mode).");
                 } else {
                     setStarterPackAvailable(false);
                 }
@@ -248,8 +251,11 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
             setInventory(formattedInv);
 
             // [Fix] Re-enable starter pack check here for robustness
-            if (!isClaimingInSession && formattedInv.length === 0 && !profile.hasReceivedStarterPack) {
-                console.log("[UserContext] refreshData: Triggering Starter Pack");
+            // BUT only if tutorial is completed (otherwise TutorialManager handles it)
+            const isTutorialCompleted = localStorage.getItem(`tutorial_completed_${user?.uid}`);
+
+            if (isTutorialCompleted && !isClaimingInSession && formattedInv.length === 0 && !profile.hasReceivedStarterPack) {
+                console.log("[UserContext] refreshData: Triggering Starter Pack (Rescue Mode)");
                 setStarterPackAvailable(true);
             }
         } else {
