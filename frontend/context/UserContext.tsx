@@ -10,7 +10,7 @@ import {
     saveUserProfile
 } from '@/lib/firebase-db';
 import { generateCardByRarity } from '@/lib/card-generation-system';
-import { addCardToInventory, loadInventory } from '@/lib/inventory-system';
+import { addCardToInventory, loadInventory, distributeStarterPack } from '@/lib/inventory-system';
 import type { Card, Rarity } from '@/lib/types';
 import { useNotification } from '@/context/NotificationContext';
 import { useFirebase } from '@/components/FirebaseProvider';
@@ -347,26 +347,21 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
             }
             console.log("1000 coins added to account.");
 
-            // 2. 카드 생성 및 지급 (5장)
-            const newCards: Card[] = [];
+            // 2. 카드 생성 및 지급 (배치 처리로 변경)
+            console.log("Distributing starter cards...");
+            const inventoryCards = await distributeStarterPack(uid, profile?.nickname || '지휘관');
 
-            // 1 Rare Card
-            const rareCard = generateCardByRarity('rare');
-            if (rareCard) newCards.push(rareCard);
-
-            // 4 Common Cards
-            for (let i = 0; i < 4; i++) {
-                const commonCard = generateCardByRarity('common');
-                if (commonCard) newCards.push(commonCard);
+            if (!inventoryCards || inventoryCards.length === 0) {
+                throw new Error("Failed to generate starter cards.");
             }
 
-            console.log("Generated starter cards:", newCards.length);
+            // Convert InventoryCard to Card (handle Timestamp/Date conversion)
+            const newCards = inventoryCards.map(c => ({
+                ...c,
+                acquiredAt: (c.acquiredAt && 'toDate' in (c.acquiredAt as any)) ? (c.acquiredAt as any).toDate() : new Date(c.acquiredAt as any)
+            })) as Card[];
 
-            // 3. Add to Inventory
-            for (const card of newCards) {
-                card.ownerId = uid;
-                await addCardToInventory(card, uid);
-            }
+            console.log(`${newCards.length} cards distributed successfully.`);
 
             // 4. Update Flag
             if (profile) {
