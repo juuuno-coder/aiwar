@@ -14,11 +14,14 @@ import {
     addDoc,
     orderBy,
     collectionGroup,
+    collectionGroup,
     limit
 } from 'firebase/firestore';
 import { createUniqueCardFromApplication } from './unique-card-factory';
 import { db, isFirebaseConfigured } from './firebase';
 import { getUserId } from './firebase-auth';
+import { CATEGORY_TOKEN_BONUS, FACTION_CATEGORY_MAP, TIER_MULTIPLIER } from './token-constants';
+import { SubscriptionTier } from './faction-subscription';
 
 // ==================== 사용자 프로필 ====================
 
@@ -39,13 +42,46 @@ export interface UserProfile {
     lastTokenUpdate?: any; // [NEW] 토큰 자동 충전 기준 시간
 }
 
-const MAX_TOKENS_FREE = 1000; // [UPDATED] 최대 1000개
-const RECHARGE_RATE_PER_HOUR = 100; // [UPDATED] 시간당 100개
+const BASE_MAX_TOKENS = 1000;
+const BASE_RECHARGE_RATE = 100;
+
+/**
+ * 활성 구독 목록을 기반으로 보너스 계산
+ */
+function calculateTokenBonuses(subscriptions: { factionId: string; tier: SubscriptionTier }[]) {
+    let bonusRecharge = 0;
+    let bonusMaxCap = 0;
+    let bonusSpeedMinutes = 0; // 감소할 분 (기본 60분 간격)
+
+    subscriptions.forEach(sub => {
+        const categoryKey = FACTION_CATEGORY_MAP[sub.factionId];
+        if (!categoryKey) return;
+
+        const bonusConfig = CATEGORY_TOKEN_BONUS[categoryKey];
+        const multiplier = TIER_MULTIPLIER[sub.tier] || 1;
+
+        if (bonusConfig.type === 'recharge_amount') {
+            bonusRecharge += (bonusConfig.baseValue || 0) * multiplier;
+        } else if (bonusConfig.type === 'max_capacity') {
+            bonusMaxCap += (bonusConfig.baseValue || 0) * multiplier;
+        } else if (bonusConfig.type === 'recharge_speed') {
+            bonusSpeedMinutes += (bonusConfig.baseValue || 0) * multiplier;
+        }
+    });
+
+    return { bonusRecharge, bonusMaxCap, bonusSpeedMinutes };
+}
 
 /**
  * 토큰 자동 충전 체크 및 업데이트
+ * @param subscriptions - [{ factionId: 'chatgpt', tier: 'pro' }, ...]
  */
-export async function checkAndRechargeTokens(userId: string, currentTokens: number, lastUpdate: any): Promise<number> {
+export async function checkAndRechargeTokens(
+    userId: string,
+    currentTokens: number,
+    lastUpdate: any,
+    subscriptions: { factionId: string; tier: SubscriptionTier }[] = []
+): Promise<number> {
     if (!lastUpdate) {
         // 첫 실행 시 현재 시간 기록
         const userRef = doc(db!, 'users', userId);
@@ -53,38 +89,55 @@ export async function checkAndRechargeTokens(userId: string, currentTokens: numb
         return currentTokens;
     }
 
+    const { bonusRecharge, bonusMaxCap, bonusSpeedMinutes } = calculateTokenBonuses(subscriptions);
+
+    // 기본 60분 - 보너스 단축 (최소 10분 간격은 유지)
+    const rechargeIntervalMinutes = Math.max(10, 60 - bonusSpeedMinutes);
+
+    // 최종 충전량 (시간당 기본 100 + 보너스)
+    // 간격이 줄어들면, '1회 충전당 지급량'을 조절하거나, '시간당 총량'을 유지하거나 선택해야 함.
+    // 여기서는 '시간당 총량' 개념보다 '충전 주기'가 빨라지는 것으로 기획됨 (이미지 카테고리).
+    // => 단순히 (경과시간 / 주기) * (기본양 + 보너스양) 으로 계산.
+
+    const rechargeAmountPerCycle = BASE_RECHARGE_RATE + bonusRecharge;
+    const maxTokens = BASE_MAX_TOKENS + bonusMaxCap;
+
     const now = new Date();
     const lastDate = lastUpdate.toDate ? lastUpdate.toDate() : new Date(lastUpdate);
     const diffMs = now.getTime() - lastDate.getTime();
-    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffMinutes = Math.floor(diffMs / (1000 * 60));
 
-    if (diffHours >= 1) {
-        // 충전량 계산
-        let rechargeAmount = diffHours * RECHARGE_RATE_PER_HOUR;
+    // 충전 주기(Interval) 횟수 계산
+    const cycles = Math.floor(diffMinutes / rechargeIntervalMinutes);
 
-        // 최대 한도 체크 (일단 무료 기준 100개)
-        // 구독 등급에 따라 분기 처리 가능 (나중에 확장)
-        const maxTokens = MAX_TOKENS_FREE;
+    if (cycles >= 1) {
+        // 실제 충전량
+        const totalRecharge = cycles * rechargeAmountPerCycle;
 
-        let newTokens = currentTokens + rechargeAmount;
+        let newTokens = currentTokens + totalRecharge;
+
+        // 최대 보유량 체크
         if (newTokens > maxTokens) {
-            // 이미 꽉 찼거나 초과했다면 충전 안 함 (단, 이미 초과 상태면 유지)
+            // 이미 초과 상태면 유지, 아니면 max로
             if (currentTokens < maxTokens) {
                 newTokens = maxTokens;
             } else {
-                return currentTokens; // 이미 많으면 유지
+                return currentTokens;
             }
-        } else {
-            // 상한선 안 넘었으면 그대로
         }
 
         const userRef = doc(db!, 'users', userId);
+        // lastTokenUpdate를 '이번에 충전된 주기만큼' 앞으로 당김 (정확한 주기 유지)
+        // 단, 너무 오래전이면 그냥 now로 리셋할수도 았으나, 정밀하게 하려면 cycles * interval 만큼 더해줌.
+        const cyclesMs = cycles * rechargeIntervalMinutes * 60 * 1000;
+        const newLastUpdate = new Date(lastDate.getTime() + cyclesMs);
+
         await updateDoc(userRef, {
             tokens: newTokens,
-            lastTokenUpdate: serverTimestamp()
+            lastTokenUpdate: newLastUpdate // Firestore Timestamp로 변환 필요하지만 JS Date도 허용될 수 있음, 안전하게 Timestamp 사용 권장되나 로컬 계산이라 Date 저장
         });
 
-        console.log(`🔋 토큰 자동 충전: +${newTokens - currentTokens} (경과: ${diffHours}시간)`);
+        console.log(`🔋 토큰 충전: +${newTokens - currentTokens} (주기: ${cycles}회, 간격: ${rechargeIntervalMinutes}분)`);
         return newTokens;
     }
 

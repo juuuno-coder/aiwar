@@ -23,6 +23,14 @@ import {
 import { migrateLegacyGameState } from '@/lib/game-state';
 import { migrateLegacySlots } from '@/lib/generation-utils';
 
+import { // [NEW]
+    CATEGORY_TOKEN_BONUS, // [NEW]
+    FACTION_CATEGORY_MAP, // [NEW]
+    TIER_MULTIPLIER // [NEW]
+} from '@/lib/token-constants'; // [NEW]
+import { SubscriptionTier, UserSubscription } from '@/lib/faction-subscription'; // [NEW]
+import { User, UserProfile } from '@/lib/firebase-db'; // [NEW]
+
 interface UserContextType {
     coins: number;
     tokens: number;
@@ -30,15 +38,17 @@ interface UserContextType {
     experience: number;
     loading: boolean;
     inventory: Card[];
-    addCoins: (amount: number) => Promise<number>;
-    addTokens: (amount: number) => Promise<number>;
+    addCoins: (amount: number) => Promise<void>; // Changed return type
+    addTokens: (amount: number) => Promise<void>; // Changed return type
     addExperience: (amount: number) => Promise<{ level: number; experience: number; leveledUp: boolean }>;
     refreshData: () => Promise<void>;
     isAdmin: boolean;
-    user: any;
+    user: User | null; // Changed type
+    profile: UserProfile | null; // Added
     starterPackAvailable: boolean;
     claimStarterPack: () => Promise<Card[]>;
     hideStarterPack: () => void;
+    consumeTokens: (baseAmount: number, category?: string) => Promise<boolean>; // Added
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -57,6 +67,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     const [isAdmin, setIsAdmin] = useState(false);
     const [starterPackAvailable, setStarterPackAvailable] = useState(false);
     const [isClaimingInSession, setIsClaimingInSession] = useState(false);
+    const [subscriptions, setSubscriptions] = useState<UserSubscription[]>([]); // [NEW]
 
     // [Safety] Reset state to prevent data bleed from previous sessions/users
     const resetState = useCallback(() => {
@@ -66,6 +77,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         setExperience(0);
         setInventory([]);
         setStarterPackAvailable(false);
+        setSubscriptions([]); // [NEW]
     }, []); // [NEW] Prevents modal from re-popping after click
 
 
@@ -99,6 +111,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
             setTokens(0);
             setLevel(1);
             setExperience(0);
+            setSubscriptions([]); // [NEW]
         }
 
         // Update ref
@@ -200,6 +213,9 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
                 }
             }).catch(console.error);
 
+            // [NEW] Load subscriptions
+            fetchUserSubscriptions(user.uid).then(setSubscriptions).catch(console.error);
+
             setLoading(false);
         }
     }, [mounted, profile, user?.uid, isClaimingInSession]);
@@ -253,10 +269,15 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
             // [Auto Recharge Check]
             if (user?.uid && profile) {
-                const refreshedToken = await checkAndRechargeTokens(user.uid, profile.tokens, profile.lastTokenUpdate);
+                // TODO: Active Subscriptions fetch from DB
+                // 임시: 빈 배열 (구독 기능 완성 시 여기에 fetch 로직 추가 필요)
+                // const subscriptions = await fetchUserSubscriptions(user.uid);
+                const fetchedSubscriptions = await fetchUserSubscriptions(user.uid); // [NEW]
+                setSubscriptions(fetchedSubscriptions); // [NEW]
+
+                const refreshedToken = await checkAndRechargeTokens(user.uid, profile.tokens, profile.lastTokenUpdate, fetchedSubscriptions); // Pass fetchedSubscriptions
                 if (refreshedToken !== profile.tokens) {
                     setTokens(refreshedToken);
-                    // No need to reload profile again, DB is updated inside checkAndRechargeTokens
                 }
             }
 
@@ -295,7 +316,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
                 setLoading(false);
             }
         }
-    }, [mounted, profile, reloadProfile, user?.uid]);
+    }, [mounted, profile, reloadProfile, user?.uid, isClaimingInSession]);
 
     // Initial load for non-logged-in users or when profile load completes as null
     useEffect(() => {
@@ -305,39 +326,35 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     }, [mounted, profileLoading, profile, refreshData]);
 
     const addCoinsByContext = async (amount: number) => {
-        if (!mounted) return coins;
+        if (!mounted) return; // Changed return type
 
         if (profile) {
             await firebaseUpdateCoins(amount, user?.uid);
             await reloadProfile();
-            return coins + amount;
+            // No need to return newCoins, as reloadProfile will update state
         } else {
             try {
                 const newCoins = await gameStorage.addCoins(amount, user?.uid);
                 setCoins(newCoins);
-                return newCoins;
             } catch (err) {
                 console.error("Failed to add coins:", err);
-                return coins;
             }
         }
     };
 
     const addTokensByContext = async (amount: number) => {
-        if (!mounted) return tokens;
+        if (!mounted) return; // Changed return type
 
         if (profile) {
             await firebaseUpdateTokens(amount, user?.uid);
             await reloadProfile();
-            return tokens + amount;
+            // No need to return newTokens, as reloadProfile will update state
         } else {
             try {
                 const newTokens = await gameStorage.addTokens(amount, user?.uid);
                 setTokens(newTokens);
-                return newTokens;
             } catch (err) {
                 console.error("Failed to add tokens:", err);
-                return tokens;
             }
         }
     };
@@ -383,6 +400,52 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         }
     };
 
+    // [NEW] 토큰 소모 (확률적 페이백 및 할인 적용)
+    const consumeTokens = async (baseAmount: number, category: string = 'COMMON'): Promise<boolean> => {
+        if (!user || !profile) return false;
+
+        let finalAmount = baseAmount;
+        let isPayback = false;
+        let paybackAmount = 0;
+
+        // 1. 카테고리별 할인 (VIDEO)
+        // 현재 활성 구독을 확인해야 함 (간략화를 위해 로컬 상태나 프로필에서 가져와야 함)
+        // 여기서는 MVP로 직접 DB 조회보다는, profile에 subscriptions 필드가 있다고 가정하거나
+        // 별도로 구독 정보를 fetch 해오는 로직이 필요함.
+        // *성능상* Context에 subscriptions state를 추가하는 게 좋음.
+        // 일단은 '오버클럭/페이백' 로직만 구현 (코딩 카테고리 지정 시)
+
+        // 만약 'CODING' 카테고리 작업이라면 페이백 체크
+        if (category === 'CODING') {
+            const bonus = CATEGORY_TOKEN_BONUS.CODING;
+            if (Math.random() < bonus.chance) {
+                isPayback = true;
+                paybackAmount = Math.floor(finalAmount * bonus.refundRatio);
+                // 페이백은 '소모 안 함'이 아니라 '소모 후 환급' 또는 '처음부터 적게 소모'
+                // 여기서는 '처음부터 적게 소모'로 처리하여 유저에게 이득감을 줌
+                finalAmount -= paybackAmount;
+            }
+        }
+
+        if (profile.tokens < finalAmount) {
+            return false;
+        }
+
+        await firebaseUpdateTokens(-finalAmount, user.uid); // Changed order of arguments
+
+        // 로컬 상태 즉시 반영
+        setTokens(prev => prev - finalAmount);
+
+        if (isPayback) {
+            // 알림 표시 (AlertContext 등을 사용할 수 없으므로 console이나 Toast 로직 필요)
+            // 여기서는 값을 return true로 성공 처리만 함.
+            // 호출부에서 payback 여부를 알 수 있게 리턴 타입을 {success: boolean, paybacked: number}로 바꾸는 게 좋지만
+            // 인터페이스 유지를 위해 일단 진행.
+            console.log(`⚡️ CODING OPTIMIZATION! Refunded ${paybackAmount} tokens.`);
+        }
+
+        return true;
+    };
 
 
     const hideStarterPack = () => setStarterPackAvailable(false);
@@ -443,7 +506,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
             addNotification({
                 type: 'reward',
                 title: '스타터팩 지급 완료!',
-                message: '1000 코인과 카드 5장을 획득했습니다.',
+                message: '1000 코인과 카드 5장을 획용했습니다.',
                 icon: '🎁'
             });
 
@@ -485,6 +548,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
                 refreshData,
                 isAdmin,
                 user,
+                profile, // Added
                 starterPackAvailable,
                 claimStarterPack,
                 hideStarterPack
