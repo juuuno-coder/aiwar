@@ -13,11 +13,13 @@ import { updateNickname } from '@/lib/firebase-db';
 import { useFirebase } from '@/components/FirebaseProvider';
 import { distributeStarterPack, InventoryCard } from '@/lib/inventory-system'; // Import Starter Pack logic
 import { Card as CardType } from '@/lib/types'; // Import Card Type
+import { useUser } from '@/context/UserContext';
 
 export default function TutorialManager() {
     const pathname = usePathname();
     const { user } = useFirebase();
     const { profile, reload: reloadProfile, loading } = useUserProfile();
+    const { refreshData } = useUser();
     const [showNicknameModal, setShowNicknameModal] = useState(false);
     const [showTutorialModal, setShowTutorialModal] = useState(false);
 
@@ -119,6 +121,9 @@ export default function TutorialManager() {
             const rewards = await distributeStarterPack(user?.uid, profile?.nickname);
             if (rewards.length > 0) {
                 setStarterCards(rewards as unknown as CardType[]);
+
+                // [Fix] Immediately refresh inventory so user context is in sync
+                await refreshData();
 
                 // Instead of showing Receipt immediately, show the Opening Ceremony first
                 setShowOpeningModal(true);
