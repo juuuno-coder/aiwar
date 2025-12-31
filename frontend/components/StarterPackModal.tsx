@@ -40,6 +40,7 @@ export default function StarterPackModal() {
                 cards={revealedCards}
                 onClose={hideStarterPack}
                 packType="premium"
+                bonusReward={{ type: 'coins', amount: 1000 }}
             />
         );
     }

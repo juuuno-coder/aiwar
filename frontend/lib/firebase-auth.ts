@@ -21,8 +21,19 @@ export async function signInWithGoogle(): Promise<User | null> {
         const provider = new GoogleAuthProvider();
         const result = await signInWithPopup(auth, provider);
         return result.user;
-    } catch (error) {
+    } catch (error: any) {
         console.error('구글 로그인 실패:', error);
+
+        if (error.code === 'auth/unauthorized-domain') {
+            alert('도메인 승인 오류: Firebase Console에서 현재 도메인을 승인된 도메인에 추가해야 로그인이 가능합니다.\n(Authentication > Settings > Authorized Domains)');
+        } else if (error.code === 'auth/popup-closed-by-user') {
+            console.log('사용자가 로그인 팝업을 닫았습니다.');
+        } else if (error.code === 'auth/cancelled-popup-request') {
+            // Multiple popups
+        } else {
+            alert(`로그인 오류가 발생했습니다: ${error.message}`);
+        }
+
         return null;
     }
 }

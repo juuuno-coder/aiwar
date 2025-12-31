@@ -11,7 +11,8 @@ interface GachaRevealModalProps {
     isOpen: boolean;
     onClose: () => void;
     cards: CardType[];
-    packType: 'basic' | 'premium' | 'legendary';
+    packType: 'basic' | 'premium' | 'legendary' | 'starter';
+    bonusReward?: { type: 'coins'; amount: number };
 }
 
 // 등급별 연출 설정
@@ -34,7 +35,7 @@ const RARITY_GRADIENTS = {
     commander: 'from-emerald-900 via-teal-800 to-emerald-900'
 };
 
-export default function GachaRevealModal({ isOpen, onClose, cards, packType }: GachaRevealModalProps) {
+export default function GachaRevealModal({ isOpen, onClose, cards, packType, bonusReward }: GachaRevealModalProps) {
     const [phase, setPhase] = useState<'opening' | 'revealing' | 'complete'>('opening');
     const [currentCardIndex, setCurrentCardIndex] = useState(0);
     const [revealedCards, setRevealedCards] = useState<CardType[]>([]);
@@ -171,6 +172,22 @@ export default function GachaRevealModal({ isOpen, onClose, cards, packType }: G
                                 </motion.div>
                             ))}
                         </div>
+
+                        {/* Bonus Reward */}
+                        {bonusReward && (
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.5, y: 20 }}
+                                animate={{ opacity: 1, scale: 1, y: 0 }}
+                                transition={{ delay: 0.5 }}
+                                className="mt-8 flex flex-col items-center justify-center py-4 px-8 bg-black/40 border border-yellow-500/50 rounded-xl backdrop-blur-sm"
+                            >
+                                <div className="text-yellow-400 font-bold mb-2 uppercase tracking-wider text-xs">Starter Gift</div>
+                                <div className="flex items-center gap-3">
+                                    <div className="text-3xl animate-bounce">💰</div>
+                                    <div className="text-4xl font-black text-white orbitron text-shadow-glow">+{bonusReward.amount.toLocaleString()}</div>
+                                </div>
+                            </motion.div>
+                        )}
 
                         <motion.p
                             initial={{ opacity: 0 }}
