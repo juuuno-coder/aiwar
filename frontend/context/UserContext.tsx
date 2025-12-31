@@ -28,11 +28,9 @@ import { // [NEW]
     FACTION_CATEGORY_MAP, // [NEW]
     TIER_MULTIPLIER // [NEW]
 } from '@/lib/token-constants'; // [NEW]
-TIER_MULTIPLIER // [NEW]
-} from '@/lib/token-constants'; // [NEW]
 import { SubscriptionTier, UserSubscription } from '@/lib/faction-subscription'; // [NEW]
-import { UserProfile, fetchUserSubscriptions } from '@/lib/firebase-db'; // [NEW] Updated import
-import { User } from 'firebase/auth'; // [NEW] Correct import
+import { UserProfile, fetchUserSubscriptions } from '@/lib/firebase-db'; // [NEW]
+import { User } from 'firebase/auth'; // [NEW]
 
 interface UserContextType {
     coins: number;
