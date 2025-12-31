@@ -31,6 +31,7 @@ export interface UserProfile {
     tokens: number;
     level: number;
     exp: number;
+    hasReceivedStarterPack?: boolean;
     createdAt?: any;
     lastLogin?: any;
 }
@@ -88,6 +89,7 @@ export async function loadUserProfile(uid?: string): Promise<UserProfile | null>
             tokens: 100,
             level: 1,
             exp: 0,
+            hasReceivedStarterPack: false,
             createdAt: serverTimestamp(),
             lastLogin: serverTimestamp()
         };

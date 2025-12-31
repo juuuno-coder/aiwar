@@ -134,8 +134,8 @@ export function createDefaultGameState(userId: string, nickname: string): GameSt
         nickname,
         level: 1,
         experience: 0,
-        tokens: 1000, // 초기 토큰 (프리미엄 재화)
-        coins: 5000,  // 초기 코인 (기본 재화)
+        tokens: 100, // 초기 토큰 (프리미엄 재화)
+        coins: 0,  // 초기 코인 (기본 재화)
         commanderMastery: 0, // 초기 숙련도
         inventory: [],
         cards: [], // Alias for inventory

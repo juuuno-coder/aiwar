@@ -6,10 +6,11 @@ import { useUserProfile } from '@/hooks/useUserProfile';
 import {
     updateCoins as firebaseUpdateCoins,
     updateTokens as firebaseUpdateTokens,
-    updateExpAndLevel as firebaseUpdateExpAndLevel
+    updateExpAndLevel as firebaseUpdateExpAndLevel,
+    saveUserProfile
 } from '@/lib/firebase-db';
 import { generateCardByRarity } from '@/lib/card-generation-system';
-import { addCardToInventory } from '@/lib/inventory-system';
+import { addCardToInventory, loadInventory } from '@/lib/inventory-system';
 import type { Card, Rarity } from '@/lib/types';
 import { useNotification } from '@/context/NotificationContext';
 import { useFirebase } from '@/components/FirebaseProvider';
@@ -130,9 +131,21 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
             setLevel(profile.level);
             setExperience(profile.exp);
 
+            // [Auto-Healing] 신규 유저 초기 코인 과다 지급 자동 수정 로직
+            if (profile.level === 1 && profile.coins > 1000 && profile.hasReceivedStarterPack) {
+                const excess = profile.coins - 1000;
+                console.log(`[SafetySystem] Detected excess initial coins (${profile.coins}). Healing to 1000...`);
+                firebaseUpdateCoins(-excess, user?.uid).catch(console.error);
+                setCoins(1000); // 즉시 UI 반영
+            }
+
             // Load inventory separately since it's not in profile
-            gameStorage.getCards(user?.uid).then((cards: any[]) => {
-                setInventory(cards || []);
+            loadInventory(user?.uid).then((cards) => {
+                const formattedCards = cards.map(c => ({
+                    ...c,
+                    acquiredAt: (c.acquiredAt && 'toDate' in c.acquiredAt) ? (c.acquiredAt as any).toDate() : new Date(c.acquiredAt as any)
+                })) as Card[];
+                setInventory(formattedCards);
             }).catch(console.error);
 
             setLoading(false);
@@ -196,10 +209,16 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
                 setLevel(state.level || 1);
                 setLevel(state.level || 1);
                 setExperience(state.experience || 0);
-                setInventory(state.inventory || []);
+                const inv = await loadInventory(user?.uid);
+                const formattedInv = inv.map(c => ({
+                    ...c,
+                    acquiredAt: (c.acquiredAt && 'toDate' in c.acquiredAt) ? (c.acquiredAt as any).toDate() : new Date(c.acquiredAt as any)
+                })) as Card[];
+                setInventory(formattedInv);
 
                 // Starter Pack Check
-                if ((!state.inventory || state.inventory.length === 0) && !state.hasReceivedStarterPack) {
+                const hasReceived = profile ? !!profile.hasReceivedStarterPack : !!(state as any).hasReceivedStarterPack;
+                if ((!formattedInv || formattedInv.length === 0) && !hasReceived) {
                     setStarterPackAvailable(true);
                 }
             } catch (err) {
@@ -342,11 +361,16 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
                 await addCardToInventory(card, uid);
             }
 
-            // 4. Update Flag in GameState
-            const currentState = await gameStorage.loadGameState(uid);
-            currentState.hasReceivedStarterPack = true;
-            await gameStorage.saveGameState(currentState, uid);
-            console.log("Starter pack flag check marked.");
+            // 4. Update Flag
+            if (profile) {
+                await saveUserProfile({ hasReceivedStarterPack: true }, uid);
+                console.log("Firebase profile flag marked.");
+            } else {
+                const currentState = await gameStorage.loadGameState(uid);
+                currentState.hasReceivedStarterPack = true;
+                await gameStorage.saveGameState(currentState, uid);
+                console.log("Local state flag marked.");
+            }
 
             // 5. Notify
             addNotification({
