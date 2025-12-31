@@ -125,29 +125,54 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
     // Sync state from Firebase profile
     useEffect(() => {
-        if (mounted && profile) {
+        if (mounted && profile && user?.uid) {
             setCoins(profile.coins);
             setTokens(profile.tokens);
             setLevel(profile.level);
             setExperience(profile.exp);
 
-            // [Auto-Healing] 신규 유저 초기 코인 과다 지급 자동 수정 로직
-            if (profile.level === 1 && profile.coins > 1000 && profile.hasReceivedStarterPack) {
+            // [Auto-Healing & Rescue] 
+            // 1. 코인 과다 지급 수정 (Level 1은 1,000 코인이 최대)
+            if (profile.level === 1 && profile.coins > 1000) {
                 const excess = profile.coins - 1000;
-                console.log(`[SafetySystem] Detected excess initial coins (${profile.coins}). Healing to 1000...`);
-                firebaseUpdateCoins(-excess, user?.uid).catch(console.error);
+                console.log(`[SafetySystem] Healing: Resetting Level 1 coins from ${profile.coins} to 1000`);
+                firebaseUpdateCoins(-excess, user.uid).catch(console.error);
                 setCoins(1000); // 즉시 UI 반영
+                // If coins are healed, it implies the starter pack was effectively received.
+                if (!profile.hasReceivedStarterPack) {
+                    saveUserProfile({ hasReceivedStarterPack: true }, user.uid).catch(console.error);
+                }
             }
 
-            // Load inventory separately since it's not in profile
-            loadInventory(user?.uid).then((cards) => {
+            // 2. 인벤토리 긴급 구조 (수령 처리되었으나 카드가 없는 경우)
+            // Load inventory and check for gaps
+            loadInventory(user.uid).then(async (cards) => {
                 const formattedCards = cards.map(c => ({
                     ...c,
-                    acquiredAt: (c.acquiredAt && 'toDate' in c.acquiredAt) ? (c.acquiredAt as any).toDate() : new Date(c.acquiredAt as any)
+                    acquiredAt: (c.acquiredAt && 'toDate' in (c.acquiredAt as any)) ? (c.acquiredAt as any).toDate() : new Date(c.acquiredAt as any)
                 })) as Card[];
                 setInventory(formattedCards);
 
-                // [Fix] Starter Pack Check for Logged-in User
+                // Emergency Rescue: 이미 수령했는데 카드가 0장인 경우 (Level 1 대상)
+                if (profile.level === 1 && profile.hasReceivedStarterPack && formattedCards.length === 0) {
+                    console.log("[SafetySystem] Rescue: Found claimed flag but 0 cards. Re-distributing...");
+                    const rescuedCards = await distributeStarterPack(user.uid, profile.nickname || '지휘관');
+                    if (rescuedCards && rescuedCards.length > 0) {
+                        const formattedRescued = rescuedCards.map(c => ({
+                            ...c,
+                            acquiredAt: new Date()
+                        })) as Card[];
+                        setInventory(formattedRescued);
+                        addNotification({
+                            type: 'reward',
+                            title: '데이터 복구 완료',
+                            message: '유실되었던 스타터팩 카드를 복구했습니다.',
+                            icon: '🎁'
+                        });
+                    }
+                }
+
+                // [Fix] Starter Pack Check
                 if (formattedCards.length === 0 && !profile.hasReceivedStarterPack) {
                     setStarterPackAvailable(true);
                 }
