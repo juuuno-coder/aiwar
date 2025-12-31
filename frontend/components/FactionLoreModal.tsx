@@ -201,16 +201,6 @@ export default function FactionLoreModal({ faction, isOpen, onClose, allFactions
                                             </section>
                                         </div>
 
-                                        {/* Special Ability */}
-                                        <section className="p-5 bg-gradient-to-r from-purple-900/40 to-blue-900/20 rounded-xl border border-purple-500/30">
-                                            <h3 className="flex items-center gap-2 text-sm font-bold text-pink-400 mb-2 uppercase tracking-widest font-mono">
-                                                <Swords size={14} />
-                                                특수 능력
-                                            </h3>
-                                            <p className="text-white font-medium text-lg">
-                                                {faction.specialAbility}
-                                            </p>
-                                        </section>
 
                                         {/* Relationships */}
                                         <section>
