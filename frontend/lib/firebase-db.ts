@@ -16,6 +16,7 @@ import {
     collectionGroup,
     limit
 } from 'firebase/firestore';
+import { createUniqueCardFromApplication } from './unique-card-factory';
 import { db, isFirebaseConfigured } from './firebase';
 import { getUserId } from './firebase-auth';
 
@@ -705,6 +706,18 @@ export async function updateUniqueRequestStatus(requestId: string, status: 'pend
 
         await updateDoc(requestRef, updateData);
         console.log('✅ 유니크 신청 업데이트:', requestId, status);
+
+        // [NEW] 만약 승인(approved)되었다면, 실제 카드를 생성하여 유저에게 지급
+        if (status === 'approved') {
+            const success = await createUniqueCardFromApplication(requestId);
+            if (!success) {
+                console.error('⚠️ 카드 생성에 실패했습니다. 수동 지급이 필요할 수 있습니다.');
+                // 실패했다고 신청 상태를 다시 돌리지는 않음 (관리자가 알아야 함)
+                if (comment) {
+                    await updateDoc(requestRef, { adminComment: comment + " (시스템 오류: 카드 자동 지급 실패)" });
+                }
+            }
+        }
     } catch (error) {
         console.error('❌ 유니크 신청 업데이트 실패:', error);
         throw error;
@@ -713,70 +726,32 @@ export async function updateUniqueRequestStatus(requestId: string, status: 'pend
 /**
  * 리더보드 데이터 로드
  */
+/**
+ * 리더보드 데이터 로드 (실제 DB 연동)
+ */
 export async function getLeaderboardData(limitCount = 50): Promise<UserProfile[]> {
     if (!isFirebaseConfigured || !db) return [];
 
     try {
         const usersRef = collection(db, 'users');
-        // Note: This query requires an index on (level DESC, exp DESC).
-        // If index is missing, Firebase console will provide a link to create it.
-        // We perform client-side sorting as a fallback/hybrid approach if needed,
-        // but for "Global Ranking", querying 'users' strictly might be expensive eventually.
-        // Ideally, we maintain a separate 'leaderboard' collection updated via triggers.
-        // For MVP, we query users directly.
-
-        // Since user data is nested in subcollections (users/{uid}/profile/data), 
-        // collectionGroup queries are needed for 'data' subcollections where parent is 'profile'.
-        // However, 'profile' is a doc, 'data' is a doc?? No, structure is:
-        // doc(db, 'users', userId, 'profile', 'data'); -> specific path.
-        // So 'data' is a document inside 'profile' collection?
-        // Let's check saveUserProfile again. 
-        // const userRef = doc(db, 'users', userId, 'profile', 'data'); 
-        // This means: Collection 'users' -> Doc {userId} -> Collection 'profile' -> Doc 'data'.
-
-        // To query ALL users' profiles, we need a Collection Group Query on 'profile' collection?
-        // Actually, the structure seems to be: users/{uid}/profile/data.
-        // 'profile' acts as a collection name here? No, 'profile' is in the path.
-        // If we did doc(db, 'users', userId, 'profile', 'data'), then:
-        // 'users' (col) -> userId (doc) -> 'profile' (col) -> 'data' (doc).
-
-        // In this case, to get all 'data' docs, we can use collectionGroup('profile')? 
-        // No, 'data' is the document ID. The collection is 'profile'.
-        // So we query collectionGroup('profile') where id is 'data'? 
-        // Actually, better practice is: collectionGroup('users')?? No.
-
-        // Simpler approach for MVP if structure is fixed:
-        // Use a top-level 'leaderboard' collection.
-        // Since we don't have triggers set up in this environment easily without Cloud Functions deployment,
-        // we will fetch all users from 'users' collection? No, profile data is deep.
-
-        // REVISION: We will execute a Collection Group query on 'profile'.
-        // Assuming the collection name is 'profile'.
-        // Wait, doc(db, 'users', userId, 'profile', 'data') implies:
-        // Collection 'users', Document 'userId', Collection 'profile', Document 'data'.
-        // So the collection name is 'profile'.
-
-        // Let's try collectionGroup('profile').
-        const profileQuery = query(
-            collectionGroup(db, 'profile'),
-            // where('level', '>', 0), // Optional filter
+        // 레벨 내림차순 -> 경험치 내림차순 정렬
+        // 주의: Firestore 복합 색인(Composite Index)이 필요할 수 있음.
+        // 에러 발생 시 콘솔의 링크를 클릭하여 색인 생성 필요.
+        const q = query(
+            usersRef,
             orderBy('level', 'desc'),
             orderBy('exp', 'desc'),
             limit(limitCount)
         );
 
-        const snapshot = await getDocs(profileQuery);
-        // We need to map back to having UID. 
-        // The doc ref has parent... parent... to get UID?
-        // doc.ref.parent.parent?.id should be the UID if structure is strict.
-
+        const snapshot = await getDocs(q);
         return snapshot.docs.map(doc => {
-            const data = doc.data() as UserProfile;
-            // Manual UID fallback if not in data (though saveUserProfile saves it)
-            const uid = data.uid || doc.ref.parent.parent?.id;
-            return { ...data, uid };
+            const data = doc.data();
+            return {
+                uid: doc.id,
+                ...data
+            } as UserProfile;
         });
-
     } catch (error) {
         console.error('❌ 리더보드 로드 실패:', error);
         return [];

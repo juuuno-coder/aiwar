@@ -4,8 +4,9 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import CyberPageLayout from '@/components/CyberPageLayout';
+import { getLeaderboardData } from '@/lib/firebase-db';
 import { RankingEntry } from '@/lib/ranking-types';
-import { loadRankings, findMyRank, getCurrentSeason, getRewardForRank, getRankTier, getRatingToNextTier } from '@/lib/ranking-utils';
+import { findMyRank, getCurrentSeason, getRankTier, getRatingToNextTier } from '@/lib/ranking-utils';
 import { getPvPStats } from '@/lib/pvp-utils';
 import { cn } from '@/lib/utils';
 
@@ -19,9 +20,31 @@ export default function RankingPage() {
     useEffect(() => {
         setCurrentSeason(getCurrentSeason());
         setPvpStats(getPvPStats());
-        const rankingData = loadRankings();
-        setRankings(rankingData);
-        setMyRank(findMyRank(rankingData));
+
+        async function fetchRanking() {
+            const profiles = await getLeaderboardData(100);
+
+            // UserProfile -> RankingEntry 변환
+            const rankingData: RankingEntry[] = profiles.map((p, index) => ({
+                rank: index + 1,
+                playerId: p.uid || 'unknown',
+                playerName: p.nickname || 'Unknown',
+                level: p.level || 1,
+                rating: 1000 + ((p.level || 1) * 50), // 레벨 기반 임시 레이팅
+                highestRating: 1000 + ((p.level || 1) * 50), // [FIX] 필수 속성 추가
+                wins: 0, // PVP 기록 연동 전까지 0
+                losses: 0,
+                winRate: 0,
+                tier: 'bronze',
+                recentMatchHistory: []
+            }));
+
+            setRankings(rankingData);
+            // 내 랭킹 찾기 (Client Side Logic 보완 필요)
+            // setMyRank(findMyRank(rankingData)); 
+        }
+
+        fetchRanking();
     }, []);
 
     if (!currentSeason || !pvpStats) {

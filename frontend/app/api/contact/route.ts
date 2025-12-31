@@ -14,10 +14,12 @@ export async function POST(req: Request) {
         const emailUser = process.env.EMAIL_USER;
         const emailPass = process.env.EMAIL_PASS;
 
+        console.log(`[API] Email Attempt: User=${emailUser ? 'Set' : 'Missing'}, Pass=${emailPass ? 'Set' : 'Missing'}`);
+
         // Skip email if credentials are not set (but don't fail the request)
         if (!emailUser || !emailPass) {
-            console.warn('Email credentials not set. Skipping email notification.');
-            return NextResponse.json({ message: 'Saved (Email skipped)' }, { status: 200 });
+            console.warn('[API] Email credentials not set in environment variables.');
+            return NextResponse.json({ message: 'Saved (Email skipped due to missing config)' }, { status: 200 });
         }
 
         const transporter = nodemailer.createTransport({
