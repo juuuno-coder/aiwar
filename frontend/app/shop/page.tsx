@@ -142,8 +142,8 @@ export default function ShopPage() {
     };
 
     const handleExchangeToken = async () => {
-        const EXCHANGE_COST = 10000;
-        const EXCHANGE_AMOUNT = 50;
+        const EXCHANGE_COST = 100; // [UPDATED]
+        const EXCHANGE_AMOUNT = 1000; // [UPDATED]
 
         if (coins < EXCHANGE_COST) {
             showAlert({
@@ -225,14 +225,14 @@ export default function ShopPage() {
                             <div className="text-right">
                                 <div className="text-xs text-gray-500">PAY</div>
                                 <div className="text-lg font-bold text-yellow-500 flex items-center justify-end gap-1">
-                                    <Coins size={16} /> 10,000
+                                    <Coins size={16} /> 100
                                 </div>
                             </div>
                             <ArrowRight className="text-gray-600" />
                             <div className="text-left">
                                 <div className="text-xs text-gray-500">GET</div>
                                 <div className="text-lg font-bold text-cyan-500 flex items-center gap-1">
-                                    <Zap size={16} /> 50 TOKENS
+                                    <Zap size={16} /> 1,000 TOKENS
                                 </div>
                             </div>
                         </div>
