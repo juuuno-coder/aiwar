@@ -9,6 +9,7 @@ import { Switch } from '@/components/ui/custom/Switch';
 import { Slider } from '@/components/ui/custom/Slider';
 import { Volume2, VolumeX, Music, Bell, Settings2, Sliders, ShieldCheck, Zap } from 'lucide-react';
 import { useFirebase } from '@/components/FirebaseProvider';
+import { saveUserProfile } from '@/lib/firebase-db';
 import { useUser } from '@/context/UserContext';
 import { useEscapeKey } from '@/hooks/useEscapeKey';
 
@@ -27,7 +28,23 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     const { user } = useFirebase();
     // const { applyAdminCheat } = useUser();
 
-    const isAdmin = user?.email === 'nerounni@gmail.com';
+    // const { applyAdminCheat } = useUser();
+
+    const allowedUsers = ['nerounni@gmail.com', 'juuuno1116@gmail.com', 'juuuno1116@gamil.com'];
+    const isAdmin = user?.email && allowedUsers.includes(user.email);
+
+    const handleResetStarterPack = async () => {
+        if (!user) return;
+        if (confirm('스타터팩 수령 상태를 초기화하시겠습니까? (페이지가 새로고침됩니다)')) {
+            try {
+                await saveUserProfile({ hasReceivedStarterPack: false }, user.uid);
+                window.location.reload();
+            } catch (error) {
+                console.error('Failed to reset starter pack:', error);
+                alert('초기화에 실패했습니다.');
+            }
+        }
+    };
 
     return (
         <Modal isOpen={isOpen} onClose={onClose} size="lg">
@@ -112,6 +129,28 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                                 <span className="text-[10px] text-gray-600 font-mono tracking-tighter">PROTO_v2.5.4</span>
                             </div>
                         </div>
+
+                        {/* Admin Section */}
+                        {isAdmin && (
+                            <div className="space-y-6 pt-6 border-t border-white/5">
+                                <div className="flex items-center gap-2 mb-2">
+                                    <ShieldCheck size={14} className="text-red-500" />
+                                    <span className="text-[11px] font-black orbitron text-red-500 tracking-widest uppercase">Admin Override</span>
+                                </div>
+                                <div className="p-4 rounded-2xl bg-red-500/5 border border-red-500/10 flex items-center justify-between">
+                                    <div>
+                                        <p className="text-xs text-red-400 font-bold mb-1">스타터팩 상태 초기화</p>
+                                        <p className="text-[10px] text-zinc-500">수령 기록을 삭제하고 재지급을 활성화합니다.</p>
+                                    </div>
+                                    <Button
+                                        onClick={handleResetStarterPack}
+                                        className="bg-red-500/10 text-red-500 border border-red-500/20 hover:bg-red-500/20 text-xs px-3 py-1 h-8"
+                                    >
+                                        RESET
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
 
                         {/* Admin Section (Removed) */}
                     </ModalBody>
