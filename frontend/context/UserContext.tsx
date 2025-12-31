@@ -55,7 +55,17 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     const [mounted, setMounted] = useState(false);
     const [isAdmin, setIsAdmin] = useState(false);
     const [starterPackAvailable, setStarterPackAvailable] = useState(false);
-    const [isClaimingInSession, setIsClaimingInSession] = useState(false); // [NEW] Prevents modal from re-popping after click
+    const [isClaimingInSession, setIsClaimingInSession] = useState(false);
+
+    // [Safety] Reset state to prevent data bleed from previous sessions/users
+    const resetState = useCallback(() => {
+        setCoins(0);
+        setTokens(0);
+        setLevel(1);
+        setExperience(0);
+        setInventory([]);
+        setStarterPackAvailable(false);
+    }, []); // [NEW] Prevents modal from re-popping after click
 
 
     // Initial mount check to prevent hydration mismatch
@@ -119,10 +129,13 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
             };
 
             runMigration();
+        } else if (!loading && !user) {
+            // User logged out or no user: Clear state immediately
+            resetState();
         }
 
         // Data will be reloaded by the profile sync or refreshData effect
-    }, [mounted, user?.uid]);
+    }, [mounted, user, resetState, loading]);
 
     // Sync state from Firebase profile
     useEffect(() => {
