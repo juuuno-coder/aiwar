@@ -551,10 +551,10 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
                 addTokens: addTokensByContext,
                 addExperience: addExperienceByContext,
                 isAdmin,
-                profile, // Added
                 starterPackAvailable,
                 claimStarterPack,
-                hideStarterPack
+                hideStarterPack,
+                consumeTokens // [NEW]
             }}
         >
             {children}
