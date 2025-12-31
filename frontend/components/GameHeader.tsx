@@ -8,7 +8,7 @@ import { useUser } from '@/context/UserContext';
 
 export default function GameHeader() {
     const pathname = usePathname();
-    const { tokens, level } = useUser();
+    const { coins, tokens, level } = useUser();
 
     const menuItems = [
         { name: '스토리', path: '/story', icon: '📖' },
@@ -50,7 +50,11 @@ export default function GameHeader() {
                 <div className="flex items-center gap-4">
                     <div className="flex items-center gap-2 bg-yellow-500/20 px-4 py-2 rounded-lg border border-yellow-500/50">
                         <span className="text-yellow-400">💰</span>
-                        <span className="font-bold text-yellow-300">{tokens.toLocaleString()}</span>
+                        <span className="font-bold text-yellow-300">{coins.toLocaleString()}</span>
+                    </div>
+                    <div className="flex items-center gap-2 bg-purple-500/20 px-4 py-2 rounded-lg border border-purple-500/50">
+                        <span className="text-purple-400">💎</span>
+                        <span className="font-bold text-purple-300">{tokens.toLocaleString()}</span>
                     </div>
                     <div className="flex items-center gap-2 bg-blue-500/20 px-4 py-2 rounded-lg border border-blue-500/50">
                         <span className="text-blue-400">⭐</span>

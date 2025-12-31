@@ -233,7 +233,12 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
                 acquiredAt: (c.acquiredAt && 'toDate' in c.acquiredAt) ? (c.acquiredAt as any).toDate() : new Date(c.acquiredAt as any)
             })) as Card[];
             setInventory(formattedInv);
-            // Removed redundant starterPackAvailable check here to prevent session flicker
+
+            // [Fix] Re-enable starter pack check here for robustness
+            if (!isClaimingInSession && formattedInv.length === 0 && !profile.hasReceivedStarterPack) {
+                console.log("[UserContext] refreshData: Triggering Starter Pack");
+                setStarterPackAvailable(true);
+            }
         } else {
             setLoading(true);
             try {
