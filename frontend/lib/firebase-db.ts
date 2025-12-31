@@ -20,7 +20,10 @@ import { createUniqueCardFromApplication } from './unique-card-factory';
 import { db, isFirebaseConfigured } from './firebase';
 import { getUserId } from './firebase-auth';
 import { CATEGORY_TOKEN_BONUS, FACTION_CATEGORY_MAP, TIER_MULTIPLIER } from './token-constants';
-import { SubscriptionTier } from './faction-subscription';
+import {
+    TierConfig,
+    TIER_CONFIGS
+} from './faction-subscription';
 
 // ==================== 사용자 프로필 ====================
 
@@ -69,6 +72,55 @@ function calculateTokenBonuses(subscriptions: { factionId: string; tier: Subscri
     });
 
     return { bonusRecharge, bonusMaxCap, bonusSpeedMinutes };
+}
+
+/**
+ * 군단 구독 처리 (생성 또는 갱신)
+ */
+export async function subscribeToFaction(userId: string, factionId: string, tier: import('./faction-subscription').SubscriptionTier): Promise<boolean> {
+    try {
+        const subscriptionsRef = collection(db!, 'users', userId, 'subscriptions');
+
+        // 1. 기존 동일 팩션 구독 확인 (활성 상태인 것)
+        const q = query(subscriptionsRef, where('factionId', '==', factionId), where('status', '==', 'active'));
+        const snapshot = await getDocs(q);
+
+        const now = serverTimestamp(); // Use serverTimestamp for Firestore
+        // For local calculation of nextPaymentDate, we might need a JS Date object, 
+        // but for now let's just save the start date.
+        // Subscription logic usually requires Cloud Functions for recurring payments.
+        // Here we just implement the "Purchase" part.
+
+        // Calculate next payment date (e.g., 30 days later) - Approximate for client display
+        const nextPayment = new Date();
+        nextPayment.setDate(nextPayment.getDate() + 30);
+
+        if (!snapshot.empty) {
+            // 이미 구독 중 -> 업데이트 (Tier 변경)
+            const docId = snapshot.docs[0].id;
+            await updateDoc(doc(subscriptionsRef, docId), {
+                tier: tier,
+                startDate: now, // Reset start date on tier change? Or keep original? Let's reset for MVP.
+                nextPaymentDate: nextPayment,
+                autoRenew: true
+            });
+        } else {
+            // 신규 구독
+            await addDoc(subscriptionsRef, {
+                factionId,
+                tier,
+                status: 'active',
+                startDate: now,
+                nextPaymentDate: nextPayment,
+                autoRenew: true
+            });
+        }
+
+        return true;
+    } catch (error) {
+        console.error('Subscription error:', error);
+        return false;
+    }
 }
 
 /**

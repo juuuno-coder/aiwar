@@ -14,6 +14,7 @@ import GachaRevealModal from '@/components/GachaRevealModal';
 import { useUser } from '@/context/UserContext';
 import { gameStorage } from '@/lib/game-storage';
 import { getResearchBonus } from '@/lib/research-system';
+import FactionSubscriptionModal from '@/components/FactionSubscriptionModal'; // [NEW]
 
 export default function ShopPage() {
     const router = useRouter();
@@ -30,7 +31,8 @@ export default function ShopPage() {
     const [showPackOpening, setShowPackOpening] = useState(false);
     const [currentPack, setCurrentPack] = useState<CardPack | null>(null);
     const [isPurchasing, setIsPurchasing] = useState(false);
-    const [isExchanging, setIsExchanging] = useState(false); // [NEW] Exchange loading state
+    const [isExchanging, setIsExchanging] = useState(false);
+    const [showSubscriptionModal, setShowSubscriptionModal] = useState(false); // [NEW]
 
     useEffect(() => {
         loadResearchData();
@@ -182,6 +184,25 @@ export default function ShopPage() {
             color="yellow"
         >
             <div className="max-w-6xl mx-auto">
+                {/* Header / Nav */}
+                <div className="flex items-center justify-between mb-8">
+                    <div>
+                        <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+                            데이터 상점
+                        </h1>
+                        <p className="text-gray-400 mt-1">AI 카드팩 구매 및 토큰 환전소</p>
+                    </div>
+
+                    {/* [NEW] Subscription Button */}
+                    <button
+                        onClick={() => setShowSubscriptionModal(true)}
+                        className="flex items-center gap-2 px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-blue-400 hover:bg-gray-700 hover:text-white transition-colors"
+                    >
+                        <RefreshCw className="w-4 h-4" />
+                        <span className="font-bold">AI 군단 구독 관리</span>
+                    </button>
+                </div>
+
                 {/* 보유 코인 */}
                 <div className="bg-gradient-to-r from-yellow-500/10 to-orange-500/10 border border-yellow-500/30 rounded-xl p-6 mb-8">
                     <div className="flex items-center justify-between">
