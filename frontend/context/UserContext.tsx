@@ -7,7 +7,6 @@ import {
     updateCoins as firebaseUpdateCoins,
     updateTokens as firebaseUpdateTokens,
     updateExpAndLevel as firebaseUpdateExpAndLevel,
-    updateExpAndLevel as firebaseUpdateExpAndLevel,
     saveUserProfile,
     checkAndRechargeTokens // [NEW]
 } from '@/lib/firebase-db';
@@ -246,10 +245,6 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         if (profile) {
             await reloadProfile();
             const inv = await loadInventory(user?.uid);
-            const formattedInv = inv.map(c => ({
-                ...c,
-                acquiredAt: (c.acquiredAt && 'toDate' in c.acquiredAt) ? (c.acquiredAt as any).toDate() : new Date(c.acquiredAt as any)
-            })) as Card[];
             const formattedInv = inv.map(c => ({
                 ...c,
                 acquiredAt: (c.acquiredAt && 'toDate' in c.acquiredAt) ? (c.acquiredAt as any).toDate() : new Date(c.acquiredAt as any)
