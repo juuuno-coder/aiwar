@@ -146,6 +146,11 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
                     acquiredAt: (c.acquiredAt && 'toDate' in c.acquiredAt) ? (c.acquiredAt as any).toDate() : new Date(c.acquiredAt as any)
                 })) as Card[];
                 setInventory(formattedCards);
+
+                // [Fix] Starter Pack Check for Logged-in User
+                if (formattedCards.length === 0 && !profile.hasReceivedStarterPack) {
+                    setStarterPackAvailable(true);
+                }
             }).catch(console.error);
 
             setLoading(false);
@@ -192,14 +197,16 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
         if (profile) {
             await reloadProfile();
-            // Check inventory from profile or context?
-            // Profile context usually syncs to local state, so check local state in useEffect or here?
-            // Actually reloadProfile updates 'profile' object.
-            // Let's assume profile has inventory or we check loaded state.
-            // gameStorage.loadGameState gives full state.
-            // But if profile exists, we trust profile.
-            // Let's check if inventory is empty in the profile-based flow too.
-            // Ideally inventory is loaded.
+            const inv = await loadInventory(user?.uid);
+            const formattedInv = inv.map(c => ({
+                ...c,
+                acquiredAt: (c.acquiredAt && 'toDate' in c.acquiredAt) ? (c.acquiredAt as any).toDate() : new Date(c.acquiredAt as any)
+            })) as Card[];
+            setInventory(formattedInv);
+
+            if (formattedInv.length === 0 && !profile.hasReceivedStarterPack) {
+                setStarterPackAvailable(true);
+            }
         } else {
             setLoading(true);
             try {
@@ -217,7 +224,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
                 setInventory(formattedInv);
 
                 // Starter Pack Check
-                const hasReceived = profile ? !!profile.hasReceivedStarterPack : !!(state as any).hasReceivedStarterPack;
+                const hasReceived = !!(state as any).hasReceivedStarterPack;
                 if ((!formattedInv || formattedInv.length === 0) && !hasReceived) {
                     setStarterPackAvailable(true);
                 }
