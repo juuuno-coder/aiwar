@@ -4,7 +4,6 @@ import { useState, createContext, useContext } from 'react';
 import { usePathname } from 'next/navigation';
 import GameSidebar from './GameSidebar';
 import GameTopBar from './GameTopBar';
-import GameTopBar from './GameTopBar';
 import MobileNav from './MobileNav'; // [NEW]
 import dynamic from 'next/dynamic';
 

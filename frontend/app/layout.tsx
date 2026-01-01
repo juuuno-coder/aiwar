@@ -26,7 +26,6 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "AI WAR : 전쟁의 서막 | 시즌1",
   description: "2030년의 미래를 바꿀 AI 카드 전략 게임 AI WAR. 20개 AI 군단을 모아 최강의 시너지로 전쟁의 서막을 열어보세요!",
-  description: "2030년의 미래를 바꿀 AI 카드 전략 게임 AI WAR. 20개 AI 군단을 모아 최강의 시너지로 전쟁의 서막을 열어보세요!",
 };
 
 export const viewport = {
