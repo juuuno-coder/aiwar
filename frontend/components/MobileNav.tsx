@@ -24,7 +24,7 @@ export default function MobileNav() {
     };
 
     return (
-        <div className="fixed bottom-0 left-0 right-0 z-50 bg-black/90 backdrop-blur-lg border-t border-white/10 md:hidden pb-safe">
+        <div className="mobile-nav-container fixed bottom-0 left-0 right-0 z-40 bg-black/90 backdrop-blur-lg border-t border-white/10 md:hidden pb-safe">
             <div className="flex justify-around items-center h-16">
                 {navItems.map((item) => {
                     const active = isCurrent(item.path);

@@ -11,11 +11,8 @@ const DynamicFooter = dynamic(() => import('@/components/DynamicFooter'), {
     ssr: false,
 });
 
-const TutorialManager = dynamic(() => import('@/components/TutorialManager'), {
-    ssr: false,
-});
-
-const StarterPackModal = dynamic(() => import('@/components/StarterPackModal'), {
+// [NEW] Unified Tutorial
+const UnifiedTutorialModal = dynamic(() => import('@/components/UnifiedTutorialModal'), {
     ssr: false,
 });
 
@@ -72,8 +69,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
                             footerState.visible && "pb-[160px]" // 푸터가 보일 때 하단 여백 추가
                         )}
                     >
-                        <TutorialManager />
-                        <StarterPackModal />
+                        <UnifiedTutorialModal />
                         {children}
 
                         {/* Dynamic Footer - Only renders when FooterContext.visible is true */}
