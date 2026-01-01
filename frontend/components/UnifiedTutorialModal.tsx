@@ -50,8 +50,8 @@ const parseMarkdownTutorial = (md: string): TutorialStep[] => {
 };
 
 export default function UnifiedTutorialModal() {
-    const { user } = useUserProfile();
-    const { claimStarterPack, refreshData } = useUser();
+    const { user, claimStarterPack } = useUser();
+    // const { user } = useUserProfile(); // Incorrect hook
 
     const [steps, setSteps] = useState<TutorialStep[]>([]);
     const [currentStepIndex, setCurrentStepIndex] = useState(0);

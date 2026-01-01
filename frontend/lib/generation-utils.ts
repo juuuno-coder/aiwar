@@ -245,7 +245,9 @@ export async function generateCard(slotIndex: number, userId?: string): Promise<
     const factionData = (aiFactionsData as { factions: any[] }).factions.find((f: any) => f.id === slot.factionId);
 
     // 실제 카드 생성 (등급별 확률 적용 + 친밀도 + 군단 효과)
-    const { generateRandomCard } = await import('./card-generation-system');
+    // Dynamic import removed to avoid potential client/server mismatch issues in next.js app dir if not handled carefully.
+    // Assuming card-generation-system is safe to import at top level or handling it cleaner.
+    const { generateRandomCard } = require('./card-generation-system');
 
     // Research Stat Extraction
     const gameState = await gameStorage.loadGameState(userId);

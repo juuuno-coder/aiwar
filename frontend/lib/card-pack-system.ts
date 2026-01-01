@@ -6,6 +6,7 @@ export interface CardPack {
     name: string;
     description: string;
     price: number;
+    currencyType: 'coin' | 'token'; // [NEW] Support multiple currencies
     cardCount: number;
     icon: string;
     rarityWeights: {
@@ -21,44 +22,49 @@ export const CARD_PACKS: CardPack[] = [
     {
         id: 'standard',
         name: 'Standard Supply',
-        description: '보급형 카드 팩 (3장)',
-        price: 200,
-        cardCount: 3,
+        description: '보급형 카드 팩 (5장)',
+        price: 500,
+        currencyType: 'coin',
+        cardCount: 5,
         icon: '📦',
+        rarityWeights: {
+            common: 60,
+            rare: 30,
+            epic: 10,
+            legendary: 0,
+            unique: 0
+        },
+    },
+    {
+        id: 'premium', // Renamed from elite/commander to ensure clarity
+        name: 'Premium Supply',
+        description: '고급 카드 팩 (5장)',
+        price: 1000,
+        currencyType: 'coin',
+        cardCount: 5,
+        icon: '👑',
+        rarityWeights: {
+            common: 40,
+            rare: 40,
+            epic: 15,
+            legendary: 0,
+            unique: 5 // Unique chance added
+        },
+    },
+    {
+        id: 'token_supply',
+        name: 'Token Supply',
+        description: '활동력 교환 팩 (1장)',
+        price: 1000,
+        currencyType: 'token',
+        cardCount: 1,
+        icon: '💎',
         rarityWeights: {
             common: 70,
             rare: 25,
             epic: 5,
             legendary: 0,
-        },
-    },
-    {
-        id: 'elite',
-        name: 'Elite Supply',
-        description: '정예 카드 팩 (5장)',
-        price: 500,
-        cardCount: 5,
-        icon: '💼',
-        rarityWeights: {
-            common: 40,
-            rare: 40,
-            epic: 15,
-            legendary: 5,
-        },
-    },
-    {
-        id: 'commander',
-        name: 'Commander Supply',
-        description: '지휘관용 최상급 팩 (10장)',
-        price: 1000,
-        cardCount: 10,
-        icon: '👑',
-        rarityWeights: {
-            common: 20,
-            rare: 30,
-            epic: 30,
-            legendary: 15,
-            unique: 5,
+            unique: 0
         },
     },
 ];

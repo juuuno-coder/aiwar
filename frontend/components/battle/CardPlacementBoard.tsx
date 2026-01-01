@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils';
 import RoundPlacementSlot from './RoundPlacementSlot';
 import { BattleMode } from '@/lib/pvp-battle-system';
 import { getTypeIcon, getTypeColor } from '@/lib/type-system';
-import { RefreshCcw, Wand2, Trash2 } from 'lucide-react';
+import { RefreshCcw, Wand2, Trash2, Swords } from 'lucide-react';
 
 interface CardPlacementBoardProps {
     selectedCards: any[];
@@ -422,263 +422,201 @@ export default function CardPlacementBoard({ selectedCards, onPlacementComplete,
     const availableCards = getAvailableCards();
 
     return (
-        <div className="w-full max-w-6xl mx-auto p-6 space-y-8">
-            {/* Title */}
-            <div className="text-center">
-                <h2 className="text-2xl font-bold text-white mb-2">라운드별 카드 배치</h2>
-                <p className="text-sm text-white/60">
-                    카드를 드래그하거나 클릭하여 순서대로 배치하세요.
-                    {battleMode === 'ambush' && " 3라운드는 히든 카드(매복)를 추가할 수 있습니다."}
-                    {battleMode === 'double' && " 각 라운드에 2장의 카드를 배치하세요."}
-                </p>
+        <div className="w-full h-full max-h-screen flex flex-col overflow-hidden relative">
+            {/* Compact Header */}
+            <div className="shrink-0 pt-4 pb-2 text-center relative z-10">
+                <h2 className="text-2xl font-black text-white italic tracking-tighter flex items-center justify-center gap-2">
+                    <span className="text-cyan-500">TACTICAL</span> DEPLOYMENT
+                    <span className="text-xs font-normal text-gray-500 bg-black/50 px-2 py-1 rounded-full border border-white/10 ml-2">
+                        {battleMode === 'ambush' ? '전략 승부 (6장)' : battleMode === 'double' ? '두장 승부 (6장)' : '전술 승부 (5장)'}
+                    </span>
+                </h2>
             </div>
 
-            {/* Opponent Deck Preview (if available) */}
-            {
-                opponentDeck && opponentDeck.length > 0 && (
-                    <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4">
-                        <div className="flex items-center justify-between mb-3">
-                            <div className="flex items-center gap-2">
-                                <span className="text-xl">😈</span>
-                                <h3 className="font-bold text-red-400">상대방 덱 정보</h3>
-                            </div>
-                            <div className="text-xs text-red-300 bg-red-500/20 px-2 py-1 rounded">
-                                ⚠️ 상대방의 카드 배치 순서는 변경될 수 있습니다
-                            </div>
+            {/* Main Content Area */}
+            <div className="flex-1 flex flex-col justify-center items-center gap-2 min-h-0 p-4">
+
+                {/* 1. TOP: Opponent Intel */}
+                {opponentDeck && opponentDeck.length > 0 && (
+                    <div className="w-full max-w-4xl flex items-center justify-center gap-4 bg-red-950/20 border-y border-red-500/20 py-2">
+                        <div className="text-center shrink-0">
+                            <span className="text-2xl">😈</span>
+                            <div className="text-[10px] font-bold text-red-400">ENEMY</div>
                         </div>
-                        <div className="flex justify-center gap-3">
+                        <div className="flex justify-center gap-2">
                             {opponentDeck.map((card, idx) => (
-                                <div key={idx} className="relative w-20 h-28 rounded-lg border-2 border-red-500/30 overflow-hidden shadow-lg">
+                                <div key={idx} className="relative w-12 h-16 rounded border border-red-500/30 overflow-hidden opacity-90">
                                     <div
                                         className="absolute inset-0 bg-cover bg-center"
-                                        style={{
-                                            backgroundImage: `url(${getCardImage(card)})`,
-                                        }}
+                                        style={{ backgroundImage: `url(${getCardImage(card)})` }}
                                     />
-                                    <div className="absolute inset-0 bg-gradient-to-t from-red-900/80 via-transparent to-transparent" />
-
-                                    {/* Type Icon - Top Right Corner inside image */}
+                                    {/* Obscure opponent cards slightly */}
+                                    <div className="absolute inset-0 bg-red-900/40" />
+                                    {/* Type Hint */}
                                     {card.type && (
-                                        <div
-                                            className="absolute top-1 right-1 w-8 h-8 rounded-full border-2 border-white flex items-center justify-center text-lg shadow-xl z-20"
-                                            style={{ backgroundColor: getTypeColor(card.type) }}
-                                        >
+                                        <div className="absolute top-0 right-0 w-3 h-3 bg-black rounded-bl text-[8px] flex items-center justify-center text-white">
                                             {getTypeIcon(card.type)}
                                         </div>
                                     )}
-
-                                    {/* Power */}
-                                    <div className="absolute bottom-0 left-0 right-0 text-center bg-black/70 py-0.5">
-                                        <div className="text-[8px] font-bold text-white truncate px-1">{card.name}</div>
-                                        <div className="text-[8px] text-red-400">⚡{Math.floor(card.stats?.totalPower || 0)}</div>
-                                    </div>
                                 </div>
                             ))}
                         </div>
                     </div>
-                )
-            }
-
-            {/* Round Slots - Dynamic Layout */}
-            <div className="flex justify-center gap-4 flex-wrap">
-                {/* Round 1 */}
-                <RoundPlacementSlot
-                    roundNumber={1}
-                    hasHidden={battleMode === 'double'}
-                    mainCard={placement.round1}
-                    hiddenCard={placement.round1Hidden}
-                    mainSlotId="round1"
-                    hiddenSlotId="round1Hidden"
-                    onDropMain={(cardId, sourceSlot) => handleDropMain('round1', cardId, sourceSlot)}
-                    onDropHidden={(cardId, sourceSlot) => handleDropHidden('round1Hidden', cardId, sourceSlot)}
-                    onRemoveMain={() => handleRemove('round1')}
-                    onRemoveHidden={() => handleRemove('round1Hidden')}
-                />
-
-                {/* Round 2 */}
-                <RoundPlacementSlot
-                    roundNumber={2}
-                    hasHidden={battleMode === 'double'} // Ambush no longer has hidden here
-                    mainCard={placement.round2Main}
-                    hiddenCard={placement.round2Hidden}
-                    mainSlotId="round2Main"
-                    hiddenSlotId="round2Hidden"
-                    onDropMain={(cardId, sourceSlot) => handleDropMain('round2Main', cardId, sourceSlot)}
-                    onDropHidden={(cardId, sourceSlot) => handleDropHidden('round2Hidden', cardId, sourceSlot)}
-                    onRemoveMain={() => handleRemove('round2Main')}
-                    onRemoveHidden={() => handleRemove('round2Hidden')}
-                />
-
-                {/* Round 3 - Ambush & Double have hidden here */}
-                <RoundPlacementSlot
-                    roundNumber={3}
-                    hasHidden={battleMode === 'ambush' || battleMode === 'double'}
-                    mainCard={placement.round3Main}
-                    hiddenCard={placement.round3Hidden}
-                    mainSlotId="round3Main"
-                    hiddenSlotId="round3Hidden"
-                    onDropMain={(cardId, sourceSlot) => handleDropMain('round3Main', cardId, sourceSlot)}
-                    onDropHidden={(cardId, sourceSlot) => handleDropHidden('round3Hidden', cardId, sourceSlot)}
-                    onRemoveMain={() => handleRemove('round3Main')}
-                    onRemoveHidden={() => handleRemove('round3Hidden')}
-                />
-
-                {/* Round 4 & 5 (Not for Double) */}
-                {battleMode !== 'double' && (
-                    <>
-                        <RoundPlacementSlot
-                            roundNumber={4}
-                            hasHidden={false} // Ambush removed hidden here
-                            mainCard={placement.round4Main}
-                            hiddenCard={null}
-                            mainSlotId="round4Main"
-                            onDropMain={(cardId, sourceSlot) => handleDropMain('round4Main', cardId, sourceSlot)}
-                            onDropHidden={() => { }}
-                            onRemoveMain={() => handleRemove('round4Main')}
-                            onRemoveHidden={() => { }}
-                        />
-                        <RoundPlacementSlot
-                            roundNumber={5}
-                            hasHidden={false}
-                            mainCard={placement.round5}
-                            hiddenCard={null}
-                            mainSlotId="round5"
-                            onDropMain={(cardId, sourceSlot) => handleDropMain('round5', cardId, sourceSlot)}
-                            onDropHidden={() => { }}
-                            onRemoveMain={() => handleRemove('round5')}
-                            onRemoveHidden={() => { }}
-                        />
-                    </>
                 )}
-            </div>
 
+                {/* 2. CENTER: Battle Board Slots */}
+                <div className="flex-1 w-full max-w-5xl flex flex-col justify-center relative">
+                    {/* Background Grid */}
+                    <div className="absolute inset-0 bg-[url('/assets/grid.svg')] opacity-5 pointer-events-none" />
 
+                    <div className="flex justify-center items-end gap-2 sm:gap-4 flex-wrap z-10 mb-4">
+                        {/* Round 1 */}
+                        <RoundPlacementSlot
+                            roundNumber={1}
+                            hasHidden={battleMode === 'double'}
+                            mainCard={placement.round1}
+                            hiddenCard={placement.round1Hidden}
+                            mainSlotId="round1"
+                            hiddenSlotId="round1Hidden"
+                            onDropMain={(cardId, sourceSlot) => handleDropMain('round1', cardId, sourceSlot)}
+                            onDropHidden={(cardId, sourceSlot) => handleDropHidden('round1Hidden', cardId, sourceSlot)}
+                            onRemoveMain={() => handleRemove('round1')}
+                            onRemoveHidden={() => handleRemove('round1Hidden')}
+                        />
+                        {/* Round 2 */}
+                        <RoundPlacementSlot
+                            roundNumber={2}
+                            hasHidden={battleMode === 'double'}
+                            mainCard={placement.round2Main}
+                            hiddenCard={placement.round2Hidden}
+                            mainSlotId="round2Main"
+                            hiddenSlotId="round2Hidden"
+                            onDropMain={(cardId, sourceSlot) => handleDropMain('round2Main', cardId, sourceSlot)}
+                            onDropHidden={(cardId, sourceSlot) => handleDropHidden('round2Hidden', cardId, sourceSlot)}
+                            onRemoveMain={() => handleRemove('round2Main')}
+                            onRemoveHidden={() => handleRemove('round2Hidden')}
+                        />
+                        {/* Round 3 */}
+                        <RoundPlacementSlot
+                            roundNumber={3}
+                            hasHidden={battleMode === 'ambush' || battleMode === 'double'}
+                            mainCard={placement.round3Main}
+                            hiddenCard={placement.round3Hidden}
+                            mainSlotId="round3Main"
+                            hiddenSlotId="round3Hidden"
+                            onDropMain={(cardId, sourceSlot) => handleDropMain('round3Main', cardId, sourceSlot)}
+                            onDropHidden={(cardId, sourceSlot) => handleDropHidden('round3Hidden', cardId, sourceSlot)}
+                            onRemoveMain={() => handleRemove('round3Main')}
+                            onRemoveHidden={() => handleRemove('round3Hidden')}
+                        />
+                        {/* Round 4 & 5 */}
+                        {battleMode !== 'double' && (
+                            <>
+                                <RoundPlacementSlot
+                                    roundNumber={4}
+                                    hasHidden={false}
+                                    hiddenCard={null}
+                                    mainCard={placement.round4Main}
+                                    mainSlotId="round4Main"
+                                    onDropMain={(cardId, sourceSlot) => handleDropMain('round4Main', cardId, sourceSlot)}
+                                    onDropHidden={() => { }}
+                                    onRemoveMain={() => handleRemove('round4Main')}
+                                    onRemoveHidden={() => { }}
+                                />
+                                <RoundPlacementSlot
+                                    roundNumber={5}
+                                    hasHidden={false}
+                                    hiddenCard={null}
+                                    mainCard={placement.round5}
+                                    mainSlotId="round5"
+                                    onDropMain={(cardId, sourceSlot) => handleDropMain('round5', cardId, sourceSlot)}
+                                    onDropHidden={() => { }}
+                                    onRemoveMain={() => handleRemove('round5')}
+                                    onRemoveHidden={() => { }}
+                                />
+                            </>
+                        )}
+                    </div>
 
-            {/* Quick Actions */}
-            <div className="flex justify-center gap-4">
-                <button
-                    onClick={handleReset}
-                    className="flex items-center gap-2 px-4 py-2 bg-red-500/20 hover:bg-red-500/40 text-red-400 rounded-lg transition-colors border border-red-500/30 text-sm"
-                >
-                    <Trash2 size={16} />
-                    초기화
-                </button>
-                <button
-                    onClick={handleAutoFill}
-                    className="flex items-center gap-2 px-4 py-2 bg-cyan-500/20 hover:bg-cyan-500/40 text-cyan-400 rounded-lg transition-colors border border-cyan-500/30 text-sm"
-                >
-                    <Wand2 size={16} />
-                    자동 배치
-                </button>
-            </div>
+                    {/* Quick Access Bar (Reset/Auto/Start) */}
+                    <div className="flex items-center justify-center gap-4 mt-2">
+                        <button
+                            onClick={handleReset}
+                            className="p-2 hover:bg-white/10 rounded-full text-white/40 hover:text-white transition-colors"
+                            title="Reset Board"
+                        >
+                            <Trash2 size={18} />
+                        </button>
 
-            {/* Card Pool */}
-            <div className="space-y-3">
-                <div className="text-center text-sm font-bold text-white/80">
-                    선택한 카드 ({availableCards.length}/{battleMode === 'double' ? 6 : 5})
-                </div>
-                <div className="flex justify-center gap-3 flex-wrap">
-                    {availableCards.map((card) => (
-                        <motion.div
-                            key={card.id}
-                            draggable
-                            onDragStart={(e: any) => {
-                                e.dataTransfer.setData('cardId', card.id);
-                                handleDragStart(card);
-                            }}
-                            onDragEnd={handleDragEnd}
-                            onClick={() => handleAutoPlace(card)} // 클릭 시 자동 배치
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
+                        <button
+                            onClick={handleConfirm}
+                            disabled={!isPlacementComplete()}
                             className={cn(
-                                "relative w-24 h-32 rounded-xl border-2 border-white/30 overflow-hidden cursor-pointer", // cursor-pointer로 변경
-                                "hover:border-cyan-400 hover:shadow-lg hover:shadow-cyan-500/30 transition-all",
-                                "active:scale-95"
+                                "px-10 py-3 rounded-full font-black text-lg transition-all shadow-xl flex items-center gap-2 mx-4",
+                                isPlacementComplete()
+                                    ? "bg-gradient-to-r from-cyan-600 to-blue-600 text-white hover:scale-105 hover:shadow-cyan-500/40"
+                                    : "bg-gray-800 text-gray-600 cursor-not-allowed border border-white/5"
                             )}
                         >
-                            <div
-                                className="absolute inset-0 bg-cover bg-center"
-                                style={{
-                                    backgroundImage: `url(${getCardImage(card)})`,
-                                }}
-                            />
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-
-                            {/* Rarity Badge */}
-                            {(() => {
-                                const rarityInfo: Record<string, { text: string; bg: string }> = {
-                                    legendary: { text: '전설', bg: 'bg-gradient-to-r from-yellow-500 to-orange-500' },
-                                    commander: { text: '군단장', bg: 'bg-gradient-to-r from-purple-600 to-pink-600' },
-                                    epic: { text: '영웅', bg: 'bg-gradient-to-r from-purple-500 to-indigo-500' },
-                                    rare: { text: '희귀', bg: 'bg-gradient-to-r from-blue-500 to-cyan-500' },
-                                    unique: { text: '유니크', bg: 'bg-gradient-to-r from-green-500 to-emerald-500' },
-                                    common: { text: '일반', bg: 'bg-gradient-to-r from-gray-500 to-slate-500' }
-                                };
-                                const info = rarityInfo[card.rarity || 'common'] || rarityInfo.common;
-                                return (
-                                    <div className={`absolute top-0.5 left-0.5 px-1 py-0.5 rounded text-[7px] font-black text-white shadow-lg z-10 ${info.bg}`}>
-                                        {info.text}
-                                    </div>
-                                );
-                            })()}
-
-                            {/* Type Icon - Top Right Corner inside image (Consistent with opponent deck) */}
-                            {card.type && (
-                                <div
-                                    className="absolute top-1 right-1 w-8 h-8 rounded-full border-2 border-white flex items-center justify-center text-lg shadow-xl z-20"
-                                    style={{ backgroundColor: getTypeColor(card.type) }}
-                                >
-                                    {getTypeIcon(card.type)}
-                                </div>
+                            {isPlacementComplete() ? (
+                                <>BATTLE START <Swords size={20} /></>
+                            ) : (
+                                <span className="text-sm font-normal">배치 미완료</span>
                             )}
+                        </button>
 
-                            {/* Level Badge */}
-                            <div className="absolute bottom-6 right-0.5 z-10">
-                                <div className="px-1 py-0.5 bg-gradient-to-r from-yellow-500 to-orange-500 rounded text-[7px] font-black text-white shadow-lg">
-                                    LV.{card.level || 1}
-                                </div>
-                            </div>
+                        <button
+                            onClick={handleAutoFill}
+                            className="p-2 hover:bg-white/10 rounded-full text-cyan-400 hover:text-cyan-200 transition-colors"
+                            title="Auto Fill"
+                        >
+                            <Wand2 size={18} />
+                        </button>
+                    </div>
+                </div>
 
-                            <div className="absolute bottom-0 left-0 right-0 text-center bg-black/70 py-0.5">
-                                <div className="text-[9px] font-bold text-white truncate px-1">
+                {/* 3. BOTTOM: My Card Pool */}
+                <div className="shrink-0 w-full max-w-5xl bg-black/40 border-t border-white/10 p-4 backdrop-blur-md rounded-t-2xl">
+                    <div className="flex items-center justify-between mb-2">
+                        <div className="text-xs font-bold text-gray-400 flex items-center gap-2">
+                            <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                            MY CARDS ({availableCards.length})
+                        </div>
+                    </div>
+                    <div className="flex justify-center gap-2 overflow-x-auto pb-2 no-scrollbar min-h-[90px]">
+                        {availableCards.length > 0 ? availableCards.map((card) => (
+                            <motion.div
+                                key={card.id}
+                                layoutId={`card-${card.id}`}
+                                draggable
+                                onDragStart={(e: any) => {
+                                    e.dataTransfer.setData('cardId', card.id);
+                                    handleDragStart(card);
+                                }}
+                                onDragEnd={handleDragEnd}
+                                onClick={() => handleAutoPlace(card)}
+                                whileHover={{ scale: 1.05, y: -5 }}
+                                whileTap={{ scale: 0.95 }}
+                                className="relative w-16 h-24 rounded-lg border border-white/20 overflow-hidden cursor-pointer shadow hover:border-cyan-400 shrink-0"
+                            >
+                                <div
+                                    className="absolute inset-0 bg-cover bg-center"
+                                    style={{ backgroundImage: `url(${getCardImage(card)})` }}
+                                />
+                                <div className="absolute bottom-0 inset-x-0 bg-black/80 text-[8px] text-white text-center py-0.5 truncate px-1">
                                     {card.name}
                                 </div>
-                                <div className="text-[8px] text-cyan-400">⚡{Math.floor(card.stats?.totalPower || 0)}</div>
+                                <div className="absolute top-0.5 right-0.5 w-3 h-3 bg-black/50 rounded flex items-center justify-center text-[8px]">
+                                    {getTypeIcon(card.type)}
+                                </div>
+                            </motion.div>
+                        )) : (
+                            <div className="flex items-center text-gray-600 text-sm italic">
+                                Ready to battle
                             </div>
-                        </motion.div>
-                    ))}
-                    {availableCards.length === 0 && (
-                        <div className="text-white/40 text-sm py-2">
-                            모든 카드가 배치되었습니다
-                        </div>
-                    )}
+                        )}
+                    </div>
                 </div>
-
-                {/* 힌트 메시지 */}
-                <div className="text-center text-xs text-white/40 mt-2">
-                    카드를 클릭하면 빈 슬롯에 순서대로 배치됩니다.
-                </div>
-            </div>
-
-            {/* Confirm Button */}
-            <div className="flex justify-center">
-                <button
-                    onClick={handleConfirm}
-                    disabled={!isPlacementComplete()}
-                    className={cn(
-                        "px-8 py-3 rounded-xl font-bold text-lg transition-all",
-                        isPlacementComplete()
-                            ? "bg-gradient-to-r from-cyan-500 to-blue-600 text-white hover:shadow-lg hover:shadow-cyan-500/50"
-                            : "bg-gray-600 text-gray-400 cursor-not-allowed"
-                    )}
-                >
-                    {isPlacementComplete()
-                        ? "배치 완료 → 전투 시작"
-                        : hasHiddenSlots
-                            ? "히든 카드를 배치하세요"
-                            : "모든 카드를 배치하세요"
-                    }
-                </button>
             </div>
         </div >
     );

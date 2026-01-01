@@ -88,7 +88,7 @@ export default function ChapterDetailPage() {
         setModalConfig({
             isOpen: true,
             title: `VS ${selectedStage.enemy.name_ko || selectedStage.enemy.name}`,
-            message: selectedStage.enemy.dialogue.intro_ko || selectedStage.enemy.dialogue.intro,
+            message: selectedStage.enemy.dialogue.appearance_ko || selectedStage.enemy.dialogue.appearance || selectedStage.enemy.dialogue.intro_ko || selectedStage.enemy.dialogue.intro,
             type: 'intro',
             onConfirm: () => {
                 router.push(`/battle/stage/${selectedStage.id}`);
@@ -224,7 +224,7 @@ export default function ChapterDetailPage() {
                                                 </div>
                                                 <div className="mt-4 text-gray-400 text-sm bg-white/5 p-3 rounded-lg italic">
                                                     <Quote size={12} className="inline mr-1 mb-1" />
-                                                    {selectedStage.enemy.dialogue.intro_ko || selectedStage.enemy.dialogue.intro}
+                                                    {selectedStage.enemy.dialogue.quote_ko || selectedStage.enemy.dialogue.quote || selectedStage.enemy.dialogue.intro_ko || selectedStage.enemy.dialogue.intro}
                                                 </div>
                                             </div>
 

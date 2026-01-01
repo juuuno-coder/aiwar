@@ -51,7 +51,7 @@ type Phase =
 export default function PVPArenaPage() {
     const router = useRouter();
     const { showAlert } = useAlert();
-    const { coins } = useUser(); // [NEW] Use generic coins from context
+    const { coins, level } = useUser(); // [NEW] Use generic coins/level from context
 
     const [phase, setPhase] = useState<Phase>('stats');
     const [selectedMode, setSelectedMode] = useState<BattleMode>('double');
@@ -111,10 +111,20 @@ export default function PVPArenaPage() {
     // 모드 정보
     const modes = [
         {
+            id: 'sudden-death' as BattleMode,
+            name: '단판 승부',
+            nameEn: 'Sudden Death',
+            description: '5장 덱 - 1:1 정면 승부 (빠른 진행)',
+            icon: Zap,
+            color: 'from-amber-500 to-orange-500',
+            rounds: '5장 덱',
+            reward: `+${PVP_REWARDS['sudden-death'].win} 코인`,
+        },
+        {
             id: 'double' as BattleMode,
-            name: '복식 승부',
-            nameEn: 'Double Battle',
-            description: '6장 덱 - 한국형 "하나빼기" 심리전 전투',
+            name: '두장 승부',
+            nameEn: 'Two-Card Battle',
+            description: '6장 덱 - "하나빼기" 심리전 (3판 2선승)',
             icon: Users,
             color: 'from-indigo-500 to-violet-500',
             rounds: '6장 덱',
@@ -124,7 +134,7 @@ export default function PVPArenaPage() {
             id: 'tactics' as BattleMode,
             name: '전술 승부',
             nameEn: 'Tactical Duel',
-            description: '3선승제 - 카드 배치와 상성을 활용한 정공법',
+            description: '5장 덱 - 배치와 상성을 활용한 정공법 (3점 선승)',
             icon: Shield,
             color: 'from-blue-500 to-cyan-500',
             rounds: '3선승',
@@ -133,8 +143,8 @@ export default function PVPArenaPage() {
         {
             id: 'ambush' as BattleMode,
             name: '전략 승부',
-            nameEn: 'Ambush Strategy',
-            description: '6장 덱 - 3라운드 "매복" 시스템으로 일발역전',
+            nameEn: 'Strategy Battle',
+            description: '6장 덱 - 3라운드 "매복" 시스템 (3점 선승)',
             icon: Eye,
             color: 'from-purple-500 to-pink-500',
             rounds: '6장 덱',
@@ -181,8 +191,8 @@ export default function PVPArenaPage() {
 
             setInventory(mappedInventory);
 
-            // Corrected: checkPVPRequirements takes only inventory, returns canJoin
-            const check = await checkPVPRequirements(mappedInventory);
+            // Corrected: checkPVPRequirements now receives current level and coins from context
+            const check = await checkPVPRequirements(mappedInventory, level, coins);
 
             // [FIX] Manual Coin Check with Context State (More accurate than gameStorage)
             if (coins < PVP_REQUIREMENTS.entryFee) {

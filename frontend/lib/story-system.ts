@@ -26,6 +26,12 @@ export interface StoryStage {
         dialogue: {
             intro: string;
             intro_ko: string;
+            quote?: string;
+            quote_ko?: string;
+            appearance?: string;
+            appearance_ko?: string;
+            start?: string;
+            start_ko?: string;
             win: string;
             win_ko: string;
             lose: string;
@@ -102,6 +108,9 @@ export function getChapters(t?: (key: TranslationKey) => string): Chapter[] {
                         id: 'bot-1', name: 'Rogue Crawler', name_ko: '로그 크롤러',
                         dialogue: {
                             intro: 'Bzzzt... Unknown entity detected. Initiating purge sequence.', intro_ko: '지지직... 알 수 없는 개체 감지. 퍼지 시퀀스를 가동한다.',
+                            quote: 'Bzzzt...', quote_ko: '지지직...',
+                            appearance: 'Unknown entity detected.', appearance_ko: '알 수 없는 개체 감지.',
+                            start: 'Initiating purge sequence.', start_ko: '퍼지 시퀀스를 가동한다.',
                             win: 'Critical error... System shutdown imminent.', win_ko: '치명적 오류... 시스템 강제 종료 임박.',
                             lose: 'Target deleted. Resuming patrol.', lose_ko: '대상 삭제 완료. 순찰을 재개한다.'
                         }
@@ -447,7 +456,7 @@ export function getChapters(t?: (key: TranslationKey) => string): Chapter[] {
                 },
                 {
                     id: 'stage-3-8', step: 8,
-                    title: 'The Final Ambush', title_ko: '최후의 매복 (전량 승부)',
+                    title: 'The Final Ambush', title_ko: '최후의 매복 (전략 승부)',
                     description: 'One last trap before the Omega.', description_ko: '오메가 직전의 마지막 함정.',
                     battleMode: 'ambush', difficulty: 'HARD',
                     enemy: {

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { cn } from '@/lib/utils';
 import CyberPageLayout from '@/components/CyberPageLayout';
 // import { getGameState, updateGameState } from '@/lib/game-state';
 import { useAlert } from '@/context/AlertContext';
@@ -53,14 +54,17 @@ export default function ShopPage() {
     };
 
     const handlePurchase = async (pack: CardPack) => {
-        const discount = negotiationBonus / 100;
+        const discount = pack.currencyType === 'coin' ? negotiationBonus / 100 : 0; // Discount only for Coins
         const finalPrice = Math.floor(pack.price * (1 - discount));
+        const currencyName = pack.currencyType === 'coin' ? '코인' : '토큰';
 
-        // 코인 확인 (UserContext state)
-        if (coins < finalPrice) {
+        // 재화 확인
+        const currentBalance = pack.currencyType === 'coin' ? coins : tokens;
+
+        if (currentBalance < finalPrice) {
             showAlert({
-                title: '코인 부족',
-                message: `코인이 부족합니다!\n필요: ${finalPrice} 코인\n보유: ${coins} 코인`,
+                title: `${currencyName} 부족`,
+                message: `${currencyName}이 부족합니다!\n필요: ${finalPrice} ${currencyName}\n보유: ${currentBalance} ${currencyName}`,
                 type: 'error',
             });
             return;
@@ -68,44 +72,47 @@ export default function ShopPage() {
 
         showConfirm({
             title: '카드팩 구매',
-            message: `${pack.name}을(를) 구매하시겠습니까?\n\n가격: ${finalPrice} 코인${negotiationBonus > 0 ? ` (${negotiationBonus}% 할인 적용)` : ''}\n카드 개수: ${pack.cardCount}장`,
+            message: `${pack.name}을(를) 구매하시겠습니까?\n\n가격: ${finalPrice} ${currencyName}${discount > 0 ? ` (${negotiationBonus}% 할인)` : ''}\n카드 개수: ${pack.cardCount}장`,
             onConfirm: async () => {
                 setIsPurchasing(true);
                 try {
-                    // 1. 카드 생성 (통찰력 레벨 전달)
+                    // 1. 카드 생성
                     const generatedCards = openCardPack(pack, `commander-${level}`, insightLevel);
 
-                    // 2. 인벤토리에 추가 (Atomic Batch)
+                    // 2. 인벤토리에 추가
                     await addCardsToInventory(generatedCards);
 
-                    // 3. 코인 차감 (Only after cards are safely registered)
-                    await addCoins(-finalPrice);
-                    await refreshData();
+                    // 3. 재화 차감
+                    if (pack.currencyType === 'coin') {
+                        await addCoins(-finalPrice);
 
-                    // 잭팟 체크 (행운 연구 레벨 기반)
-                    // Lv 3,4: 1%, Lv 5,6: 2%, Lv 7,8: 3%, Lv 9: 5%
-                    let jackpotProb = 0;
-                    if (fortuneLevel >= 9) jackpotProb = 0.05;
-                    else if (fortuneLevel >= 7) jackpotProb = 0.03;
-                    else if (fortuneLevel >= 5) jackpotProb = 0.02;
-                    else if (fortuneLevel >= 3) jackpotProb = 0.01;
+                        // [Jackpot Logic only for Coins]
+                        let jackpotProb = 0;
+                        if (fortuneLevel >= 9) jackpotProb = 0.05;
+                        else if (fortuneLevel >= 7) jackpotProb = 0.03;
+                        else if (fortuneLevel >= 5) jackpotProb = 0.02;
+                        else if (fortuneLevel >= 3) jackpotProb = 0.01;
 
-                    let refund = 0;
-                    if (jackpotProb > 0 && Math.random() < jackpotProb) {
-                        // 10~50% 환급
-                        const refundRatio = 0.1 + Math.random() * 0.4;
-                        refund = Math.floor(finalPrice * refundRatio);
-                        if (refund > 0) {
-                            await addCoins(refund);
-                            showAlert({
-                                title: '🍀 잭팟 발생!',
-                                message: `행운 연구의 효과로 구매 금액의 일부인 ${refund.toLocaleString()} 코인을 환급받았습니다!`,
-                                type: 'success'
-                            });
+                        if (jackpotProb > 0 && Math.random() < jackpotProb) {
+                            const refund = Math.floor(finalPrice * (0.1 + Math.random() * 0.4));
+                            if (refund > 0) {
+                                await addCoins(refund);
+                                showAlert({
+                                    title: '🍀 잭팟 발생!',
+                                    message: `행운 보너스! ${refund.toLocaleString()} 코인을 돌려받았습니다!`,
+                                    type: 'success'
+                                });
+                            }
                         }
+
+                    } else {
+                        // Token deduction
+                        await addTokens(-finalPrice); // Use updateTokens logic (negative value)
                     }
 
-                    // 4. 개봉 애니메이션 표시
+                    await refreshData();
+
+                    // 4. 개봉 애니메이션
                     setCurrentPack(pack);
                     setOpenedCards(generatedCards);
                     setShowPackOpening(true);
@@ -114,7 +121,7 @@ export default function ShopPage() {
                     console.error('카드팩 구매 실패:', error);
                     showAlert({
                         title: '구매 실패',
-                        message: '카드팩 구매 중 오류가 발생했습니다. 코인은 차감되지 않았습니다.',
+                        message: '오류가 발생했습니다. 재화는 차감되지 않았습니다.',
                         type: 'error',
                     });
                 } finally {
@@ -124,11 +131,13 @@ export default function ShopPage() {
         });
     };
 
+    // Add Token Deduction Helper if not exists in Context (it does, updated below logic)
+    // Actually addTokens in context wraps updateTokens which supports +/- 
+
     const closePackOpening = () => {
         setShowPackOpening(false);
         setOpenedCards([]);
         setCurrentPack(null);
-        // No need to manually reload state, UserContext stays in sync or updates via addCoins
     };
 
     const getRarityColor = (rarity: string) => {
@@ -280,16 +289,20 @@ export default function ShopPage() {
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                     {CARD_PACKS.map((pack) => {
-                        const discount = negotiationBonus / 100;
+                        const isCoin = pack.currencyType === 'coin';
+                        const discount = isCoin ? negotiationBonus / 100 : 0;
                         const finalPrice = Math.floor(pack.price * (1 - discount));
-                        const hasDiscount = negotiationBonus > 0;
+                        const hasDiscount = discount > 0;
 
                         return (
                             <div
                                 key={pack.id}
-                                className="bg-black/40 border border-white/10 rounded-xl p-6 hover:border-yellow-500/50 transition-all group"
+                                className={cn(
+                                    "bg-black/40 border rounded-xl p-6 transition-all group relative overflow-hidden",
+                                    isCoin ? "border-white/10 hover:border-yellow-500/50" : "border-cyan-500/20 hover:border-cyan-500/50"
+                                )}
                             >
-                                <div className="text-center mb-4">
+                                <div className="text-center mb-4 relative z-10">
                                     <div className="text-6xl mb-3">{pack.icon}</div>
                                     <h3 className="text-xl font-bold text-white mb-2">{pack.name}</h3>
                                     <p className="text-sm text-white/60 mb-2">{pack.description}</p>
@@ -317,10 +330,24 @@ export default function ShopPage() {
                                     </div>
                                 </div>
 
-                                <div className="text-center mb-4">
-                                    <div className="flex flex-col items-center justify-center">
+                                <button
+                                    onClick={() => handlePurchase(pack)}
+                                    disabled={isPurchasing}
+                                    className={cn(
+                                        "w-full py-3 rounded-lg font-bold flex items-center justify-center gap-2 transition-all relative z-10",
+                                        isCoin
+                                            ? "bg-yellow-600 hover:bg-yellow-500 text-black"
+                                            : "bg-cyan-600 hover:bg-cyan-500 text-white"
+                                    )}
+                                >
+                                    {isPurchasing ? (
+                                        <Loader2 className="animate-spin" size={18} />
+                                    ) : (
+                                        isCoin ? <Coins size={18} /> : <Zap size={18} />
+                                    )}
+                                    <div>
                                         {hasDiscount && (
-                                            <span className="text-sm text-white/40 line-through mb-1">
+                                            <span className="line-through text-xs opacity-60 mr-2">
                                                 {pack.price.toLocaleString()}
                                             </span>
                                         )}
@@ -334,17 +361,6 @@ export default function ShopPage() {
                                             )}
                                         </div>
                                     </div>
-                                </div>
-
-                                <button
-                                    onClick={() => handlePurchase(pack)}
-                                    disabled={coins < finalPrice}
-                                    className={`w-full py-3 font-bold rounded-xl transition-all shadow-lg ${coins < finalPrice
-                                        ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
-                                        : 'bg-gradient-to-r from-yellow-600 to-orange-600 hover:from-yellow-500 hover:to-orange-500 text-white hover:scale-105'
-                                        }`}
-                                >
-                                    {coins < finalPrice ? '코인 부족' : '구매하기'}
                                 </button>
                             </div>
                         );
