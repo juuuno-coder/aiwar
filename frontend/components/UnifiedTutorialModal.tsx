@@ -153,9 +153,9 @@ export default function UnifiedTutorialModal() {
                 // or show a toast. But the user wants the "Effect".
                 // Let's create a dummy set for visual satisfaction if it returns empty (assuming already claimed).
                 const DEMO_CARDS: Card[] = [
-                    { id: 'demo-1', name: 'Code Red', rarity: 'rare', type: 'EFFICIENCY', tier: 'basic', description: 'Starter Unit', stats: { totalPower: 40, efficiency: 40, creativity: 0, function: 0 }, ownerId: 'demo', level: 1, experience: 0, acquiredAt: new Date(), isLocked: false },
-                    { id: 'demo-2', name: 'Analysis Bot', rarity: 'common', type: 'FUNCTION', tier: 'basic', description: 'Starter Unit', stats: { totalPower: 30, efficiency: 0, creativity: 0, function: 30 }, ownerId: 'demo', level: 1, experience: 0, acquiredAt: new Date(), isLocked: false },
-                    { id: 'demo-3', name: 'Firewall', rarity: 'common', type: 'EFFICIENCY', tier: 'basic', description: 'Defense Unit', stats: { totalPower: 35, efficiency: 35, creativity: 0, function: 0 }, ownerId: 'demo', level: 1, experience: 0, acquiredAt: new Date(), isLocked: false },
+                    { id: 'demo-1', templateId: 'demo-t1', name: 'Code Red', rarity: 'rare', type: 'EFFICIENCY', description: 'Starter Unit', stats: { totalPower: 40, efficiency: 40, creativity: 0, function: 0 }, ownerId: 'demo', level: 1, experience: 0, acquiredAt: new Date(), isLocked: false },
+                    { id: 'demo-2', templateId: 'demo-t2', name: 'Analysis Bot', rarity: 'common', type: 'FUNCTION', description: 'Starter Unit', stats: { totalPower: 30, efficiency: 0, creativity: 0, function: 30 }, ownerId: 'demo', level: 1, experience: 0, acquiredAt: new Date(), isLocked: false },
+                    { id: 'demo-3', templateId: 'demo-t3', name: 'Firewall', rarity: 'common', type: 'EFFICIENCY', description: 'Defense Unit', stats: { totalPower: 35, efficiency: 35, creativity: 0, function: 0 }, ownerId: 'demo', level: 1, experience: 0, acquiredAt: new Date(), isLocked: false },
                 ];
                 setClaimedCards(DEMO_CARDS);
                 setShowRewardModal(true);

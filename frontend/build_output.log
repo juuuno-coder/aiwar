@@ -1,0 +1,30 @@
+
+> ai-war@0.1.0 build
+> next build
+
+ ⚠ Warning: Next.js inferred your workspace root, but it may not be correct.
+ We detected multiple lockfiles and selected the directory of /Users/admin/Desktop/ai-daejeon/package-lock.json as the root directory.
+ To silence this warning, set `turbopack.root` in your Next.js config, or consider removing one of the lockfiles if it's not needed.
+   See https://nextjs.org/docs/app/api-reference/config/next-config-js/turbopack#root-directory for more information.
+ Detected additional lockfiles: 
+   * /Users/admin/Desktop/ai-daejeon/frontend/package-lock.json
+
+   ▲ Next.js 16.0.10 (Turbopack)
+   - Environments: .env.local
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully in 4.4s
+   Running TypeScript ...
+Failed to compile.
+
+./components/UnifiedTutorialModal.tsx:156:91
+Type error: Object literal may only specify known properties, and 'tier' does not exist in type 'Card'.
+
+[0m [90m 154 |[39m                 [90m// Let's create a dummy set for visual satisfaction if it returns empty (assuming already claimed).[39m
+ [90m 155 |[39m                 [36mconst[39m [33mDEMO_CARDS[39m[33m:[39m [33mCard[39m[] [33m=[39m [
+[31m[1m>[22m[39m[90m 156 |[39m                     { id[33m:[39m [32m'demo-1'[39m[33m,[39m name[33m:[39m [32m'Code Red'[39m[33m,[39m rarity[33m:[39m [32m'rare'[39m[33m,[39m type[33m:[39m [32m'EFFICIENCY'[39m[33m,[39m tier[33m:[39m [32m'basic'[39m[33m,[39m description[33m:[39m [32m'Starter Unit'[39m[33m,[39m stats[33m:[39m { totalPower[33m:[39m [35m40[39m[33m,[39m efficiency[33m:[39m [35m40[39m[33m,[39m creativity[33m:[39m [35m0[39m[33m,[39m [36mfunction[39m[33m:[39m [35m0[39m }[33m,[39m ownerId[33m:[39m [32m'demo'[39m[33m,[39m level[33m:[39m [35m1[39m[33m,[39m experience[33m:[39m [35m0[39m[33m,[39m acquiredAt[33m:[39m [36mnew[39m [33mDate[39m()[33m,[39m isLocked[33m:[39m [36mfalse[39m }[33m,[39m
+ [90m     |[39m                                                                                           [31m[1m^[22m[39m
+ [90m 157 |[39m                     { id[33m:[39m [32m'demo-2'[39m[33m,[39m name[33m:[39m [32m'Analysis Bot'[39m[33m,[39m rarity[33m:[39m [32m'common'[39m[33m,[39m type[33m:[39m [32m'FUNCTION'[39m[33m,[39m tier[33m:[39m [32m'basic'[39m[33m,[39m description[33m:[39m [32m'Starter Unit'[39m[33m,[39m stats[33m:[39m { totalPower[33m:[39m [35m30[39m[33m,[39m efficiency[33m:[39m [35m0[39m[33m,[39m creativity[33m:[39m [35m0[39m[33m,[39m [36mfunction[39m[33m:[39m [35m30[39m }[33m,[39m ownerId[33m:[39m [32m'demo'[39m[33m,[39m level[33m:[39m [35m1[39m[33m,[39m experience[33m:[39m [35m0[39m[33m,[39m acquiredAt[33m:[39m [36mnew[39m [33mDate[39m()[33m,[39m isLocked[33m:[39m [36mfalse[39m }[33m,[39m
+ [90m 158 |[39m                     { id[33m:[39m [32m'demo-3'[39m[33m,[39m name[33m:[39m [32m'Firewall'[39m[33m,[39m rarity[33m:[39m [32m'common'[39m[33m,[39m type[33m:[39m [32m'EFFICIENCY'[39m[33m,[39m tier[33m:[39m [32m'basic'[39m[33m,[39m description[33m:[39m [32m'Defense Unit'[39m[33m,[39m stats[33m:[39m { totalPower[33m:[39m [35m35[39m[33m,[39m efficiency[33m:[39m [35m35[39m[33m,[39m creativity[33m:[39m [35m0[39m[33m,[39m [36mfunction[39m[33m:[39m [35m0[39m }[33m,[39m ownerId[33m:[39m [32m'demo'[39m[33m,[39m level[33m:[39m [35m1[39m[33m,[39m experience[33m:[39m [35m0[39m[33m,[39m acquiredAt[33m:[39m [36mnew[39m [33mDate[39m()[33m,[39m isLocked[33m:[39m [36mfalse[39m }[33m,[39m
+ [90m 159 |[39m                 ][33m;[39m[0m
+Next.js build worker exited with code: 1 and signal: null

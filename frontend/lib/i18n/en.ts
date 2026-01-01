@@ -378,6 +378,7 @@ export const en: Translations = {
     'tutorial.faction.step1.desc': 'Select an AI faction to start your journey.',
     'tutorial.faction.step2.title': 'Core Subscription',
     'tutorial.faction.step2.desc': 'Subscribe to unlock their unique units.',
+    'tutorial.faction.finish': 'Tutorial Complete',
     'tutorial.faction.step3.title': 'Tactical Advantage',
     'tutorial.faction.step3.desc': 'Deploy these units to gain the upper hand.',
 

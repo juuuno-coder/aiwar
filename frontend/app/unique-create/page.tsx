@@ -347,8 +347,7 @@ export default function UniqueCreatePage() {
                         ))
                     )}
                 </div>
-            )
-
+            )}
         </CyberPageLayout >
     );
 }
