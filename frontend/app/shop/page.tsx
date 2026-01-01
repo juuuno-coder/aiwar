@@ -20,7 +20,7 @@ import FactionSubscriptionModal from '@/components/FactionSubscriptionModal'; //
 export default function ShopPage() {
     const router = useRouter();
     const { showAlert, showConfirm } = useAlert();
-    const { coins, tokens, level, addCoins, addTokens, refreshData } = useUser(); // [UPDATED] tokens, addTokens
+    const { coins, tokens, level, addCoins, addTokens, refreshData, user } = useUser(); // [UPDATED] user
 
     // 연구 보너스 로드
     const [negotiationBonus, setNegotiationBonus] = useState(0);
@@ -53,7 +53,12 @@ export default function ShopPage() {
         }
     };
 
-    const handlePurchase = async (pack: CardPack) => {
+    const handlePurchase = async (pack: CardPack, skipConfirm = false) => {
+        if (!user?.uid) {
+            showAlert({ title: '오류', message: '로그인이 필요합니다.', type: 'error' });
+            return;
+        }
+
         const discount = pack.currencyType === 'coin' ? negotiationBonus / 100 : 0; // Discount only for Coins
         const finalPrice = Math.floor(pack.price * (1 - discount));
         const currencyName = pack.currencyType === 'coin' ? '코인' : '토큰';
@@ -70,65 +75,73 @@ export default function ShopPage() {
             return;
         }
 
-        showConfirm({
-            title: '카드팩 구매',
-            message: `${pack.name}을(를) 구매하시겠습니까?\n\n가격: ${finalPrice} ${currencyName}${discount > 0 ? ` (${negotiationBonus}% 할인)` : ''}\n카드 개수: ${pack.cardCount}장`,
-            onConfirm: async () => {
-                setIsPurchasing(true);
-                try {
-                    // 1. 카드 생성
-                    const generatedCards = openCardPack(pack, `commander-${level}`, insightLevel);
+        const processPurchase = async () => {
+            setIsPurchasing(true);
+            try {
+                // 1. 카드 생성
+                // [FIX] Use authentic user ID instead of commander-{level}
+                const generatedCards = openCardPack(pack, user.uid, insightLevel);
 
-                    // 2. 인벤토리에 추가
-                    await addCardsToInventory(generatedCards);
+                // 2. 인벤토리에 추가
+                // [FIX] Explicitly pass user.uid
+                await addCardsToInventory(generatedCards, user.uid);
 
-                    // 3. 재화 차감
-                    if (pack.currencyType === 'coin') {
-                        await addCoins(-finalPrice);
+                // 3. 재화 차감
+                if (pack.currencyType === 'coin') {
+                    await addCoins(-finalPrice);
 
-                        // [Jackpot Logic only for Coins]
-                        let jackpotProb = 0;
-                        if (fortuneLevel >= 9) jackpotProb = 0.05;
-                        else if (fortuneLevel >= 7) jackpotProb = 0.03;
-                        else if (fortuneLevel >= 5) jackpotProb = 0.02;
-                        else if (fortuneLevel >= 3) jackpotProb = 0.01;
+                    // [Jackpot Logic only for Coins]
+                    let jackpotProb = 0;
+                    if (fortuneLevel >= 9) jackpotProb = 0.05;
+                    else if (fortuneLevel >= 7) jackpotProb = 0.03;
+                    else if (fortuneLevel >= 5) jackpotProb = 0.02;
+                    else if (fortuneLevel >= 3) jackpotProb = 0.01;
 
-                        if (jackpotProb > 0 && Math.random() < jackpotProb) {
-                            const refund = Math.floor(finalPrice * (0.1 + Math.random() * 0.4));
-                            if (refund > 0) {
-                                await addCoins(refund);
-                                showAlert({
-                                    title: '🍀 잭팟 발생!',
-                                    message: `행운 보너스! ${refund.toLocaleString()} 코인을 돌려받았습니다!`,
-                                    type: 'success'
-                                });
-                            }
+                    if (jackpotProb > 0 && Math.random() < jackpotProb) {
+                        const refund = Math.floor(finalPrice * (0.1 + Math.random() * 0.4));
+                        if (refund > 0) {
+                            await addCoins(refund);
+                            showAlert({
+                                title: '🍀 잭팟 발생!',
+                                message: `행운 보너스! ${refund.toLocaleString()} 코인을 돌려받았습니다!`,
+                                type: 'success'
+                            });
                         }
-
-                    } else {
-                        // Token deduction
-                        await addTokens(-finalPrice); // Use updateTokens logic (negative value)
                     }
 
-                    await refreshData();
-
-                    // 4. 개봉 애니메이션
-                    setCurrentPack(pack);
-                    setOpenedCards(generatedCards);
-                    setShowPackOpening(true);
-
-                } catch (error) {
-                    console.error('카드팩 구매 실패:', error);
-                    showAlert({
-                        title: '구매 실패',
-                        message: '오류가 발생했습니다. 재화는 차감되지 않았습니다.',
-                        type: 'error',
-                    });
-                } finally {
-                    setIsPurchasing(false);
+                } else {
+                    // Token deduction
+                    await addTokens(-finalPrice); // Use updateTokens logic (negative value)
                 }
-            },
-        });
+
+                await refreshData();
+
+                // 4. 개봉 애니메이션
+                setCurrentPack(pack);
+                setOpenedCards(generatedCards);
+                setShowPackOpening(true);
+
+            } catch (error) {
+                console.error('카드팩 구매 실패:', error);
+                showAlert({
+                    title: '구매 실패',
+                    message: '오류가 발생했습니다. 재화는 차감되지 않았습니다.',
+                    type: 'error',
+                });
+            } finally {
+                setIsPurchasing(false);
+            }
+        };
+
+        if (skipConfirm) {
+            await processPurchase();
+        } else {
+            showConfirm({
+                title: '카드팩 구매',
+                message: `${pack.name}을(를) 구매하시겠습니까?\n\n가격: ${finalPrice} ${currencyName}${discount > 0 ? ` (${negotiationBonus}% 할인)` : ''}\n카드 개수: ${pack.cardCount}장`,
+                onConfirm: processPurchase
+            });
+        }
     };
 
     // Add Token Deduction Helper if not exists in Context (it does, updated below logic)
@@ -138,6 +151,18 @@ export default function ShopPage() {
         setShowPackOpening(false);
         setOpenedCards([]);
         setCurrentPack(null);
+    };
+
+    const handleBuyAgain = () => {
+        if (currentPack) {
+            // Close modal first to reset animation, then purchase
+            setShowPackOpening(false);
+            setOpenedCards([]);
+            // Small delay to allow modal close animation
+            setTimeout(() => {
+                handlePurchase(currentPack, true);
+            }, 300);
+        }
     };
 
     const getRarityColor = (rarity: string) => {
@@ -416,6 +441,7 @@ export default function ShopPage() {
                 onClose={closePackOpening}
                 cards={openedCards}
                 packType={currentPack?.price! >= 1000 ? 'legendary' : currentPack?.price! >= 500 ? 'premium' : 'basic'}
+                onBuyAgain={handleBuyAgain}
             />
         </CyberPageLayout >
     );

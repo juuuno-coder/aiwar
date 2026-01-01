@@ -14,6 +14,7 @@ interface GachaRevealModalProps {
     cards: CardType[];
     packType: 'basic' | 'premium' | 'legendary' | 'starter';
     bonusReward?: { type: 'coins'; amount: number };
+    onBuyAgain?: () => void;
 }
 
 // 등급별 연출 설정
@@ -36,7 +37,7 @@ const RARITY_GRADIENTS = {
     commander: 'from-emerald-900 via-teal-800 to-emerald-900'
 };
 
-export default function GachaRevealModal({ isOpen, onClose, cards, packType, bonusReward }: GachaRevealModalProps) {
+export default function GachaRevealModal({ isOpen, onClose, cards, packType, bonusReward, onBuyAgain }: GachaRevealModalProps) {
     useEscapeKey(isOpen, onClose);
 
     const [phase, setPhase] = useState<'opening' | 'revealing' | 'complete'>('opening');
@@ -192,14 +193,28 @@ export default function GachaRevealModal({ isOpen, onClose, cards, packType, bon
                             </motion.div>
                         )}
 
-                        <motion.p
+                        <motion.div
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
-                            transition={{ delay: 0.5 }}
-                            className="text-white/60 mt-8 text-sm"
+                            transition={{ delay: 0.8 }}
+                            className="mt-8 flex gap-4"
                         >
-                            화면을 클릭하여 닫기
-                        </motion.p>
+                            <button
+                                onClick={onClose}
+                                className="px-6 py-2 rounded-lg border border-white/20 hover:bg-white/10 text-white/60 hover:text-white transition-colors"
+                            >
+                                닫기
+                            </button>
+                            {onBuyAgain && (
+                                <button
+                                    onClick={onBuyAgain}
+                                    className="px-6 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-bold shadow-[0_0_15px_rgba(6,182,212,0.4)] transition-all hover:scale-105 flex items-center gap-2"
+                                >
+                                    <Sparkles size={16} />
+                                    다시 구매하기
+                                </button>
+                            )}
+                        </motion.div>
                     </motion.div>
                 )}
             </motion.div>
