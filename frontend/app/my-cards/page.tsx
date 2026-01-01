@@ -38,102 +38,25 @@ export default function MyCardsPage() {
     const router = useRouter();
     const { t, language } = useTranslation();
     const footer = useFooter();
-    const { addCoins, refreshData } = useUser();
+    const { inventory: globalInventory, loading: globalLoading, refreshData } = useUser();
     const { showAlert } = useAlert();
     const { openCardModal } = useCardModal();
 
     const [mounted, setMounted] = useState(false);
-    const [cards, setCards] = useState<InventoryCard[]>([]);
-    const [loading, setLoading] = useState(true);
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
     const [sortBy, setSortBy] = useState<SortOption>('rarity'); // Default by rarity
     const [sortAsc, setSortAsc] = useState(true); // Low to High (Common to Commander)
     const [filterRarity, setFilterRarity] = useState<FilterOption>('all');
 
-
     useEffect(() => {
         setMounted(true);
-        loadCards(user?.uid);
-    }, [user]);
+        // refreshData is called internally by UserContext, but we can call it here if we want absolute fresh data on mount
+        refreshData();
+    }, []);
 
-    const loadCards = async (uid?: string) => {
-        setLoading(true);
-        try {
-            const rawInventory = await loadInventory(uid);
-
-            // [Sync] 최신 DB 데이터로 카드 정보(이미지 등) 동기화
-            const inventory = rawInventory.map(card => {
-                const template = CARD_DATABASE.find(t => t.id === card.templateId || t.id === card.id);
-                if (template) {
-                    return {
-                        ...card,
-                        imageUrl: template.imageUrl || card.imageUrl,
-                        name: template.name || card.name,
-                        description: template.description || card.description
-                    };
-                }
-                return card;
-            });
-
-            // Ultra 티어 구독 시 군단장 카드 추가
-            try {
-                const { getSubscribedFactions } = await import('@/lib/faction-subscription-utils');
-                const { COMMANDERS } = await import('@/data/card-database');
-
-                const subscriptions = getSubscribedFactions(user?.uid);
-                const ultraCommanders: InventoryCard[] = [];
-
-                for (const sub of subscriptions) {
-                    if (sub.tier === 'ultra') {
-                        // 해당 팩션의 군단장 카드 찾기
-                        const commander = COMMANDERS.find(c => c.aiFactionId === sub.factionId);
-                        if (commander) {
-                            // 이미 인벤토리에 있는지 확인
-                            const alreadyExists = inventory.some(c => c.templateId === commander.id || c.id === commander.id);
-                            if (!alreadyExists) {
-                                // 군단장 카드를 InventoryCard로 변환하여 추가
-                                ultraCommanders.push({
-                                    id: `commander-${commander.id}`,
-                                    instanceId: `commander-${commander.id}-${Date.now()}`,
-                                    templateId: commander.id,
-                                    name: commander.name,
-                                    rarity: 'commander',
-                                    type: 'EFFICIENCY', // 기본 타입
-                                    level: 1,
-                                    experience: 0,
-                                    imageUrl: commander.imageUrl,
-                                    aiFactionId: commander.aiFactionId,
-                                    description: commander.description,
-                                    stats: {
-                                        efficiency: 95,
-                                        creativity: 95,
-                                        function: 95,
-                                        totalPower: 285
-                                    },
-                                    acquiredAt: new Date(),
-                                    isCommanderCard: true, // 특수 플래그
-                                    specialty: commander.specialty
-                                } as any);
-                            }
-                        }
-                    }
-                }
-
-                // 인벤토리에 군단장 카드 추가
-                const combinedInventory = [...inventory, ...ultraCommanders];
-                setCards(combinedInventory);
-                console.log(`[MyCards] 로드 완료: 인벤토리 ${inventory.length}장 + Ultra 군단장 ${ultraCommanders.length}장`);
-            } catch (e) {
-                console.warn('군단장 카드 로드 중 오류:', e);
-                setCards(inventory);
-            }
-        } catch (error) {
-            console.error('Failed to load inventory:', error);
-            showAlert({ title: '오류', message: '인벤토리 로드에 실패했습니다.', type: 'error' });
-        } finally {
-            setLoading(false);
-        }
-    };
+    // Inventory processing (Moved filter/sort logic to use globalInventory)
+    const cards = globalInventory;
+    const loading = globalLoading;
 
     const filteredAndSortedCards = useMemo(() => {
         let result = [...cards];

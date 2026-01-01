@@ -382,23 +382,17 @@ export async function distributeStarterPack(uid?: string, nickname?: string): Pr
     try {
         const { generateCardByRarity } = await import('./card-generation-system');
 
-        // 각 등급별 1장씩 생성
+        // 각 등급별 1장씩 생성 (일반, 희귀, 에픽, 전설, 유니크)
         const commonCard = generateCardByRarity('common', uid);
         const rareCard = generateCardByRarity('rare', uid);
         const epicCard = generateCardByRarity('epic', uid);
         const legendaryCard = generateCardByRarity('legendary', uid);
-
-        // Commander Unique Card
         const uniqueCard = generateCardByRarity('unique', uid);
 
         // Customize Unique Card with Nickname
         if (nickname) {
-            uniqueCard.name = `지휘관 ${nickname}`; // '사령관' -> '지휘관' (User refers to themselves)
+            uniqueCard.name = `지휘관 ${nickname}`;
             uniqueCard.description = "전장에 새롭게 합류한 지휘관의 전용 유닛입니다.";
-
-            // Randomize portrait for the Unique card
-            const randomPortrait = UNIQUE_COMMANDER_PORTRAITS[Math.floor(Math.random() * UNIQUE_COMMANDER_PORTRAITS.length)];
-            uniqueCard.imageUrl = randomPortrait;
         }
 
         const starterPack = [

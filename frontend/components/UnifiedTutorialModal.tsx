@@ -141,7 +141,7 @@ export default function UnifiedTutorialModal() {
 
         try {
             // Claim Logic
-            const cards = await claimStarterPack();
+            const cards = await claimStarterPack('신입 지휘관');
 
             if (cards && cards.length > 0) {
                 setClaimedCards(cards);

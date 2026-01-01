@@ -66,9 +66,10 @@ export interface Card {
     ownerId: string;
     level: number;
     experience: number;
-    stats: Stats; // Assuming CardStats is a typo and should be Stats
+    stats: Stats;
     rarity?: Rarity;
-    acquiredAt: Date;
+    acquiredAt: Date | any;
+    instanceId?: string;
     isLocked: boolean;
     isUnique?: boolean; // 유니크 유닛 여부
     type?: AIType; // Rock-Paper-Scissors type

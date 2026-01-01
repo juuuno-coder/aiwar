@@ -78,19 +78,15 @@ export default function ShopPage() {
         const processPurchase = async () => {
             setIsPurchasing(true);
             try {
-                // 1. 카드 생성
-                // [FIX] Use authentic user ID instead of commander-{level}
+                // 1. 카드 생성 (기존 로직 유지)
                 const generatedCards = openCardPack(pack, user.uid, insightLevel);
 
-                // 2. 인벤토리에 추가
-                // [FIX] Explicitly pass user.uid
-                await addCardsToInventory(generatedCards, user.uid);
+                // 2. 트랜잭션 구매 실행 (재화 차감 + 카드 지급 통합)
+                const { buyCardPack } = useUser(); // Hook already called at top level, just destruct
+                await buyCardPack(generatedCards, finalPrice, pack.currencyType);
 
-                // 3. 재화 차감
+                // 3. 잭팟 로직 (코인 구매 시에만 적용)
                 if (pack.currencyType === 'coin') {
-                    await addCoins(-finalPrice);
-
-                    // [Jackpot Logic only for Coins]
                     let jackpotProb = 0;
                     if (fortuneLevel >= 9) jackpotProb = 0.05;
                     else if (fortuneLevel >= 7) jackpotProb = 0.03;
@@ -108,13 +104,7 @@ export default function ShopPage() {
                             });
                         }
                     }
-
-                } else {
-                    // Token deduction
-                    await addTokens(-finalPrice); // Use updateTokens logic (negative value)
                 }
-
-                await refreshData();
 
                 // 4. 개봉 애니메이션
                 setCurrentPack(pack);

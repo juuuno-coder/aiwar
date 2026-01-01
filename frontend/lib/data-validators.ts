@@ -12,6 +12,9 @@ export function validateGameState(state: any): GameState {
         tokens: Math.max(0, Number(state?.tokens) || 0),
         level: Math.max(1, Math.min(100, Number(state?.level) || 1)),
         experience: Math.max(0, Number(state?.experience) || 0),
+        nickname: state?.nickname || '지휘관',
+        username: state?.username || '',
+        hasReceivedStarterPack: Boolean(state?.hasReceivedStarterPack),
         inventory: Array.isArray(state?.inventory) ? state.inventory : [],
         unlockedFactions: Array.isArray(state?.unlockedFactions) ? state.unlockedFactions : [],
         slots: Array.isArray(state?.slots) ? state.slots : [],
@@ -20,7 +23,8 @@ export function validateGameState(state: any): GameState {
         stageProgress: state?.stageProgress ? validateStageProgress(state.stageProgress) : undefined,
         decks: Array.isArray(state?.decks) ? state.decks : [],
         subscriptions: Array.isArray(state?.subscriptions) ? state.subscriptions : [],
-        uniqueApplications: Array.isArray(state?.uniqueApplications) ? state.uniqueApplications : []
+        uniqueApplications: Array.isArray(state?.uniqueApplications) ? state.uniqueApplications : [],
+        stats: state?.stats || { rating: 1000, wins: 0, losses: 0 }
     };
 
     return validated;

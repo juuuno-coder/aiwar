@@ -14,7 +14,8 @@ import {
     addDoc,
     orderBy,
     collectionGroup,
-    limit
+    limit,
+    runTransaction
 } from 'firebase/firestore';
 import { createUniqueCardFromApplication } from './unique-card-factory';
 import { db, isFirebaseConfigured } from './firebase';
@@ -25,6 +26,7 @@ import {
     TIER_CONFIGS,
     SubscriptionTier
 } from './faction-subscription';
+import { Card } from './types';
 
 // ==================== 사용자 프로필 ====================
 
@@ -51,6 +53,114 @@ export interface UserProfile {
 
 const BASE_MAX_TOKENS = 1000;
 const BASE_RECHARGE_RATE = 100;
+
+/**
+ * 카드팩 구매 트랜잭션 (재화 차감 + 카드 지급)
+ */
+export async function purchaseCardPackTransaction(
+    userId: string,
+    cards: Card[],
+    price: number,
+    currencyType: 'coin' | 'token'
+): Promise<void> {
+    if (!isFirebaseConfigured || !db) throw new Error('Firebase NOT_CONFIGURED');
+
+    const userRef = doc(db, 'users', userId, 'profile', 'data');
+
+    try {
+        await runTransaction(db, async (transaction) => {
+            const userDoc = await transaction.get(userRef);
+            if (!userDoc.exists()) throw new Error('USER_NOT_FOUND');
+
+            const userData = userDoc.data() as UserProfile;
+            const currentBalance = currencyType === 'coin' ? userData.coins : userData.tokens;
+
+            if (currentBalance < price) throw new Error('INSUFFICIENT_FUNDS');
+
+            // 1. 재화 차감
+            transaction.update(userRef, {
+                [currencyType === 'coin' ? 'coins' : 'tokens']: increment(-price)
+            });
+
+            // 2. 카드 지급
+            for (const card of cards) {
+                const instanceId = `${card.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+                const cardRef = doc(db!, 'users', userId, 'inventory', instanceId);
+                transaction.set(cardRef, {
+                    ...card,
+                    instanceId,
+                    acquiredAt: serverTimestamp()
+                });
+            }
+        });
+        console.log(`✅ 트랜잭션 성공: ${cards.length}매 지급, -${price} ${currencyType}`);
+    } catch (error) {
+        console.error('❌ 트랜잭션 실패:', error);
+        throw error;
+    }
+}
+
+/**
+ * 스타터팩 수령 트랜잭션 (코인 지급 + 닉네임 설정 + 카드 지급)
+ */
+export async function claimStarterPackTransaction(
+    userId: string,
+    nickname: string,
+    cards: Card[],
+    coinReward: number = 1000
+): Promise<void> {
+    if (!isFirebaseConfigured || !db) throw new Error('Firebase NOT_CONFIGURED');
+
+    const userRef = doc(db, 'users', userId, 'profile', 'data');
+
+    try {
+        await runTransaction(db, async (transaction) => {
+            const userDoc = await transaction.get(userRef);
+            const exists = userDoc.exists();
+            const userData = exists ? userDoc.data() as UserProfile : null;
+
+            if (userData?.hasReceivedStarterPack) {
+                throw new Error('ALREADY_CLAIMED');
+            }
+
+            // 1. 프로필 업데이트 (코인 증액 + 닉네임 + 플래그)
+            const profileUpdate = {
+                nickname,
+                coins: increment(coinReward),
+                hasReceivedStarterPack: true,
+                lastLogin: serverTimestamp()
+            };
+
+            if (exists) {
+                transaction.update(userRef, profileUpdate);
+            } else {
+                // 신규 유저인 경우 기본값과 함께 생성
+                transaction.set(userRef, {
+                    ...profileUpdate,
+                    tokens: 100,
+                    level: 1,
+                    exp: 0,
+                    createdAt: serverTimestamp()
+                });
+            }
+
+            // 2. 카드 지급
+            for (const card of cards) {
+                const instanceId = `${card.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+                const cardRef = doc(db!, 'users', userId, 'inventory', instanceId);
+                transaction.set(cardRef, {
+                    ...card,
+                    instanceId,
+                    acquiredAt: serverTimestamp()
+                });
+            }
+        });
+        console.log(`✅ 스타터팩 트랜잭션 성공: ${nickname}, ${cards.length}매 지급`);
+    } catch (error) {
+        console.error('❌ 스타터팩 트랜잭션 실패:', error);
+        throw error;
+    }
+}
 
 /**
  * 활성 구독 목록을 기반으로 보너스 계산

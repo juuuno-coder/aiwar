@@ -31,6 +31,7 @@ export interface GameState {
     stageProgress?: any;
     lastBackup?: string;
     username?: string; // Player username for PVP
+    nickname: string; // Commander nickname
     hasReceivedStarterPack?: boolean; // Track if player received starter pack
 
     // Stats for PVP
@@ -256,6 +257,7 @@ class UnifiedStorage {
             decks: [],
             research: undefined,
             subscriptions: [],
+            nickname: '지휘관',
             uniqueApplications: [],
         };
 

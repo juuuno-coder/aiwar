@@ -8,10 +8,12 @@ import {
     updateTokens as firebaseUpdateTokens,
     updateExpAndLevel as firebaseUpdateExpAndLevel,
     saveUserProfile,
-    checkAndRechargeTokens // [NEW]
+    checkAndRechargeTokens,
+    claimStarterPackTransaction,
+    purchaseCardPackTransaction
 } from '@/lib/firebase-db';
 import { generateCardByRarity } from '@/lib/card-generation-system';
-import { addCardToInventory, loadInventory, distributeStarterPack } from '@/lib/inventory-system';
+import { addCardToInventory, loadInventory, distributeStarterPack, InventoryCard } from '@/lib/inventory-system';
 import type { Card, Rarity } from '@/lib/types';
 import { useNotification } from '@/context/NotificationContext';
 import { useFirebase } from '@/components/FirebaseProvider';
@@ -38,19 +40,20 @@ interface UserContextType {
     level: number;
     experience: number;
     loading: boolean;
-    inventory: Card[];
-    addCoins: (amount: number) => Promise<void>; // Changed return type
-    addTokens: (amount: number) => Promise<void>; // Changed return type
+    inventory: InventoryCard[];
+    addCoins: (amount: number) => Promise<void>;
+    addTokens: (amount: number) => Promise<void>;
     addExperience: (amount: number) => Promise<{ level: number; experience: number; leveledUp: boolean }>;
     refreshData: () => Promise<void>;
     isAdmin: boolean;
-    user: User | null; // Changed type
-    profile: UserProfile | null; // Added
+    user: User | null;
+    profile: UserProfile | null;
     starterPackAvailable: boolean;
-    claimStarterPack: () => Promise<Card[]>;
+    claimStarterPack: (nickname: string) => Promise<InventoryCard[]>;
     hideStarterPack: () => void;
     consumeTokens: (baseAmount: number, category?: string) => Promise<boolean>; // Added
-    subscriptions: UserSubscription[]; // [NEW] Added
+    subscriptions: UserSubscription[];
+    buyCardPack: (cards: Card[], price: number, currencyType: 'coin' | 'token') => Promise<void>;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -63,7 +66,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     const [tokens, setTokens] = useState<number>(0);
     const [level, setLevel] = useState<number>(1);
     const [experience, setExperience] = useState<number>(0);
-    const [inventory, setInventory] = useState<Card[]>([]);
+    const [inventory, setInventory] = useState<InventoryCard[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
     const [mounted, setMounted] = useState(false);
     const [isAdmin, setIsAdmin] = useState(false);
@@ -156,51 +159,83 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
             setLevel(profile.level);
             setExperience(profile.exp);
 
-            // [Auto-Healing & Rescue] 
-            // 1. 인벤토리 긴급 구조 (수령 처리되었으나 카드가 없는 경우)
-            // Load inventory and check for gaps
-            loadInventory(user.uid).then(async (cards) => {
-                const formattedCards = cards.map(c => ({
-                    ...c,
-                    acquiredAt: (c.acquiredAt && 'toDate' in (c.acquiredAt as any)) ? (c.acquiredAt as any).toDate() : new Date(c.acquiredAt as any)
-                })) as Card[];
-                setInventory(formattedCards);
+            // [NEW] Load inventory and subscriptions with commander logic
+            const loadData = async () => {
+                try {
+                    const cards = await loadInventory(user.uid);
+                    const formattedCards = cards.map(c => ({
+                        ...c,
+                        acquiredAt: (c.acquiredAt && 'toDate' in (c.acquiredAt as any)) ? (c.acquiredAt as any).toDate() : new Date(c.acquiredAt as any)
+                    })) as Card[];
 
-                // Emergency Rescue: 이미 수령했는데 카드가 0장인 경우 (Level 1 대상)
-                if (profile.level === 1 && profile.hasReceivedStarterPack && formattedCards.length === 0) {
-                    console.log("[SafetySystem] Rescue: Found claimed flag but 0 cards. Re-distributing...");
-                    const rescuedCards = await distributeStarterPack(user.uid, profile.nickname || '지휘관');
-                    if (rescuedCards && rescuedCards.length > 0) {
-                        const formattedRescued = rescuedCards.map(c => ({
-                            ...c,
-                            acquiredAt: new Date()
-                        })) as Card[];
-                        setInventory(formattedRescued);
-                        addNotification({
-                            type: 'reward',
-                            title: '데이터 복구 완료',
-                            message: '유실되었던 스타터팩 카드를 복구했습니다.',
-                            icon: '🎁'
-                        });
-                        setIsClaimingInSession(true); // Don't show modal ever again
+                    // [NEW] Add Commander cards from Ultra subscriptions
+                    const subs = await fetchUserSubscriptions(user.uid);
+                    setSubscriptions(subs);
+
+                    const { COMMANDERS } = await import('@/data/card-database');
+                    const ultraCommanders: Card[] = [];
+
+                    for (const sub of subs) {
+                        if (sub.tier === 'ultra' && sub.status === 'active') {
+                            const cmdTemplate = COMMANDERS.find(c => c.aiFactionId === sub.factionId);
+                            if (cmdTemplate) {
+                                const alreadyExists = formattedCards.some(c => c.templateId === cmdTemplate.id || c.id === cmdTemplate.id);
+                                if (!alreadyExists) {
+                                    ultraCommanders.push({
+                                        id: `commander-${cmdTemplate.id}`,
+                                        instanceId: `commander-${cmdTemplate.id}-${user.uid}`,
+                                        templateId: cmdTemplate.id,
+                                        ownerId: user.uid,
+                                        name: cmdTemplate.name,
+                                        rarity: 'commander',
+                                        type: 'EFFICIENCY',
+                                        level: 1,
+                                        experience: 0,
+                                        imageUrl: cmdTemplate.imageUrl,
+                                        aiFactionId: cmdTemplate.aiFactionId,
+                                        description: cmdTemplate.description,
+                                        stats: {
+                                            efficiency: 95,
+                                            creativity: 95,
+                                            function: 95,
+                                            totalPower: 285
+                                        },
+                                        acquiredAt: new Date(),
+                                        isCommanderCard: true,
+                                        isLocked: false,
+                                        specialty: cmdTemplate.specialty
+                                    } as InventoryCard);
+                                }
+                            }
+                        }
                     }
+
+                    const finalInventory = [...formattedCards, ...ultraCommanders] as InventoryCard[];
+                    setInventory(finalInventory);
+
+                    // Emergency Rescue (기존 로직 유지)
+                    if (profile.level === 1 && profile.hasReceivedStarterPack && formattedCards.length === 0) {
+                        console.log("[SafetySystem] Rescue: Found claimed flag but 0 cards. Re-distributing...");
+                        const rescuedCards = await claimStarterPack(profile.nickname || '지휘관');
+                        if (rescuedCards && rescuedCards.length > 0) {
+                            // refreshData will handle the update
+                        }
+                    }
+
+                    // Starter Pack Check
+                    const isTutorialCompleted = localStorage.getItem(`tutorial_completed_${user.uid}`);
+                    if (isTutorialCompleted && !isClaimingInSession && formattedCards.length === 0 && !profile.hasReceivedStarterPack) {
+                        setStarterPackAvailable(true);
+                    } else {
+                        setStarterPackAvailable(false);
+                    }
+
+                } catch (e) {
+                    console.error("Error loading user data:", e);
                 }
+            };
 
-                // [Fix] Starter Pack Check - Only show if NO cards and NOT claimed in session
-                // AND tutorial is completed (otherwise TutorialManager handles it)
-                const isTutorialCompleted = localStorage.getItem(`tutorial_completed_${user.uid}`);
-
-                if (isTutorialCompleted && !isClaimingInSession && formattedCards.length === 0 && !profile.hasReceivedStarterPack) {
-                    setStarterPackAvailable(true);
-                    console.log("[SafetySystem] Starter Pack is available (Rescue Mode).");
-                } else {
-                    setStarterPackAvailable(false);
-                }
-            }).catch(console.error);
-
-            // [NEW] Load subscriptions
-            fetchUserSubscriptions(user.uid).then(setSubscriptions).catch(console.error);
-
+            loadData();
             setLoading(false);
         }
     }, [mounted, profile, user?.uid, isClaimingInSession]);
@@ -249,7 +284,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
             const formattedInv = inv.map(c => ({
                 ...c,
                 acquiredAt: (c.acquiredAt && 'toDate' in c.acquiredAt) ? (c.acquiredAt as any).toDate() : new Date(c.acquiredAt as any)
-            })) as Card[];
+            })) as InventoryCard[];
             setInventory(formattedInv);
 
             // [Auto Recharge Check]
@@ -292,7 +327,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
                 const formattedInv = inv.map(c => ({
                     ...c,
                     acquiredAt: (c.acquiredAt && 'toDate' in c.acquiredAt) ? (c.acquiredAt as any).toDate() : new Date(c.acquiredAt as any)
-                })) as Card[];
+                })) as InventoryCard[];
                 setInventory(formattedInv);
 
                 // Starter Pack Check
@@ -441,77 +476,45 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
     const hideStarterPack = () => setStarterPackAvailable(false);
 
-    const claimStarterPack = async (): Promise<Card[]> => {
-        if (!mounted) return [];
+    const claimStarterPack = async (nickname: string): Promise<InventoryCard[]> => {
+        if (!mounted || !user) return [];
 
-        const uid = user?.uid;
-        if (!user || !starterPackAvailable) return [];
-
-        console.log("Starting starter pack claim process...");
         setStarterPackAvailable(false);
-        setIsClaimingInSession(true); // [CRITICAL] Block re-opening immediately
+        setIsClaimingInSession(true);
 
         try {
             const uid = user.uid;
 
-            // 1. 코인 지급 (1000 코인)
-            // if profile exists, we use the account-based coin update
-            if (profile) {
-                await firebaseUpdateCoins(1000, uid);
-            } else {
-                await addCoinsByContext(1000);
-            }
-            console.log("1000 coins added to account.");
+            // 1. 카드 리스트 생성 (기존 방식 유지)
+            // inventory-system.ts의 distributeStarterPack 로직 중 카드 생성 부분만 필요하지만,
+            // 트랜잭션 내에서 모든 처리를 하기 위해 generateCardByRarity를 사용하여 수동 생성.
+            const { generateCardByRarity: gen } = await import('@/lib/card-generation-system');
+            const starterCards = [
+                gen('common', uid),
+                gen('rare', uid),
+                gen('epic', uid),
+                gen('legendary', uid),
+                gen('unique', uid)
+            ];
 
-            // 2. 카드 생성 및 지급 (배치 처리로 변경)
-            console.log("Distributing starter cards...");
-            const inventoryCards = await distributeStarterPack(uid, profile?.nickname || '지휘관');
+            // 닉네임 커스터마이징
+            starterCards[4].name = `지휘관 ${nickname}`;
+            starterCards[4].description = "전장에 새롭게 합류한 지휘관의 전용 유닉입니다.";
 
-            // [FIX] distributeStarterPack automatically adds to inventory
-            if (!inventoryCards || inventoryCards.length === 0) {
-                throw new Error("Failed to generate starter cards.");
-            }
+            // 2. 트랜잭션 실행 (재화 지급 + 닉네임 설정 + 카드 추가)
+            await claimStarterPackTransaction(uid, nickname, starterCards, 1000);
 
-
-
-            // Convert InventoryCard to Card (handle Timestamp/Date conversion)
-            const newCards = inventoryCards.map(c => ({
-                ...c,
-                acquiredAt: (c.acquiredAt && 'toDate' in (c.acquiredAt as any)) ? (c.acquiredAt as any).toDate() : new Date(c.acquiredAt as any)
-            })) as Card[];
-
-            console.log(`${newCards.length} cards distributed successfully.`);
-
-            // 4. Update Flag
-            if (profile) {
-                await saveUserProfile({ hasReceivedStarterPack: true }, uid);
-                console.log("Firebase profile flag marked.");
-            } else {
-                const currentState = await gameStorage.loadGameState(uid);
-                currentState.hasReceivedStarterPack = true;
-                await gameStorage.saveGameState(currentState, uid);
-                console.log("Local state flag marked.");
-            }
-
-            // [CRITICAL] Ensure local state is refreshed immediately to reflect the flag
+            // 3. 로컬 데이터 즉시 갱신
             await refreshData();
 
-            // 5. Notify
             addNotification({
                 type: 'reward',
                 title: '스타터팩 지급 완료!',
-                message: '1000 코인과 카드 5장을 획용했습니다.',
+                message: `${nickname} 지휘관님, 1000 코인과 카드 5장을 획득했습니다.`,
                 icon: '🎁'
             });
 
-            // 6. Finish
-            // setStarterPackAvailable(false); 
-
-            // Refresh to update UI
-            await refreshData();
-            console.log("Data refreshed successfully.");
-
-            return newCards;
+            return starterCards as InventoryCard[];
 
         } catch (error) {
             console.error("Failed to claim starter pack:", error);
@@ -522,8 +525,6 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
                 icon: '⚠️'
             });
             return [];
-        } finally {
-            setLoading(false);
         }
     };
 
@@ -547,7 +548,13 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
                 claimStarterPack,
                 hideStarterPack,
                 consumeTokens, // [NEW]
-                subscriptions // [NEW]
+                subscriptions,
+                buyCardPack: async (cards: Card[], price: number, currencyType: 'coin' | 'token') => {
+                    if (!user) return;
+                    await purchaseCardPackTransaction(user.uid, cards, price, currencyType);
+                    // Force refresh to ensure coins and inventory are in sync
+                    await refreshData();
+                }
             }}
         >
             {children}
