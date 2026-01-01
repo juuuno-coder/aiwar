@@ -22,7 +22,8 @@ import { getUserId } from './firebase-auth';
 import { CATEGORY_TOKEN_BONUS, FACTION_CATEGORY_MAP, TIER_MULTIPLIER } from './token-constants';
 import {
     TierConfig,
-    TIER_CONFIGS
+    TIER_CONFIGS,
+    SubscriptionTier
 } from './faction-subscription';
 
 // ==================== 사용자 프로필 ====================

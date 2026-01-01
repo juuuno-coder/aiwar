@@ -50,6 +50,7 @@ interface UserContextType {
     claimStarterPack: () => Promise<Card[]>;
     hideStarterPack: () => void;
     consumeTokens: (baseAmount: number, category?: string) => Promise<boolean>; // Added
+    subscriptions: UserSubscription[]; // [NEW] Added
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -554,7 +555,8 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
                 starterPackAvailable,
                 claimStarterPack,
                 hideStarterPack,
-                consumeTokens // [NEW]
+                consumeTokens, // [NEW]
+                subscriptions // [NEW]
             }}
         >
             {children}
