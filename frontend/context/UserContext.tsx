@@ -479,6 +479,13 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
             console.log("Distributing starter cards...");
             const inventoryCards = await distributeStarterPack(uid, profile?.nickname || '지휘관');
 
+            // [FIX] 카드를 인벤토리에 확실히 저장
+            if (inventoryCards && inventoryCards.length > 0) {
+                const { addCardsToInventory } = await import('@/lib/inventory-system');
+                await addCardsToInventory(inventoryCards);
+                console.log(`${inventoryCards.length} starter cards saved to inventory.`);
+            }
+
             if (!inventoryCards || inventoryCards.length === 0) {
                 throw new Error("Failed to generate starter cards.");
             }

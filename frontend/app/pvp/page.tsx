@@ -50,6 +50,7 @@ type Phase =
 export default function PVPArenaPage() {
     const router = useRouter();
     const { showAlert } = useAlert();
+    const { coins } = useUser(); // [NEW] Use generic coins from context
 
     const [phase, setPhase] = useState<Phase>('stats');
     const [selectedMode, setSelectedMode] = useState<BattleMode>('double');
@@ -181,6 +182,16 @@ export default function PVPArenaPage() {
 
             // Corrected: checkPVPRequirements takes only inventory, returns canJoin
             const check = await checkPVPRequirements(mappedInventory);
+
+            // [FIX] Manual Coin Check with Context State (More accurate than gameStorage)
+            if (coins < PVP_REQUIREMENTS.entryFee) {
+                showAlert({
+                    title: '참가 불가',
+                    message: `코인이 부족합니다. (필요: ${PVP_REQUIREMENTS.entryFee})`,
+                    type: 'error'
+                });
+                return;
+            }
 
             if (!check.canJoin) {
                 showAlert({
@@ -578,7 +589,7 @@ export default function PVPArenaPage() {
                                     <div className="w-px h-3 bg-white/20 hidden md:block" />
                                     <div className="flex items-center gap-2">
                                         <CheckCircle className={cn(
-                                            state.coins >= PVP_REQUIREMENTS.entryFee ? 'text-green-400' : 'text-red-400'
+                                            coins >= PVP_REQUIREMENTS.entryFee ? 'text-green-400' : 'text-red-400'
                                         )} size={16} />
                                         <span className="text-white/80">참가비 {PVP_REQUIREMENTS.entryFee} 코인</span>
                                     </div>
