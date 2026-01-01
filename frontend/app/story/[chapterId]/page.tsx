@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import {
     loadStoryProgress,
+    getChapters,
     completeStage,
     claimChapterReward,
     Chapter,
@@ -23,7 +24,7 @@ import { useUser } from '@/context/UserContext';
 export default function ChapterDetailPage() {
     const router = useRouter();
     const params = useParams();
-    const { t, language } = useTranslation();
+    const { language } = useTranslation();
     const chapterId = params.chapterId as string;
 
     const [chapter, setChapter] = useState<Chapter | null>(null);
@@ -39,17 +40,10 @@ export default function ChapterDetailPage() {
     }>({ isOpen: false, title: '', message: '' });
 
     useEffect(() => {
-        loadChapter();
-    }, [chapterId]);
-
-    const loadChapter = () => {
-        // Dynamic import hack if needed, or just import normally if guaranteed
-        const { getChapters } = require('@/lib/story-system');
         const allChapters = getChapters();
         const found = allChapters.find((c: Chapter) => c.id === chapterId);
 
         if (found) {
-            const { loadStoryProgress } = require('@/lib/story-system');
             const progress = loadStoryProgress(chapterId);
 
             found.unlocked = true;
@@ -65,7 +59,7 @@ export default function ChapterDetailPage() {
                 setSelectedStage(firstUncleared || found.stages[found.stages.length - 1]);
             }
         }
-    };
+    }, [chapterId]); // eslint-disable-line react-hooks/exhaustive-deps
 
     const handleStageSelect = (stage: StoryStage) => {
         if (stage.step > 1) {
@@ -289,7 +283,7 @@ export default function ChapterDetailPage() {
                     <ModalBody className="text-center py-8">
                         <div className="text-4xl mb-6">💬</div>
                         <p className="text-xl text-white font-serif italic leading-relaxed">
-                            "{modalConfig.message}"
+                            &quot;{modalConfig.message}&quot;
                         </p>
                     </ModalBody>
                     <ModalFooter>

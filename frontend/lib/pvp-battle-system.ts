@@ -95,13 +95,22 @@ export const PVP_REQUIREMENTS = {
 };
 
 /**
+ * 보상 설정 인터페이스
+ */
+export interface RewardConfig {
+    coins: number;
+    exp: number;
+    rating: number;
+}
+
+/**
  * 보상 체계
  */
-export const PVP_REWARDS = {
-    'sudden-death': { win: 100, exp: 30, rating: 15 },
-    'tactics': { win: 100, exp: 50, rating: 25 },
-    'ambush': { win: 100, exp: 70, rating: 35 },
-    'double': { win: 100, exp: 60, rating: 30 },
+export const PVP_REWARDS: Record<string, RewardConfig> = {
+    'sudden-death': { coins: 100, exp: 30, rating: 15 },
+    'tactics': { coins: 100, exp: 50, rating: 25 },
+    'ambush': { coins: 100, exp: 70, rating: 35 },
+    'double': { coins: 100, exp: 60, rating: 30 },
     loss: { coins: 0, exp: 10, rating: -10 },
     draw: { coins: 20, exp: 20, rating: 0 }
 };
@@ -278,9 +287,9 @@ export function getPVPStats(): PVPStats {
 export async function checkPVPRequirements(currentInventory?: Card[], currentLevel?: number, currentCoins?: number): Promise<{ canJoin: boolean; reason?: string }> {
     const state = typeof window !== 'undefined' ? getGameState() : { level: 0, coins: 0, inventory: [] } as any;
 
-    let inventory = currentInventory || state.inventory || [];
-    let level = currentLevel !== undefined ? currentLevel : state.level;
-    let coins = currentCoins !== undefined ? currentCoins : state.coins;
+    const inventory = currentInventory || state.inventory || [];
+    const level = currentLevel !== undefined ? currentLevel : state.level;
+    const coins = currentCoins !== undefined ? currentCoins : state.coins;
 
     if (level < PVP_REQUIREMENTS.minLevel) {
         return {
@@ -391,9 +400,9 @@ function calculateRewards(mode: BattleMode, winner: 'player' | 'opponent' | 'dra
             PVP_REWARDS.loss;
 
     return {
-        coins: (rewards as any).win || (rewards as any).coins || 0,
-        experience: (rewards as any).exp || (rewards as any).experience || 0,
-        ratingChange: (rewards as any).rating || (rewards as any).ratingChange || 0,
+        coins: rewards.coins,
+        experience: rewards.exp,
+        ratingChange: rewards.rating,
     };
 }
 

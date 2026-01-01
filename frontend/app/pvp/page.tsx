@@ -118,7 +118,7 @@ export default function PVPArenaPage() {
             icon: Zap,
             color: 'from-amber-500 to-orange-500',
             rounds: '5장 덱',
-            reward: `+${PVP_REWARDS['sudden-death'].win} 코인`,
+            reward: `+${PVP_REWARDS['sudden-death'].coins} 코인`,
         },
         {
             id: 'double' as BattleMode,
@@ -128,7 +128,7 @@ export default function PVPArenaPage() {
             icon: Users,
             color: 'from-indigo-500 to-violet-500',
             rounds: '6장 덱',
-            reward: `+${PVP_REWARDS.double.win} 코인`,
+            reward: `+${PVP_REWARDS.double.coins} 코인`,
         },
         {
             id: 'tactics' as BattleMode,
@@ -138,7 +138,7 @@ export default function PVPArenaPage() {
             icon: Shield,
             color: 'from-blue-500 to-cyan-500',
             rounds: '3선승',
-            reward: `+${PVP_REWARDS.tactics.win} 코인`,
+            reward: `+${PVP_REWARDS.tactics.coins} 코인`,
         },
         {
             id: 'ambush' as BattleMode,
@@ -148,7 +148,7 @@ export default function PVPArenaPage() {
             icon: Eye,
             color: 'from-purple-500 to-pink-500',
             rounds: '6장 덱',
-            reward: `+${PVP_REWARDS.ambush.win} 코인`,
+            reward: `+${PVP_REWARDS.ambush.coins} 코인`,
         },
     ];
 
@@ -479,7 +479,7 @@ export default function PVPArenaPage() {
             playerWins: finalState.playerWins,
             opponentWins: finalState.opponentWins,
             rewards: {
-                coins: (finalWinner === 'player' ? PVP_REWARDS.double.win : 0) + perfectBonus,
+                coins: (finalWinner === 'player' ? PVP_REWARDS.double.coins : 0) + perfectBonus,
                 experience: finalWinner === 'player' ? PVP_REWARDS.double.exp : 10,
                 ratingChange: finalWinner === 'player' ? PVP_REWARDS.double.rating : -10
             }

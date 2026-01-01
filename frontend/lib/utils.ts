@@ -1,7 +1,7 @@
 
 import { type ClassValue, clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
-import { Rarity, Stats } from './types';
+import { Rarity, Stats, Card } from './types';
 import gameBalanceData from '@/data/game-balance.json';
 
 export function cn(...inputs: ClassValue[]) {
@@ -131,7 +131,7 @@ export const storage = {
  * 5전 3선승제 전투 시뮬레이션
  * 각 라운드에서 카드 전투력의 끝자리 숫자가 높은 쪽이 승리
  */
-export function simulate5RoundBattle(playerCards: any[], enemyCards: any[]) {
+export function simulate5RoundBattle(playerCards: Card[], enemyCards: Card[]) {
     const rounds = [];
     let playerWins = 0;
     let enemyWins = 0;
@@ -141,8 +141,8 @@ export function simulate5RoundBattle(playerCards: any[], enemyCards: any[]) {
         const playerCard = playerCards[i];
         const enemyCard = enemyCards[i];
 
-        const playerPower = playerCard.power || playerCard.stats?.totalPower || 0;
-        const enemyPower = enemyCard.power || enemyCard.stats?.totalPower || 0;
+        const playerPower = playerCard.stats?.totalPower || 0;
+        const enemyPower = enemyCard.stats?.totalPower || 0;
 
         // 끝자리 숫자 추출
         const playerLastDigit = playerPower % 10;

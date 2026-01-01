@@ -568,7 +568,7 @@ export function completeStage(chapterId: string, stageId: string) {
     }
 }
 
-export function claimChapterReward(chapterId: string): { success: boolean, message: string } {
+export function claimChapterReward(_chapterId: string): { success: boolean, message: string } {
     if (typeof window === 'undefined') return { success: false, message: 'Server side' };
 
     // In a real app, verify all stages are cleared
@@ -576,7 +576,7 @@ export function claimChapterReward(chapterId: string): { success: boolean, messa
     return { success: true, message: 'Chapter rewards (Coins & EXP) claimed successfully!' };
 }
 
-export function claimSeasonReward(seasonId: string): { success: boolean, message: string } {
+export function claimSeasonReward(_seasonId: string): { success: boolean, message: string } {
     if (typeof window === 'undefined') return { success: false, message: 'Server side' };
 
     // In a real app, verify all chapters are cleared

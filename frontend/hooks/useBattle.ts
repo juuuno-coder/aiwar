@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { Card } from '@/lib/types';
 import { calculateDuel, DuelResult } from '../lib/battle-system/battle-engine';
 import { BattleMode, getBattleModeConfig } from '../lib/battle-modes';
