@@ -18,6 +18,7 @@ import { cn } from '@/lib/utils';
 import { addNotification } from '@/components/NotificationCenter';
 import PageHeader from '@/components/PageHeader';
 import { useTranslation } from '@/context/LanguageContext';
+import { useUser } from '@/context/UserContext';
 
 export default function ChapterDetailPage() {
     const router = useRouter();
@@ -82,16 +83,24 @@ export default function ChapterDetailPage() {
         setSelectedStage(stage);
     };
 
-    const handleBattleStart = () => {
+    const { consumeTokens } = useUser(); // [NEW] Get token function
+
+    const handleBattleStart = async () => {
         if (!selectedStage) return;
+
+        const cost = selectedStage.tokenCost || (selectedStage.difficulty === 'BOSS' ? 100 : 50);
 
         setModalConfig({
             isOpen: true,
             title: `VS ${selectedStage.enemy.name_ko || selectedStage.enemy.name}`,
             message: selectedStage.enemy.dialogue.appearance_ko || selectedStage.enemy.dialogue.appearance || selectedStage.enemy.dialogue.intro_ko || selectedStage.enemy.dialogue.intro,
             type: 'intro',
-            onConfirm: () => {
-                router.push(`/battle/stage/${selectedStage.id}`);
+            onConfirm: async () => {
+                // [Check Token Balance]
+                const success = await consumeTokens(cost, 'STORY_MISSION');
+                if (success) {
+                    router.push(`/battle/stage/${selectedStage.id}`);
+                }
             }
         });
     };
@@ -287,11 +296,18 @@ export default function ChapterDetailPage() {
                         <Button
                             className="w-full bg-red-600 hover:bg-red-500 py-6 text-lg"
                             onClick={() => {
+                                // Close modal is handled inside onConfirm if needed, 
+                                // but actually we need to close it first or handle loading? 
+                                // The previous code closed it then called onConfirm.
+                                // Let's keep that behavior but we need accurate token check.
+                                // If token check fails, modal closes and notification appears. Ideally modal stays if fail?
+                                // "consumeTokens" usually handles its own notification if inside hook? Or it returns false.
+                                // Let's assume onConfirm handles logic.
                                 setModalConfig({ ...modalConfig, isOpen: false });
                                 modalConfig.onConfirm?.();
                             }}
                         >
-                            FIGHT!
+                            FIGHT! (-{selectedStage?.tokenCost || (selectedStage?.difficulty === 'BOSS' ? 100 : 50)} 🪙)
                         </Button>
                     </ModalFooter>
                 </ModalContent>

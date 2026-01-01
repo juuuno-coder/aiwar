@@ -16,6 +16,7 @@ export interface StoryStage {
     // Battle Configuration
     battleMode: StoryBattleMode;
     difficulty: 'EASY' | 'NORMAL' | 'HARD' | 'BOSS';
+    tokenCost: number;   // [NEW] Token cost to enter
 
     // Opponent
     enemy: {
@@ -89,7 +90,8 @@ export interface Season {
 // ------------------------------------------------------------------
 
 export function getChapters(t?: (key: TranslationKey) => string): Chapter[] {
-    return [
+    // Define raw data first
+    const rawChapters = [
         {
             id: 'chapter-1',
             number: 1,
@@ -489,6 +491,17 @@ export function getChapters(t?: (key: TranslationKey) => string): Chapter[] {
             unlocked: false, completed: false
         }
     ];
+
+    // [Auto-assign token costs]
+    const chaptersWithCosts = rawChapters.map(chapter => ({
+        ...chapter,
+        stages: chapter.stages.map(stage => ({
+            ...stage,
+            tokenCost: stage.difficulty === 'BOSS' ? 100 : 50
+        } as StoryStage))
+    }));
+
+    return chaptersWithCosts;
 }
 
 // Helper to get info
