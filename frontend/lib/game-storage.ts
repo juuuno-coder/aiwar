@@ -204,6 +204,7 @@ class UnifiedStorage {
                 const key = localStorage.key(i);
                 if (key && (
                     key.startsWith('game-state') ||
+                    key.startsWith('gameState_') || // [Fix] gameState_guest 등 포함
                     key.startsWith('inventory_') ||
                     key.startsWith('userCoins') ||
                     key.startsWith('userCards') ||
