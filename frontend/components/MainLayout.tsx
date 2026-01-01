@@ -4,6 +4,8 @@ import { useState, createContext, useContext } from 'react';
 import { usePathname } from 'next/navigation';
 import GameSidebar from './GameSidebar';
 import GameTopBar from './GameTopBar';
+import GameTopBar from './GameTopBar';
+import MobileNav from './MobileNav'; // [NEW]
 import dynamic from 'next/dynamic';
 
 const DynamicFooter = dynamic(() => import('@/components/DynamicFooter'), {
@@ -57,8 +59,8 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
             >
                 {/* 메인 영역 */}
                 <div
-                    className="flex-1 flex flex-col transition-all duration-300 ease-out"
-                    style={{ marginRight: 'var(--sidebar-width)' }}
+                    className="flex-1 flex flex-col transition-all duration-300 ease-out md:mr-[var(--sidebar-width)] mr-0" // md:mr 적용
+                // style={{ marginRight: 'var(--sidebar-width)' }} // REMOVED inline style force
                 >
                     {/* 상단 바 */}
                     <GameTopBar sidebarCollapsed={isCollapsed} />
@@ -76,13 +78,21 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
                         {children}
 
                         {/* Dynamic Footer - Only renders when FooterContext.visible is true */}
-                        <DynamicFooter />
+                        <div className="hidden md:block">
+                            <DynamicFooter />
+                        </div>
+                        {/* Mobile Footer Spacer */}
+                        <div className="h-20 md:hidden" />
                     </main>
 
+                    {/* Mobile Navigation */}
+                    <MobileNav />
                 </div>
 
-                {/* 사이드바 (우측 고정) */}
-                <GameSidebar isCollapsed={isCollapsed} onToggle={() => setIsCollapsed(!isCollapsed)} />
+                {/* 사이드바 (우측 고정) - 데스크탑 전용 */}
+                <div className="hidden md:block">
+                    <GameSidebar isCollapsed={isCollapsed} onToggle={() => setIsCollapsed(!isCollapsed)} />
+                </div>
             </div>
         </SidebarContext.Provider>
     );
