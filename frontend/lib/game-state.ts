@@ -228,21 +228,34 @@ export function getGameState(userId?: string): GameState {
     if (!data) {
         // 기존 데이터 마이그레이션 (게스트/레거시용)
         if (key === 'game-state') {
-            const coins = localStorage.getItem('userCoins');
-            const cards = localStorage.getItem('userCards');
+            const legacyCoins = localStorage.getItem('userCoins');
+            const legacyCards = localStorage.getItem('userCards');
 
-            const defaultState = createDefaultGameState('guest', '게스트');
+            if (legacyCoins || legacyCards) {
+                console.log(`[Migration] Found legacy data for user: ${userId}`);
+                // Create a default state first, then apply legacy data
+                const state = createDefaultGameState(userId || 'guest', '게스트');
 
-            if (coins) {
-                defaultState.tokens = JSON.parse(coins);
+                if (legacyCoins) {
+                    const parsedCoins = JSON.parse(legacyCoins);
+                    state.coins = Number(parsedCoins) || state.coins; // Map userCoins to coins
+                    // Legacy userCoins was sometimes used for tokens, ensure tokens are also set if coins are migrated
+                    state.tokens = Number(parsedCoins) || state.tokens; // Assuming userCoins was also tokens
+                    localStorage.removeItem('userCoins');
+                }
+
+                if (legacyCards) {
+                    const parsedCards = JSON.parse(legacyCards);
+                    state.inventory = Array.isArray(parsedCards) ? parsedCards : state.inventory; // Map userCards to inventory
+                    localStorage.removeItem('userCards');
+                }
+
+                saveGameState(state, userId);
+                console.log(`[Migration] Legacy data migrated for user: ${userId}`);
+                return state; // Return the migrated state
             }
-
-            if (cards) {
-                defaultState.inventory = JSON.parse(cards);
-            }
-
-            saveGameState(defaultState);
-            return defaultState;
+            // If key is 'game-state' but no legacyCoins or legacyCards, return a default guest state
+            return createDefaultGameState('guest', '게스트');
         }
 
         return createDefaultGameState(userId || 'guest', '플레이어');
@@ -266,39 +279,28 @@ export function migrateLegacyGameState(userId: string): void {
         const legacyState = JSON.parse(legacyData);
         const userState = getGameState(userId);
 
-        // 기본 정보(레벨, 경험치, 코인 등)는 더 높은 쪽이나 레거시 우선으로 병합
-        // 여기서는 레거시 데이터를 기반으로 유저의 초기 상태를 덮어쓰거나 선택적으로 병합
-        // 만약 유저 데이터가 이미 상당히 진행되었다면 (예: 레벨 > 1), 병합을 신중히 해야 함
+        // [Safety] 유저가 이미 진행 중인 계정이라면 게스트 데이터를 덮어쓰지 않음
+        const isNewUser = userState.level <= 1 && userState.experience === 0 && userState.inventory.length === 0;
+        const hasLegacyProgress = (legacyState.level || 1) > 1 || (legacyState.inventory || []).length > 0;
 
-        if (userState.level <= 1 && userState.experience === 0 && userState.inventory.length === 0) {
-            // 유저가 신규라면 레거시로 완전히 덮어쓰기 (ID만 유지)
+        if (isNewUser && hasLegacyProgress) {
+            // 유저가 신규이고 게스트 데이터에 진행도가 있는 경우에만 마이그레이션 수행
             const migratedState = {
                 ...legacyState,
                 userId: userId,
                 lastSaved: Date.now()
             };
             saveGameState(migratedState, userId);
-            console.log(`[Migration] Overwrote new user state with legacy guest state for ${userId}`);
+            console.log(`[Migration] Migrated legacy guest state to user ${userId}`);
         } else {
-            // 유저 데이터가 이미 있으면 중요 재화만 합산하거나 유지
-            // 여기서는 단순함을 위해 코인/토큰 합산 및 인벤토리 합치기 시도
-            const combinedState = {
-                ...userState,
-                tokens: userState.tokens + (legacyState.tokens || 0),
-                coins: userState.coins + (legacyState.coins || 0),
-                inventory: [...userState.inventory, ...(legacyState.inventory || [])],
-                experience: Math.max(userState.experience, legacyState.experience || 0),
-                level: Math.max(userState.level, legacyState.level || 1),
-                lastSaved: Date.now()
-            };
-            saveGameState(combinedState, userId);
-            console.log(`[Migration] Merged legacy guest state into existing user state for ${userId}`);
+            console.log(`[Migration] Skipped migration for ${userId} (User not new or no legacy progress)`);
         }
 
-        // 마이그레이션 후 레거시 데이터 삭제
+        // 마이그레이션 수행 여부와 관계없이 세션 정리를 위해 레거시 데이터 삭제 (중복 이전 방지)
         localStorage.removeItem(legacyKey);
         localStorage.removeItem('userCoins');
         localStorage.removeItem('userCards');
+        localStorage.removeItem('game-state-v1');
     }
 }
 

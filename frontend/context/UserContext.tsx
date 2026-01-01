@@ -79,8 +79,10 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         setExperience(0);
         setInventory([]);
         setStarterPackAvailable(false);
-        setSubscriptions([]); // [NEW]
-    }, []); // [NEW] Prevents modal from re-popping after click
+        setSubscriptions([]);
+        setIsAdmin(false);
+        setIsClaimingInSession(false);
+    }, []);
 
 
     // Initial mount check to prevent hydration mismatch
@@ -99,21 +101,14 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
         // If user changed (logged out or switched)
         if (prevUid !== currentUid) {
-            console.log(`[Auth] User changed from ${prevUid} to ${currentUid}`);
+            console.log(`[Auth] User changed from ${prevUid} to ${currentUid}. Clearing ALL session data to prevent bleed.`);
 
-            // If we had a previous user, clear their local session state
-            if (prevUid) {
-                console.log(`[Auth] Clearing session for previous user: ${prevUid}`);
-                gameStorage.clearState(prevUid);
-            }
+            // 더욱 강력한 초기화: 단순히 UID별 삭제가 아니라 전체 세션 클린업
+            gameStorage.clearAllSessionData();
 
-            // Reset UI state
+            // UI 상태 초기화
+            resetState();
             setLoading(true);
-            setCoins(0);
-            setTokens(0);
-            setLevel(1);
-            setExperience(0);
-            setSubscriptions([]); // [NEW]
         }
 
         // Update ref
@@ -162,19 +157,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
             setExperience(profile.exp);
 
             // [Auto-Healing & Rescue] 
-            // 1. 코인 과다 지급 수정 (Level 1은 1,000 코인이 최대)
-            if (profile.level === 1 && profile.coins > 1000) {
-                const excess = profile.coins - 1000;
-                console.log(`[SafetySystem] Healing: Resetting Level 1 coins from ${profile.coins} to 1000`);
-                firebaseUpdateCoins(-excess, user.uid).catch(console.error);
-                setCoins(1000); // 즉시 UI 반영
-                // If coins are healed, it implies the starter pack was effectively received.
-                if (!profile.hasReceivedStarterPack) {
-                    saveUserProfile({ hasReceivedStarterPack: true }, user.uid).catch(console.error);
-                }
-            }
-
-            // 2. 인벤토리 긴급 구조 (수령 처리되었으나 카드가 없는 경우)
+            // 1. 인벤토리 긴급 구조 (수령 처리되었으나 카드가 없는 경우)
             // Load inventory and check for gaps
             loadInventory(user.uid).then(async (cards) => {
                 const formattedCards = cards.map(c => ({
@@ -333,12 +316,13 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     }, [mounted, profileLoading, profile, refreshData]);
 
     const addCoinsByContext = async (amount: number) => {
-        if (!mounted) return; // Changed return type
+        if (!mounted) return;
 
         if (profile) {
+            // Firestore increment handles negative amounts, 
+            // but we ensure local state doesn't dip below 0 if it were local-only
             await firebaseUpdateCoins(amount, user?.uid);
             await reloadProfile();
-            // No need to return newCoins, as reloadProfile will update state
         } else {
             try {
                 const newCoins = await gameStorage.addCoins(amount, user?.uid);

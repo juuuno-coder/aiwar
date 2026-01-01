@@ -99,7 +99,16 @@ export async function getUserId(): Promise<string> {
 export async function signOutUser(): Promise<void> {
     if (!auth) return;
     try {
+        // Firebase 로그아웃 전/후에 로컬 데이터 정리
+        const { gameStorage } = await import('./game-storage');
+        gameStorage.clearAllSessionData();
+
         await signOut(auth);
+
+        // 페이지 새로고침을 통해 모든 스토어와 상태 초기화 강제
+        if (typeof window !== 'undefined') {
+            window.location.href = '/';
+        }
     } catch (error) {
         console.error('로그아웃 실패:', error);
     }

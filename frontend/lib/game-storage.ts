@@ -173,12 +173,51 @@ class UnifiedStorage {
             localStorage.removeItem(`${key}_backup_3`);
             localStorage.removeItem(`${key}_lastBackupIndex`);
 
+            // Clear legacy/related keys if it's the main guest key
+            if (key === 'game-state') {
+                localStorage.removeItem('userCoins');
+                localStorage.removeItem('userCards');
+                localStorage.removeItem('game-state-v1');
+            }
+
             // Clear logs
             localStorage.removeItem('gameErrorLogs');
 
             console.log(`[GameStorage] State cleared for user: ${uid || 'guest'}`);
         } catch (error) {
             console.error('Failed to clear state:', error);
+        }
+    }
+
+    /**
+     * 모든 세션 데이터 강제 초기화 (계정 전환/로그아웃 시 안전장치)
+     */
+    public clearAllSessionData() {
+        try {
+            // 1. 게스트/기본 데이터 삭제
+            this.clearState();
+
+            // 2. 모든 localStorage 키를 순회하며 게임 관련 데이터 삭제 (와일드카드 처리)
+            const keysToRemove: string[] = [];
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key && (
+                    key.startsWith('game-state') ||
+                    key.startsWith('inventory_') ||
+                    key.startsWith('userCoins') ||
+                    key.startsWith('userCards') ||
+                    key.startsWith('tutorial_') ||
+                    key.startsWith('generation_slots')
+                )) {
+                    keysToRemove.push(key);
+                }
+            }
+
+            keysToRemove.forEach(key => localStorage.removeItem(key));
+
+            console.log(`[GameStorage] All session data cleared (${keysToRemove.length} keys)`);
+        } catch (error) {
+            console.error('Failed to clear ALL session data:', error);
         }
     }
 
