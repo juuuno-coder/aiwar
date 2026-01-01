@@ -275,12 +275,16 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
                 // 임시: 빈 배열 (구독 기능 완성 시 여기에 fetch 로직 추가 필요)
                 // const subscriptions = await fetchUserSubscriptions(user.uid);
                 // fetchUserSubscriptions is now imported from firebase-db
-                const fetchedSubscriptions = await fetchUserSubscriptions(user.uid); // [NEW]
-                setSubscriptions(fetchedSubscriptions); // [NEW]
+                try {
+                    const fetchedSubscriptions = await fetchUserSubscriptions(user.uid); // [NEW]
+                    setSubscriptions(fetchedSubscriptions); // [NEW]
 
-                const refreshedToken = await checkAndRechargeTokens(user.uid, profile.tokens, profile.lastTokenUpdate, fetchedSubscriptions); // Pass fetchedSubscriptions
-                if (refreshedToken !== profile.tokens) {
-                    setTokens(refreshedToken);
+                    const refreshedToken = await checkAndRechargeTokens(user.uid, profile.tokens, profile.lastTokenUpdate, fetchedSubscriptions); // Pass fetchedSubscriptions
+                    if (refreshedToken !== profile.tokens) {
+                        setTokens(refreshedToken);
+                    }
+                } catch (rechargeError) {
+                    console.error("Token recharge check failed (non-critical):", rechargeError);
                 }
             }
 
@@ -484,9 +488,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
                 throw new Error("Failed to generate starter cards.");
             }
 
-            if (!inventoryCards || inventoryCards.length === 0) {
-                throw new Error("Failed to generate starter cards.");
-            }
+
 
             // Convert InventoryCard to Card (handle Timestamp/Date conversion)
             const newCards = inventoryCards.map(c => ({

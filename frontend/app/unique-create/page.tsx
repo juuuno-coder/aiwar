@@ -11,12 +11,14 @@ import { Textarea } from '@/components/ui/custom/Textarea';
 import ImageUpload from '@/components/ImageUpload';
 import UniqueFooter from '@/components/Footer/UniqueFooter';
 import { cn } from '@/lib/utils';
+import { useTranslation } from '@/context/LanguageContext';
 
 export default function UniqueCreatePage() {
     const [allCards, setAllCards] = useState<InventoryCard[]>([]);
     const [materialSlots, setMaterialSlots] = useState<(InventoryCard | null)[]>(Array(5).fill(null));
     const [userTokens, setUserTokens] = useState(0);
     const [legendaryCards, setLegendaryCards] = useState<InventoryCard[]>([]);
+    const { t } = useTranslation();
 
     // Application Form State
     const [appName, setAppName] = useState('');
@@ -156,9 +158,9 @@ export default function UniqueCreatePage() {
 
     return (
         <CyberPageLayout
-            title="UNIQUE_CREATION"
-            subtitle="The Ultimate Card Creation"
-            description="전설급 카드 5장의 정수를 융합하여 단 하나의 유니크 카드를 생성합니다."
+            title={t('page.unique.title')}
+            subtitle={t('page.unique.englishTitle')}
+            description={t('page.unique.description')}
             color="red"
         >
             {/* 탭 버튼 - 백 버튼 아래 배치 */}
@@ -172,7 +174,7 @@ export default function UniqueCreatePage() {
                             : "bg-white/5 text-white/60 hover:bg-white/10 border border-transparent"
                     )}
                 >
-                    유니크 생성
+                    {t('unique.tab.create')}
                 </button>
                 <button
                     onClick={() => setViewMode('list')}
@@ -183,7 +185,7 @@ export default function UniqueCreatePage() {
                             : "bg-white/5 text-white/60 hover:bg-white/10 border border-transparent"
                     )}
                 >
-                    생성 기록 ({myApps.length})
+                    {t('unique.tab.history')} ({myApps.length})
                 </button>
             </div>
 
@@ -193,58 +195,58 @@ export default function UniqueCreatePage() {
                     <div className="pb-[160px]">
                         {/* 입력 폼 */}
                         <div className="bg-white/5 border border-white/10 rounded-lg p-6 mb-6">
-                            <h3 className="text-xl font-bold mb-4 text-white">유니크 개체 설계</h3>
+                            <h3 className="text-xl font-bold mb-4 text-white">{t('unique.form.title')}</h3>
                             <div className="grid grid-cols-2 gap-6">
                                 <div className="space-y-4">
                                     <div>
-                                        <label className="block text-sm text-gray-400 mb-1">카드 이름</label>
+                                        <label className="block text-sm text-gray-400 mb-1">{t('unique.form.name')}</label>
                                         <Input
                                             value={appName}
                                             onChange={(e) => setAppName(e.target.value)}
-                                            placeholder="나만의 유니크 카드 이름"
+                                            placeholder={t('unique.form.namePlaceholder')}
                                             className="bg-gray-800 border-gray-700"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm text-gray-400 mb-1">카드 설명</label>
-                                        <Textarea
-                                            value={appDesc}
-                                            onChange={(e) => setAppDesc(e.target.value)}
-                                            placeholder="이 카드의 강력한 능력과 전설을 기록하세요."
-                                            className="bg-gray-800 border-gray-700 h-32"
                                         />
                                     </div>
                                 </div>
                                 <div>
-                                    <ImageUpload
-                                        onImageChange={setAppImage}
-                                        currentImage={appImage || undefined}
+                                    <label className="block text-sm text-gray-400 mb-1">{t('unique.form.desc')}</label>
+                                    <Textarea
+                                        value={appDesc}
+                                        onChange={(e) => setAppDesc(e.target.value)}
+                                        placeholder={t('unique.form.descPlaceholder')}
+                                        className="bg-gray-800 border-gray-700 h-32"
                                     />
                                 </div>
                             </div>
-
-                            {filledCount === 5 && (
-                                <div className="mt-4 p-4 bg-red-500/10 rounded-lg">
-                                    <div className="flex justify-between items-center mb-2">
-                                        <span className="text-gray-400">생성 요구 에너지</span>
-                                        <span className="font-bold text-yellow-400">10,000 코인 + 2,000 토큰</span>
-                                    </div>
-                                    <p className="text-xs text-gray-500">
-                                        * 차원 동기화(승인) 작업은 시스템 부하에 따라 최대 36시간이 소요될 수 있습니다.<br />
-                                        * 생성 실패(거절) 시 투입된 매개체(재료)는 소멸할 수 있습니다.
-                                    </p>
-                                </div>
-                            )}
+                            <div>
+                                <ImageUpload
+                                    onImageChange={setAppImage}
+                                    currentImage={appImage || undefined}
+                                />
+                            </div>
                         </div>
+
+                        {filledCount === 5 && (
+                            <div className="mt-4 p-4 bg-red-500/10 rounded-lg">
+                                <div className="flex justify-between items-center mb-2">
+                                    <span className="text-gray-400">{t('unique.cost.label')}</span>
+                                    <span className="font-bold text-yellow-400">{t('unique.cost.value')}</span>
+                                </div>
+                                <p className="text-xs text-gray-500 whitespace-pre-wrap">
+                                    {t('unique.cost.warning')}
+                                </p>
+                            </div>
+                        )}
+
 
                         {/* 카드 목록 */}
                         <div className="bg-white/5 border border-white/10 rounded-lg p-6">
                             <div className="flex items-center justify-between mb-4">
                                 <h3 className="text-xl font-bold text-white">
-                                    보유 전설 카드 ({legendaryCards.length}장)
+                                    {t('unique.list.title')} ({legendaryCards.length})
                                 </h3>
                                 <p className="text-sm text-gray-400">
-                                    강화되지 않은(Lv.1) 전설 카드를 선택하세요
+                                    {t('unique.list.desc')}
                                 </p>
                             </div>
 
@@ -284,7 +286,7 @@ export default function UniqueCreatePage() {
 
                             {legendaryCards.length === 0 && (
                                 <div className="text-center py-20 text-white/40">
-                                    전설급 카드가 없습니다.
+                                    {t('unique.list.empty')}
                                 </div>
                             )}
                         </div>
@@ -306,7 +308,7 @@ export default function UniqueCreatePage() {
                     {/* 신청 현황 목록 */}
                     {myApps.length === 0 ? (
                         <div className="col-span-full py-20 text-center text-gray-500">
-                            신청 내역이 없습니다.
+                            {t('unique.history.empty')}
                         </div>
                     ) : (
                         myApps.map(app => (
@@ -316,8 +318,8 @@ export default function UniqueCreatePage() {
                                         app.status === 'approved' ? 'bg-green-500/20 text-green-400' :
                                             'bg-red-500/20 text-red-400'
                                         }`}>
-                                        {app.status === 'pending' ? '차원 동기화 중 (진행률 12%)' :
-                                            app.status === 'approved' ? '생성 완료' : '생성 실패'}
+                                        {app.status === 'pending' ? t('unique.history.status.pending') :
+                                            app.status === 'approved' ? t('unique.history.status.approved') : t('unique.history.status.rejected')}
                                     </span>
                                 </div>
                                 <div className="flex gap-4 items-start mb-4">
@@ -338,14 +340,15 @@ export default function UniqueCreatePage() {
                                 </div>
                                 {app.status === 'pending' && (
                                     <div className="bg-white/5 p-3 rounded text-xs text-gray-400 mt-2">
-                                        시스템이 차원 데이터를 재구성하고 있습니다. 부적절한 데이터(이미지 등)는 차원 붕괴(기각)의 원인이 됩니다.
+                                        {t('unique.history.pendingDesc')}
                                     </div>
                                 )}
                             </div>
                         ))
                     )}
                 </div>
-            )}
-        </CyberPageLayout>
+            )
+
+        </CyberPageLayout >
     );
 }

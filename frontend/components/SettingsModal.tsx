@@ -12,6 +12,8 @@ import { useFirebase } from '@/components/FirebaseProvider';
 import { saveUserProfile } from '@/lib/firebase-db';
 import { useUser } from '@/context/UserContext';
 import { useEscapeKey } from '@/hooks/useEscapeKey';
+import { useTranslation } from '@/context/LanguageContext';
+import { Globe } from 'lucide-react';
 
 interface SettingsModalProps {
     isOpen: boolean;
@@ -20,6 +22,7 @@ interface SettingsModalProps {
 
 export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     useEscapeKey(isOpen, onClose);
+    const { language, setLanguage, t } = useTranslation();
 
     const {
         isMuted,
@@ -63,6 +66,39 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                     </ModalHeader>
 
                     <ModalBody className="py-8 space-y-8">
+                        <div className="space-y-6">
+                            <div className="flex items-center gap-2 mb-2">
+                                <Globe size={14} className="text-blue-500" />
+                                <span className="text-[11px] font-black orbitron text-gray-400 tracking-widest uppercase">{t('settings.language')}</span>
+                            </div>
+
+                            <div className="p-4 rounded-2xl bg-white/5 border border-white/5 flex items-center justify-between group hover:border-blue-500/30 transition-colors">
+                                <div className="flex items-center gap-4">
+                                    <div className={`p-3 rounded-xl transition-colors ${language === 'ko' ? 'bg-blue-500/20 text-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.2)]' : 'bg-gray-500/10 text-gray-500'}`}>
+                                        <div className="font-bold text-xs">{language === 'ko' ? 'KR' : 'EN'}</div>
+                                    </div>
+                                    <div>
+                                        <p className="text-sm font-black text-white orbitron">{language === 'ko' ? t('settings.korean') : t('settings.english')}</p>
+                                        <p className="text-[10px] text-gray-500 font-bold">Select Interface Language</p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-2 bg-black/20 p-1 rounded-lg border border-white/5">
+                                    <button
+                                        onClick={() => setLanguage('ko')}
+                                        className={`px-3 py-1 rounded text-[10px] font-bold transition-all ${language === 'ko' ? 'bg-blue-500 text-white shadow-lg' : 'text-gray-500 hover:text-gray-300'}`}
+                                    >
+                                        KR
+                                    </button>
+                                    <button
+                                        onClick={() => setLanguage('en')}
+                                        className={`px-3 py-1 rounded text-[10px] font-bold transition-all ${language === 'en' ? 'bg-blue-500 text-white shadow-lg' : 'text-gray-500 hover:text-gray-300'}`}
+                                    >
+                                        EN
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
                         {/* Audio Section */}
                         <div className="space-y-6">
                             <div className="flex items-center gap-2 mb-2">
@@ -189,7 +225,7 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                         </Button>
                     </ModalFooter>
                 </div>
-            </ModalContent>
-        </Modal>
+            </ModalContent >
+        </Modal >
     );
 }

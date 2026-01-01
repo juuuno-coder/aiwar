@@ -91,19 +91,7 @@ export default function StageBattlePage() {
 
         // Load User Deck from Inventory
         if (!userLoading) {
-            let currentDeck = [...inventory];
-            // 🛡️ Fallback: If inventory is empty (new user/guest), provide starter cards
-            if (!currentDeck || currentDeck.length === 0) {
-                console.log('Using starter deck');
-                currentDeck = [
-                    { id: 'starter-1', templateId: 'starter-blade', name: 'Cyber Blade', type: 'EFFICIENCY', rarity: 'common', level: 1, stats: { totalPower: 10, efficiency: 10, creativity: 5, function: 5 }, acquiredAt: new Date(), isLocked: false, experience: 0, ownerId: 'guest' },
-                    { id: 'starter-2', templateId: 'starter-shield', name: 'Firewall', type: 'FUNCTION', rarity: 'common', level: 1, stats: { totalPower: 10, efficiency: 5, creativity: 5, function: 10 }, acquiredAt: new Date(), isLocked: false, experience: 0, ownerId: 'guest' },
-                    { id: 'starter-3', templateId: 'starter-virus', name: 'Logic Virus', type: 'CREATIVITY', rarity: 'common', level: 1, stats: { totalPower: 10, efficiency: 5, creativity: 10, function: 5 }, acquiredAt: new Date(), isLocked: false, experience: 0, ownerId: 'guest' },
-                    { id: 'starter-4', templateId: 'starter-bot', name: 'Worker Bot', type: 'EFFICIENCY', rarity: 'common', level: 1, stats: { totalPower: 8, efficiency: 8, creativity: 4, function: 4 }, acquiredAt: new Date(), isLocked: false, experience: 0, ownerId: 'guest' },
-                    { id: 'starter-5', templateId: 'starter-drone', name: 'Scout Drone', type: 'FUNCTION', rarity: 'common', level: 1, stats: { totalPower: 8, efficiency: 4, creativity: 4, function: 8 }, acquiredAt: new Date(), isLocked: false, experience: 0, ownerId: 'guest' },
-                ];
-            }
-            setUserDeck(currentDeck);
+            setUserDeck(inventory || []);
         }
 
         // Load Enemies (Specific to Story Stage)

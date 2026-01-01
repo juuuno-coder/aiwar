@@ -239,13 +239,13 @@ export default function CommanderProfileModal({ isOpen, onClose }: CommanderProf
                             </div>
                         </ModalHeader>
 
-                        <ModalBody className="p-6 relative z-10 grid md:grid-cols-12 gap-6">
+                        <ModalBody className="p-6 relative z-10 grid md:grid-cols-12 gap-6 overflow-hidden">
                             {/* 좌측: 아바타 및 기본 정보 */}
-                            <div className="md:col-span-4 space-y-4">
+                            <div className="md:col-span-3 space-y-3">
                                 {/* 아바타 섹션 - 크게 */}
                                 <div className="relative">
                                     <div
-                                        className="relative w-full aspect-[3/4] rounded-2xl overflow-hidden border-2 border-cyan-500/30 cursor-pointer group shadow-xl"
+                                        className="relative w-full aspect-square rounded-2xl overflow-hidden border-2 border-cyan-500/30 cursor-pointer group shadow-xl"
                                         onClick={() => setShowAvatarSelect(!showAvatarSelect)}
                                     >
                                         <img
@@ -358,7 +358,7 @@ export default function CommanderProfileModal({ isOpen, onClose }: CommanderProf
 
 
                             {/* 우측: 연구 성과 차트 및 리스트 */}
-                            <div className="space-y-4 md:col-span-8">
+                            <div className="space-y-4 md:col-span-9">
                                 <h3 className="text-xs font-black text-gray-500 orbitron tracking-[0.3em] uppercase flex items-center gap-2">
                                     <FlaskConical size={14} className="text-cyan-400" />
                                     Research Accumulation
