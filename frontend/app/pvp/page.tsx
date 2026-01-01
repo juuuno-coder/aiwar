@@ -9,6 +9,7 @@ import GameCard from '@/components/GameCard';
 import { Card } from '@/lib/types';
 import { getGameState } from '@/lib/game-state';
 import { useAlert } from '@/context/AlertContext';
+import { useUser } from '@/context/UserContext'; // [NEW] Added import
 import { gameStorage } from '@/lib/game-storage';
 import { loadInventory } from '@/lib/inventory-system';
 import { groupCardsByRarity, selectBalancedDeck, getMainCards } from '@/lib/balanced-deck-selector';
