@@ -18,6 +18,7 @@ import {
     leaveMatchmaking
 } from '@/lib/realtime-pvp-service';
 import { BattleRoom, PlayerState, BattlePhase } from '@/lib/realtime-pvp-types';
+import { applyBattleResult, BattleResult, PVP_REWARDS } from '@/lib/pvp-battle-system'; // [NEW] Imports
 import { useAlert } from '@/context/AlertContext';
 import { cn } from '@/lib/utils';
 import { Loader2, Swords, Clock, Trophy, XCircle, CheckCircle, Shuffle } from 'lucide-react';
@@ -257,14 +258,49 @@ export default function RealtimeBattleRoomPage() {
         // 전투 종료
         await new Promise(resolve => setTimeout(resolve, 1000));
 
-        const winner = myWins >= room.winsNeeded ? playerId :
+        const winnerId = myWins >= room.winsNeeded ? playerId :
             opponentWins >= room.winsNeeded ? opponent.playerId : null;
+
+        const isWinner = winnerId === playerId;
+        const resultType = isWinner ? 'player' : (winnerId ? 'opponent' : 'draw');
 
         await updateBattleRoom(roomId, {
             phase: 'result',
-            winner: winner ?? undefined,
+            winner: winnerId ?? undefined,
             finished: true
         });
+
+        // [NEW] Apply Battle Result for Ranking & Rewards (Local Update + Firestore Sync)
+        if (myPlayer && opponent) {
+            const isGhost = (room as any).isGhost || false;
+
+            // Show alert for ghost match
+            if (isGhost) {
+                alert("고스트 매칭입니다. 레이팅 및 보상이 50%만 지급됩니다.");
+            }
+
+            const battleResult: BattleResult = {
+                winner: resultType,
+                rounds: [],
+                playerWins: myWins,
+                opponentWins: opponentWins,
+                rewards: {
+                    coins: isWinner ? ((PVP_REWARDS[room.battleMode as keyof typeof PVP_REWARDS] as any)?.win || 100) : PVP_REWARDS.loss.coins,
+                    experience: isWinner ? ((PVP_REWARDS[room.battleMode as keyof typeof PVP_REWARDS] as any)?.exp || 50) : PVP_REWARDS.loss.exp,
+                    ratingChange: isWinner ? ((PVP_REWARDS[room.battleMode as keyof typeof PVP_REWARDS] as any)?.rating || 20) : PVP_REWARDS.loss.rating
+                }
+            };
+
+            console.log("🏆 Updating Ranked Stats:", battleResult);
+            // Pass isRanked = true, and isGhost from room
+            await applyBattleResult(
+                battleResult,
+                myPlayer.selectedCards,
+                opponent.selectedCards,
+                true,
+                isGhost
+            );
+        }
 
         setPhase('result');
     };

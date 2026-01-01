@@ -17,23 +17,23 @@ import {
     serverTimestamp,
     onDisconnect
 } from 'firebase/database';
+import { RealtimeBattleMode, MatchmakingQueue, BattleRoom } from './realtime-pvp-types';
 import {
-    MatchmakingQueue,
-    BattleRoom,
     PlayerState,
-    RealtimeBattleMode,
     MatchResult,
     BattlePhase
 } from './realtime-pvp-types';
-import { Card } from './types';
+import { Card, Rarity } from './types';
 import { getGameState } from './game-state';
+import { getLeaderboardData } from './firebase-db';
+import { generateRandomCard } from './card-generation-system';
 
 const db = getDatabase();
 
 // ==================== 매칭 시스템 ====================
 
 /**
- * 매칭 큐에 참가
+ * 매칭 큐에 참가 (MatchmakingQueue 타입 정의에 맞춰 필드 수정)
  */
 export async function joinMatchmaking(
     battleMode: RealtimeBattleMode,
@@ -97,14 +97,22 @@ export async function findMatch(
         }
 
         const players = snapshot.val();
+        const now = Date.now();
+        const myQueueData = players[myPlayerId] as MatchmakingQueue;
+        const waitTimeSec = myQueueData ? (now - myQueueData.joinedAt) / 1000 : 0;
 
-        // 자신을 제외하고 레벨이 비슷한 플레이어 찾기 (±5 레벨)
+        // 대기 시간에 따른 매칭 허용 범위 차별화 (±3, ±7, 무제한)
+        let tolerance = 3;
+        if (waitTimeSec > 15) tolerance = 999;
+        else if (waitTimeSec > 5) tolerance = 7;
+
+        // 자신을 제외하고 레벨이 비슷한 플레이어 찾기
         for (const [playerId, player] of Object.entries(players) as [string, MatchmakingQueue][]) {
             if (playerId === myPlayerId) continue;
             if (player.status === 'matched') continue;
 
             const levelDiff = Math.abs(player.playerLevel - myLevel);
-            if (levelDiff <= 5) {
+            if (levelDiff <= tolerance) {
                 // 매칭 성공! 전투 방 생성
                 const roomId = await createBattleRoom(battleMode, myPlayerId, playerId);
 
@@ -117,6 +125,71 @@ export async function findMatch(
                     roomId,
                     opponentId: playerId,
                     opponentName: player.playerName
+                };
+            }
+        }
+
+        // [NEW] 20초 이상 대기 시 고스트 AI 매칭 시도
+        if (waitTimeSec > 20) {
+            const leaderboard = await getLeaderboardData(20);
+
+            if (leaderboard && leaderboard.length > 0) {
+                const ghostUser = leaderboard[Math.floor(Math.random() * leaderboard.length)];
+
+                // 고스트용 가상 방 생성
+                const roomId = `ghost-${myPlayerId}-${Date.now()}`;
+                const roomRef = ref(db, `battles/${roomId}`);
+
+                // generateRandomCard expects Rarity
+                const ghostRarity: Rarity = (ghostUser.level || 1) > 10 ? 'epic' : (ghostUser.level || 1) > 5 ? 'rare' : 'common';
+
+                const ghostRoomData: BattleRoom & { isGhost: boolean } = {
+                    roomId,
+                    battleMode,
+                    phase: 'ordering',
+                    player1: {
+                        playerId: myPlayerId,
+                        playerName: myQueueData?.playerName || 'Player',
+                        playerLevel: myLevel,
+                        selectedCards: [],
+                        cardOrder: [],
+                        ready: false,
+                        wins: 0,
+                        roundResults: [],
+                        connected: true,
+                        lastHeartbeat: now
+                    },
+                    player2: {
+                        playerId: (ghostUser.uid as string),
+                        playerName: (ghostUser.nickname as string) || 'Ghost Commander',
+                        playerLevel: ghostUser.level || 1,
+                        selectedCards: Array(6).fill(null).map(() => generateRandomCard(ghostRarity)),
+                        cardOrder: [0, 1, 2, 3, 4, 5],
+                        ready: true,
+                        wins: 0,
+                        roundResults: [],
+                        connected: true,
+                        lastHeartbeat: now
+                    },
+                    currentRound: 0,
+                    maxRounds: battleMode === 'sudden-death' ? 1 : 3,
+                    winsNeeded: battleMode === 'sudden-death' ? 1 : 2,
+                    phaseStartedAt: now,
+                    phaseTimeout: 30,
+                    finished: false,
+                    isGhost: true,
+                    createdAt: now,
+                    updatedAt: now
+                };
+
+                await set(roomRef, ghostRoomData);
+                await update(ref(db, `matchmaking/${battleMode}/${myPlayerId}`), { status: 'matched' });
+
+                return {
+                    success: true,
+                    roomId,
+                    opponentId: ghostUser.uid,
+                    opponentName: ghostUser.nickname || 'Ghost Commander'
                 };
             }
         }

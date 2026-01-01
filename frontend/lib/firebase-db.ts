@@ -38,11 +38,15 @@ export interface UserProfile {
     tokens: number;
     level: number;
     exp: number;
-    avatarUrl?: string;
+    avatarUrl?: string; // commander avatar
     hasReceivedStarterPack?: boolean;
     createdAt?: any;
     lastLogin?: any;
     lastTokenUpdate?: any; // [NEW] 토큰 자동 충전 기준 시간
+    rating?: number; // PVP Rating
+    wins?: number; // PVP Wins
+    losses?: number; // PVP Losses
+    rank?: number; // Ranking
 }
 
 const BASE_MAX_TOKENS = 1000;
@@ -916,8 +920,8 @@ export async function getLeaderboardData(limitCount = 50): Promise<UserProfile[]
         // 에러 발생 시 콘솔의 링크를 클릭하여 색인 생성 필요.
         const q = query(
             usersRef,
+            orderBy('rating', 'desc'),
             orderBy('level', 'desc'),
-            orderBy('exp', 'desc'),
             limit(limitCount)
         );
 

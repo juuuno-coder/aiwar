@@ -10,7 +10,10 @@ import { findMyRank, getCurrentSeason, getRankTier, getRatingToNextTier } from '
 import { getPvPStats } from '@/lib/pvp-utils';
 import { cn } from '@/lib/utils';
 
+import { useUser } from '@/context/UserContext'; // [NEW]
+
 export default function RankingPage() {
+    const { user } = useUser(); // [NEW]
     const [rankings, setRankings] = useState<RankingEntry[]>([]);
     const [myRank, setMyRank] = useState<RankingEntry | null>(null);
     const [currentSeason, setCurrentSeason] = useState<any>(null);
@@ -22,30 +25,45 @@ export default function RankingPage() {
         setPvpStats(getPvPStats());
 
         async function fetchRanking() {
-            const profiles = await getLeaderboardData(100);
+            try {
+                // Fetch top 50 users sorted by rating
+                const profiles = await getLeaderboardData(50);
 
-            // UserProfile -> RankingEntry 변환
-            const rankingData: RankingEntry[] = profiles.map((p, index) => ({
-                rank: index + 1,
-                playerId: p.uid || 'unknown',
-                playerName: p.nickname || 'Unknown',
-                level: p.level || 1,
-                rating: 1000 + ((p.level || 1) * 50), // 레벨 기반 임시 레이팅
-                highestRating: 1000 + ((p.level || 1) * 50), // [FIX] 필수 속성 추가
-                wins: 0, // PVP 기록 연동 전까지 0
-                losses: 0,
-                winRate: 0,
-                tier: 'bronze',
-                recentMatchHistory: []
-            }));
+                // UserProfile -> RankingEntry 변환
+                const rankingData: RankingEntry[] = profiles.map((p, index) => ({
+                    rank: index + 1,
+                    playerId: p.uid || 'unknown',
+                    playerName: p.nickname || `Player_${(p.uid || '').substr(0, 4)}`,
+                    level: p.level || 1,
+                    rating: p.rating || 1000,
+                    highestRating: p.rating || 1000,
+                    wins: p.wins || 0,
+                    losses: p.losses || 0,
+                    winRate: (p.wins && p.wins + (p.losses || 0) > 0)
+                        ? Math.round((p.wins / (p.wins + (p.losses || 0))) * 100)
+                        : 0,
+                    tier: getRankTier(p.rating || 1000).tier as any,
+                    recentMatchHistory: []
+                }));
 
-            setRankings(rankingData);
-            // 내 랭킹 찾기 (Client Side Logic 보완 필요)
-            // setMyRank(findMyRank(rankingData)); 
+                setRankings(rankingData);
+
+                // Find "My Rank" properly
+                // Note: pvpStats is from local storage, we might want to check against the fetched list
+                // For now, let's try to match by current user ID if available (needs user context)
+            } catch (error) {
+                console.error("Failed to fetch rankings:", error);
+            }
         }
 
         fetchRanking();
     }, []);
+
+    const filteredRankings = rankings.filter(r => {
+        if (filter === 'top10') return r.rank <= 10;
+        if (filter === 'top100') return r.rank <= 100;
+        return true;
+    });
 
     if (!currentSeason || !pvpStats) {
         return (
@@ -55,9 +73,11 @@ export default function RankingPage() {
         );
     }
 
-    const filteredRankings = filter === 'top10' ? rankings.slice(0, 10) : filter === 'top100' ? rankings.slice(0, 100) : rankings;
-    const myTier = getRankTier(pvpStats.currentRating);
-    const ratingToNext = getRatingToNextTier(pvpStats.currentRating);
+    // Use server rank data if available, otherwise fall back to local pvpStats (which might be sync'd)
+    const displayRating = myRank?.rating || pvpStats.currentRating || pvpStats.rating || 1000;
+    const displayTier = getRankTier(displayRating);
+    const displayRank = myRank ? `#${myRank.rank}` : 'Unranked';
+    const displayWinRate = myRank ? `${myRank.winRate}%` : `${pvpStats.winRate}%`;
 
     return (
         <CyberPageLayout
@@ -82,10 +102,10 @@ export default function RankingPage() {
             {/* My Stats */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
                 {[
-                    { label: 'MY_RANK', value: myRank ? `#${myRank.rank}` : 'N/A', color: 'text-amber-400' },
-                    { label: 'TIER', value: `${myTier.icon} ${myTier.tier}`, color: myTier.color },
-                    { label: 'RATING', value: pvpStats.currentRating, color: 'text-cyan-400' },
-                    { label: 'WIN_RATE', value: `${pvpStats.winRate}%`, color: 'text-green-400' }
+                    { label: 'MY_RANK', value: displayRank, color: 'text-amber-400' },
+                    { label: 'TIER', value: `${displayTier.icon} ${displayTier.tier}`, color: displayTier.color },
+                    { label: 'RATING', value: displayRating, color: 'text-cyan-400' },
+                    { label: 'WIN_RATE', value: displayWinRate, color: 'text-green-400' }
                 ].map((stat, i) => (
                     <motion.div key={stat.label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 * i }} className="bg-white/5 border border-white/10 rounded-lg p-4 text-center">
                         <p className={cn("text-2xl font-black orbitron", stat.color)}>{stat.value}</p>

@@ -33,6 +33,13 @@ export interface GameState {
     username?: string; // Player username for PVP
     hasReceivedStarterPack?: boolean; // Track if player received starter pack
 
+    // Stats for PVP
+    stats?: {
+        rating: number;
+        wins: number;
+        losses: number;
+    };
+
     // 신규 시스템 데이터
     subscriptions: { factionId: string; nextPaymentAt: number; isActive: boolean }[];
     uniqueApplications: {
@@ -288,6 +295,13 @@ class UnifiedStorage {
                     if (validatedStateUpdate.tokens !== undefined) profileUpdate.tokens = validatedStateUpdate.tokens;
                     if (validatedStateUpdate.level !== undefined) profileUpdate.level = validatedStateUpdate.level;
                     if (validatedStateUpdate.experience !== undefined) profileUpdate.exp = validatedStateUpdate.experience;
+
+                    // [NEW] PVP Stats Sync
+                    if (validatedStateUpdate.stats) {
+                        if (validatedStateUpdate.stats.rating !== undefined) profileUpdate.rating = validatedStateUpdate.stats.rating;
+                        if (validatedStateUpdate.stats.wins !== undefined) profileUpdate.wins = validatedStateUpdate.stats.wins;
+                        if (validatedStateUpdate.stats.losses !== undefined) profileUpdate.losses = validatedStateUpdate.stats.losses;
+                    }
 
                     if (Object.keys(profileUpdate).length > 0) {
                         await saveUserProfile(profileUpdate, uid);

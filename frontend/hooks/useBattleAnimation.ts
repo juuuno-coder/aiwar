@@ -14,7 +14,7 @@ export interface BattleAnimationState {
         playerWonCards: any[];
         enemyWonCards: any[];
         isGameOver: boolean;
-        finalWinner: 'player' | 'opponent' | null;
+        finalWinner: 'player' | 'opponent' | 'draw' | null;
     };
     activePlayerCard: any | null;
     activeEnemyCard: any | null;

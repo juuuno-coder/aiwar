@@ -83,6 +83,7 @@ export interface GameState {
         pvpMatches: number;
         cardsEnhanced: number;
         cardsFused: number;
+        rating: number; // Added rating
     };
 
     // 업적 및 미션
@@ -123,6 +124,26 @@ export interface GameState {
     // 연구 시스템
     research?: CommanderResearch;
 
+    // 일일 통계 (밸런싱용)
+    dailyStats?: {
+        aiWinsToday: number;
+        aiMatchesToday: number; // [NEW] 트래킹용 매치 횟수
+        lastDailyReset: number;
+        matchCount: Record<string, number>;
+    };
+    pvpStats?: {
+        wins: number;
+        losses: number;
+        totalBattles: number;
+        rating: number;
+        pvpMatches: number;
+        finished: boolean;
+        createdAt: number;
+        winRate: number;
+        rank: number;
+        isGhost?: boolean;
+    };
+
     // 생성 시간
     createdAt: number;
     lastSaved: number;
@@ -153,12 +174,31 @@ export function createDefaultGameState(userId: string, nickname: string): GameSt
             currentStreak: 0,
             pvpMatches: 0,
             cardsEnhanced: 0,
-            cardsFused: 0
+            cardsFused: 0,
+            rating: 1000 // Initial rating
         },
         completedAchievements: [],
         dailyMissions: [],
         lastFactionGeneration: {},
         lastDailyReset: Date.now(),
+        dailyStats: {
+            aiWinsToday: 0,
+            aiMatchesToday: 0,
+            lastDailyReset: Date.now(),
+            matchCount: {}
+        },
+        pvpStats: {
+            wins: 0,
+            losses: 0,
+            totalBattles: 0,
+            rating: 1000,
+            pvpMatches: 0,
+            finished: false,
+            createdAt: Date.now(),
+            winRate: 0,
+            rank: 0,
+            isGhost: false
+        },
         createdAt: Date.now(),
         lastSaved: Date.now()
     };
@@ -481,6 +521,39 @@ export function checkDailyReset(userId?: string): GameState {
         state.lastDailyReset = now;
         saveGameState(state, userId);
         emitGameStateChange('STATE_UPDATED', state);
+    }
+
+    return state;
+}
+
+/**
+ * 일일 통계 리셋 체크 및 초기화 (오전 6시 기준)
+ */
+export function checkAndResetDailyStats(userId?: string): GameState {
+    const state = getGameState(userId);
+    const now = Date.now();
+
+    // 현재 시간 기준 '오늘의 6 AM' 타임스탬프 계산
+    const today6AM = new Date(now);
+    today6AM.setHours(6, 0, 0, 0);
+
+    // 만약 현재 시간이 오전 6시 이전이라면, 리셋 기준점은 '어제의 6 AM'
+    if (now < today6AM.getTime()) {
+        today6AM.setDate(today6AM.getDate() - 1);
+    }
+
+    const lastReset = state.dailyStats?.lastDailyReset || 0;
+
+    // 마지막 리셋이 기준점(6 AM)보다 이전이라면 초기화
+    if (lastReset < today6AM.getTime()) {
+        const updatedStats = {
+            aiWinsToday: 0,
+            aiMatchesToday: 0,
+            lastDailyReset: now,
+            matchCount: {}
+        };
+
+        return updateGameState({ dailyStats: updatedStats }, userId);
     }
 
     return state;
