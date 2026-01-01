@@ -294,8 +294,12 @@ class UnifiedStorage {
         }
 
         // Firebase 로드 실패했거나 미사용 시 localStorage 확인
+        // [Strict Mode] If logged in (uid exists) and using Firebase, do NOT fallback to generic storage if empty.
+        // Only verify specific user storage.
         if (Object.keys(loadedState).length === 0) {
             const storageKey = this.getStorageKey(uid);
+            // If uid is present, we trust Firebase or specific local key. We don't want to fallback to any shared state implicitly?
+            // Actually getStorageKey handles uniqueness.
             loadedState = storage.get(storageKey, defaultState);
         }
 

@@ -126,9 +126,10 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
                     console.log(`[Auth] User logged in: ${user.uid}. Starting migration check...`);
 
                     // 순차적으로 마이그레이션 진행
-                    migrateLegacyGameState(user.uid);
-                    migrateLegacySlots(user.uid);
-                    await migrateLegacySubscriptions(user.uid);
+                    // [Disable Migration] User requested strict DB-only data. No merging from local guest data.
+                    // migrateLegacyGameState(user.uid);
+                    // migrateLegacySlots(user.uid);
+                    // await migrateLegacySubscriptions(user.uid);
 
                     console.log(`[Auth] Migration check completed for ${user.uid}`);
 
