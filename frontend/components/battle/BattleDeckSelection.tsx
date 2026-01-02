@@ -113,16 +113,10 @@ export default function BattleDeckSelection({
                                                     card={card}
                                                     isSelected={isSelected}
                                                 />
-                                                {/* Selection Overlay */}
-                                                {isSelected && (
-                                                    <div className="absolute inset-0 bg-cyan-500/20 rounded-[18px] border-[3px] border-cyan-400 flex items-center justify-center z-50 backdrop-blur-[1px]">
-                                                        <div className="bg-cyan-500 rounded-full p-2 shadow-[0_0_20px_rgba(6,182,212,0.8)]">
-                                                            <Check size={24} className="text-black font-black" />
-                                                        </div>
-                                                    </div>
+                                                {/* Hover Glow - Only if not selected */}
+                                                {!isSelected && (
+                                                    <div className="absolute inset-0 rounded-xl bg-amber-500/0 group-hover:bg-amber-500/10 transition-colors border-2 border-transparent group-hover:border-amber-500/50 pointer-events-none" />
                                                 )}
-                                                {/* Hover Glow */}
-                                                <div className="absolute inset-0 rounded-xl bg-amber-500/0 group-hover:bg-amber-500/10 transition-colors border-2 border-transparent group-hover:border-amber-500/50 pointer-events-none" />
                                             </div>
                                             <div className="absolute -top-2 -right-2 bg-gradient-to-r from-amber-500 to-orange-600 text-white text-[10px] font-black px-2 py-1 rounded-full shadow-lg z-30 border border-amber-300">
                                                 RECOMMENDED
@@ -160,15 +154,6 @@ export default function BattleDeckSelection({
                                     >
                                         <div className="relative">
                                             <GameCard card={card} isSelected={isSelected} />
-
-                                            {/* Selection Overlay */}
-                                            {isSelected && (
-                                                <div className="absolute inset-0 bg-cyan-500/20 rounded-[18px] border-[3px] border-cyan-400 flex items-center justify-center z-50 backdrop-blur-[1px]">
-                                                    <div className="bg-cyan-500 rounded-full p-2 shadow-[0_0_20px_rgba(6,182,212,0.8)]">
-                                                        <Check size={24} className="text-black font-black" />
-                                                    </div>
-                                                </div>
-                                            )}
                                         </div>
                                     </motion.div>
                                 );

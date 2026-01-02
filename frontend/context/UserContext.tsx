@@ -588,17 +588,24 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
             console.error("❌ Failed to claim starter pack - DETAILED ERROR:", error);
 
             let message = '스타터팩 지급 중 서버 오류가 발생했습니다.';
-            if (error.message === 'ALREADY_CLAIMED') message = '이미 보급품을 수령하셨습니다.';
+            const isAlreadyClaimed = error.message === 'ALREADY_CLAIMED';
+
+            if (isAlreadyClaimed) message = '이미 보급품을 수령하셨습니다.';
             else if (error.message === 'Firebase NOT_CONFIGURED') message = '서버 설정이 완료되지 않았습니다.';
 
-            // Explicit alert for the user since this is a critical action
-            window.alert(`[보급 오류] ${message}\n(에러 상세: ${error.message || 'Unknown'})`);
+            // [Fix] Already claimed is not always a "Critical Error" to the user, 
+            // especially if they double-clicked. Silence alert if it's already claimed.
+            if (!isAlreadyClaimed) {
+                window.alert(`[보급 오류] ${message}\n(에러 상세: ${error.message || 'Unknown'})`);
+            } else {
+                console.log("ℹ️ ALREADY_CLAIMED caught - silencing alert for better UX.");
+            }
 
             addNotification({
-                type: 'error',
-                title: '오류 발생',
+                type: isAlreadyClaimed ? 'warning' : 'error',
+                title: isAlreadyClaimed ? '확인 완료' : '오류 발생',
                 message: message,
-                icon: '⚠️'
+                icon: isAlreadyClaimed ? 'ℹ️' : '⚠️'
             });
             return [];
         }

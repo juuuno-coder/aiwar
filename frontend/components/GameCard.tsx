@@ -297,23 +297,32 @@ function GameCard({
                     </div>
                 )}
 
-                {/* 선택 체크 표시 */}
+                {/* 선택 체크 표시 - 더욱 프리미엄하고 '딱 맞게' 개선 */}
                 {isSelected && (
                     <motion.div
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
-                        className="absolute inset-0 bg-cyan-500/20 z-40 flex items-center justify-center"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="absolute inset-0 z-40 rounded-xl overflow-hidden pointer-events-none"
                     >
-                        <motion.div
-                            initial={{ scale: 0 }}
-                            animate={{ scale: 1 }}
-                            transition={{ type: "spring", stiffness: 200, damping: 15 }}
-                            className="w-16 h-16 rounded-full bg-cyan-500 flex items-center justify-center shadow-2xl"
-                        >
-                            <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                            </svg>
-                        </motion.div>
+                        {/* 테두리 글로우 */}
+                        <div className="absolute inset-0 border-[3px] border-cyan-400 shadow-[inset_0_0_20px_rgba(6,182,212,0.5)] rounded-xl" />
+
+                        {/* 배경 오버레이 */}
+                        <div className="absolute inset-0 bg-cyan-500/10 backdrop-blur-[0.5px]" />
+
+                        {/* 체크마크 애니메이션 */}
+                        <div className="absolute inset-0 flex items-center justify-center">
+                            <motion.div
+                                initial={{ scale: 0.5, opacity: 0, y: 10 }}
+                                animate={{ scale: 1, opacity: 1, y: 0 }}
+                                transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                                className="w-14 h-14 rounded-full bg-cyan-500/90 flex items-center justify-center shadow-[0_0_30px_rgba(6,182,212,0.8)] border-2 border-white/30"
+                            >
+                                <svg className="w-8 h-8 text-white drop-shadow-md" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={4} d="M5 13l4 4L19 7" />
+                                </svg>
+                            </motion.div>
+                        </div>
                     </motion.div>
                 )}
             </div>

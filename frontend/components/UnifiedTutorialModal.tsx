@@ -61,6 +61,7 @@ export default function UnifiedTutorialModal() {
     // Reward State
     const [claimedCards, setClaimedCards] = useState<Card[]>([]);
     const [showRewardModal, setShowRewardModal] = useState(false);
+    const [isProcessing, setIsProcessing] = useState(false);
 
     // Initial Load & Check
     useEffect(() => {
@@ -121,6 +122,7 @@ export default function UnifiedTutorialModal() {
     }, [currentStepIndex, isVisible, steps]);
 
     const handleAction = async () => {
+        if (isProcessing) return;
         const step = steps[currentStepIndex];
 
         if (step.action === 'next') {
@@ -130,7 +132,12 @@ export default function UnifiedTutorialModal() {
                 completeTutorial();
             }
         } else if (step.action === 'claim') {
-            await handleClaimReward();
+            setIsProcessing(true);
+            try {
+                await handleClaimReward();
+            } finally {
+                setIsProcessing(false);
+            }
         } else if (step.action === 'close') {
             completeTutorial();
         }
@@ -266,15 +273,17 @@ export default function UnifiedTutorialModal() {
                                 )}
                                 <button
                                     onClick={handleAction}
+                                    disabled={isProcessing}
                                     className={cn(
                                         "flex-1 px-6 py-3 rounded-xl font-bold transition-all shadow-lg flex items-center justify-center gap-2",
-                                        currentStep.color
-                                            ? `bg-${currentStep.color}-600 hover:bg-${currentStep.color}-500 shadow-${currentStep.color}-500/30 text-white`
-                                            : "bg-white text-black hover:bg-gray-200"
+                                        isProcessing ? "opacity-50 cursor-not-allowed bg-gray-600" :
+                                            currentStep.color
+                                                ? `bg-${currentStep.color}-600 hover:bg-${currentStep.color}-500 shadow-${currentStep.color}-500/30 text-white`
+                                                : "bg-white text-black hover:bg-gray-200"
                                     )}
                                 >
-                                    {currentStep.action === 'claim' ? '보급품 수령' : 'Next'}
-                                    <ChevronRight size={16} />
+                                    {isProcessing ? 'Processing...' : currentStep.action === 'claim' ? '보급품 수령' : 'Next'}
+                                    {!isProcessing && <ChevronRight size={16} />}
                                 </button>
                             </div>
 
