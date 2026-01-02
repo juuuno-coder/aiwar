@@ -186,7 +186,16 @@ export async function removeCardFromInventory(instanceId: string, uid?: string):
 /**
  * 전체 인벤토리 로드
  */
+
 export async function loadInventory(uid?: string): Promise<InventoryCard[]> {
+    // [Request] "로컬스토리지 내용을 불러오는 것부터 완전히 차단"
+    // If logged in (uid exists), we strictly rely on DB.
+    // If DB is not configured or not ready, return empty [] instead of risking local data bleed.
+    if (uid && (!isFirebaseConfigured || !db)) {
+        console.warn('[Inventory] DB Only Mode: Firebase not ready/configured, but UID present. Returning empty inventory.');
+        return [];
+    }
+
     if (!isFirebaseConfigured || !db) {
         console.warn('Firebase가 설정되지 않았습니다. localStorage 사용.');
         const key = getInventoryKey(uid);
@@ -413,10 +422,42 @@ export async function distributeStarterPack(uid?: string, nickname?: string): Pr
             acquiredAt: new Date()
         } as InventoryCard));
 
+
         console.log('✅ 스타터팩 지급 완료 (5장, 포함: Commander Card)');
         return inventoryCards;
     } catch (error) {
         console.error('❌ 스타터팩 지급 실패:', error);
         return [];
+    }
+}
+
+/**
+ * 인벤토리 초기화 (데이터 리셋용)
+ */
+export async function clearInventory(uid?: string): Promise<void> {
+    if (!isFirebaseConfigured || !db) {
+        console.warn('Firebase가 설정되지 않았습니다.');
+        const key = getInventoryKey(uid);
+        localStorage.removeItem(key);
+        return;
+    }
+
+    try {
+        const userId = uid || await getUserId();
+        const inventoryRef = collection(db, 'users', userId, 'inventory');
+        const snapshot = await getDocs(inventoryRef);
+
+        if (snapshot.empty) return;
+
+        const batch = writeBatch(db);
+        snapshot.docs.forEach((doc) => {
+            batch.delete(doc.ref);
+        });
+
+        await batch.commit();
+        console.log(`✅ 인벤토리 초기화 완료: ${snapshot.docs.length}장 삭제`);
+    } catch (error) {
+        console.error('❌ 인벤토리 초기화 실패:', error);
+        throw error;
     }
 }

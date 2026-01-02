@@ -36,15 +36,32 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     const allowedUsers = ['nerounni@gmail.com', 'juuuno1116@gmail.com', 'juuuno1116@gamil.com'];
     const isAdmin = user?.email && allowedUsers.includes(user.email);
 
-    const handleResetStarterPack = async () => {
+
+    const handleResetGameData = async () => {
         if (!user) return;
-        if (confirm('스타터팩 수령 상태를 초기화하시겠습니까? (페이지가 새로고침됩니다)')) {
-            try {
-                await saveUserProfile({ hasReceivedStarterPack: false }, user.uid);
-                window.location.reload();
-            } catch (error) {
-                console.error('Failed to reset starter pack:', error);
-                alert('초기화에 실패했습니다.');
+        if (confirm('⚠️ 경고: 모든 게임 데이터가 초기화됩니다.\n\n보유한 카드, 코인, 진행 상황이 모두 영구적으로 삭제됩니다. 계속하시겠습니까?')) {
+            if (confirm('정말로 초기화하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) {
+                try {
+                    // 1. Inventory Clear
+                    const { clearInventory } = await import('@/lib/inventory-system');
+                    await clearInventory(user.uid);
+
+                    // 2. Profile Reset
+                    await saveUserProfile({
+                        coins: 0,
+                        tokens: 100,
+                        level: 1,
+                        exp: 0,
+                        hasReceivedStarterPack: false,
+                        lastLogin: new Date()
+                    }, user.uid);
+
+                    alert('초기화되었습니다. 게임을 다시 시작합니다.');
+                    window.location.reload();
+                } catch (error) {
+                    console.error('Reset failed:', error);
+                    alert('초기화 실패. 잠시 후 다시 시도해주세요.');
+                }
             }
         }
     };
@@ -66,12 +83,13 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                     </ModalHeader>
 
                     <ModalBody className="py-8 space-y-8">
+                        {/* ... existing sections ... */}
                         <div className="space-y-6">
                             <div className="flex items-center gap-2 mb-2">
                                 <Globe size={14} className="text-blue-500" />
                                 <span className="text-[11px] font-black orbitron text-gray-400 tracking-widest uppercase">{t('settings.language')}</span>
                             </div>
-
+                            {/* ... Language options ... */}
                             <div className="p-4 rounded-2xl bg-white/5 border border-white/5 flex items-center justify-between group hover:border-blue-500/30 transition-colors">
                                 <div className="flex items-center gap-4">
                                     <div className={`p-3 rounded-xl transition-colors ${language === 'ko' ? 'bg-blue-500/20 text-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.2)]' : 'bg-gray-500/10 text-gray-500'}`}>
@@ -107,7 +125,6 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                {/* BGM Toggle */}
                                 <div className="p-4 rounded-2xl bg-white/5 border border-white/5 flex items-center justify-between group hover:border-purple-500/30 transition-colors">
                                     <div className="flex items-center gap-4">
                                         <div className={`p-3 rounded-xl transition-colors ${!isMuted ? 'bg-purple-500/20 text-purple-400 shadow-[0_0_15px_rgba(168,85,247,0.2)]' : 'bg-gray-500/10 text-gray-500'}`}>
@@ -121,7 +138,6 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                                     <Switch isChecked={!isMuted} onCheckedChange={toggleMute} color="secondary" />
                                 </div>
 
-                                {/* SFX Toggle */}
                                 <div className="p-4 rounded-2xl bg-white/5 border border-white/5 flex items-center justify-between group hover:border-blue-500/30 transition-colors">
                                     <div className="flex items-center gap-4">
                                         <div className={`p-3 rounded-xl transition-colors ${!isMuted ? 'bg-blue-500/20 text-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.2)]' : 'bg-gray-500/10 text-gray-500'}`}>
@@ -135,34 +151,25 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                                     <Switch isChecked={!isMuted} onCheckedChange={toggleMute} color="primary" />
                                 </div>
                             </div>
-
-                            {/* Volume Slider - Disabled as it's not implemented in context yet */}
-                            <div className="p-6 rounded-2xl bg-white/5 border border-white/5 space-y-4 opacity-50">
-                                <div className="flex justify-between items-center mb-2">
-                                    <div className="flex items-center gap-2">
-                                        {!isMuted ? <Volume2 size={16} className="text-purple-400" /> : <VolumeX size={16} className="text-red-400" />}
-                                        <span className="text-xs font-black orbitron text-white">MASTER VOLUME</span>
-                                    </div>
-                                    <span className="text-xs font-mono text-purple-400 font-bold">{!isMuted ? '100%' : '0%'}</span>
-                                </div>
-                                <div className="h-2 bg-white/10 rounded-full w-full overflow-hidden">
-                                    <div className="h-full bg-purple-500 transition-all" style={{ width: !isMuted ? '100%' : '0%' }}></div>
-                                </div>
-                            </div>
                         </div>
 
-                        {/* System Section */}
-                        <div className="space-y-6">
+                        {/* Danger Zone */}
+                        <div className="space-y-6 pt-6 border-t border-white/5">
                             <div className="flex items-center gap-2 mb-2">
-                                <ShieldCheck size={14} className="text-cyan-500" />
-                                <span className="text-[11px] font-black orbitron text-gray-400 tracking-widest uppercase">System Protocol</span>
+                                <Zap size={14} className="text-red-500" />
+                                <span className="text-[11px] font-black orbitron text-red-500 tracking-widest uppercase">DANGER ZONE</span>
                             </div>
-                            <div className="p-4 rounded-2xl bg-cyan-500/5 border border-cyan-500/10 flex items-center justify-between">
-                                <div className="flex items-center gap-4">
-                                    <span className="text-xs text-cyan-400 font-bold">Neural Stabilizer</span>
-                                    <span className="px-2 py-0.5 rounded bg-cyan-500/20 text-[8px] text-cyan-300 font-black orbitron uppercase">Active</span>
+                            <div className="p-4 rounded-2xl bg-red-500/5 border border-red-500/10 flex items-center justify-between">
+                                <div>
+                                    <p className="text-xs text-red-400 font-bold mb-1">게임 데이터 초기화</p>
+                                    <p className="text-[10px] text-zinc-500">모든 진행 상황을 삭제하고 처음부터 시작합니다.</p>
                                 </div>
-                                <span className="text-[10px] text-gray-600 font-mono tracking-tighter">PROTO_v2.5.4</span>
+                                <Button
+                                    onClick={handleResetGameData}
+                                    className="bg-red-500/10 text-red-500 border border-red-500/20 hover:bg-red-500/20 text-xs px-3 py-1 h-8"
+                                >
+                                    RESET DATA
+                                </Button>
                             </div>
                         </div>
 
@@ -186,21 +193,7 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                                             GO TO ADMIN
                                         </Button>
                                     </div>
-
-                                    <div className="w-full h-px bg-red-500/10" />
-
-                                    <div className="flex items-center justify-between">
-                                        <div>
-                                            <p className="text-xs text-red-400 font-bold mb-1">스타터팩 상태 초기화</p>
-                                            <p className="text-[10px] text-zinc-500">수령 기록 삭제 및 재지급 활성화</p>
-                                        </div>
-                                        <Button
-                                            onClick={handleResetStarterPack}
-                                            className="bg-red-500/10 text-red-500 border border-red-500/20 hover:bg-red-500/20 text-xs px-3 py-1 h-8"
-                                        >
-                                            RESET
-                                        </Button>
-                                    </div>
+                                    {/* Admin reset is redundant now but kept for legacy/specific starter pack reset if needed */}
                                 </div>
                             </div>
                         )}

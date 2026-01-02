@@ -150,7 +150,32 @@ async function generateBasicCards(userId: string, acquiredAt: Date): Promise<Inv
         faction: 'gemini'
     };
 
-    basicCards.push(commonCard, rareCard);
+    // Common 카드 2 생성 (추가)
+    const commonCard2: InventoryCard = {
+        id: generateId(),
+        instanceId: generateId(),
+        templateId: 'starter-common-2',
+        name: 'Gemini Rookie',
+        ownerId: userId,
+        level: 1,
+        experience: 0,
+        stats: {
+            creativity: 10,
+            accuracy: 10,
+            speed: 20,
+            stability: 10,
+            ethics: 5,
+            totalPower: 55
+        },
+        rarity: 'common',
+        type: 'EFFICIENCY', // [Fix] SPEED is not a valid AIType. Changed to EFFICIENCY.
+        imageUrl: geminiTemplate.imageUrl,
+        acquiredAt,
+        isLocked: false,
+        faction: 'gemini'
+    };
+
+    basicCards.push(commonCard, commonCard2, rareCard);
     return basicCards;
 }
 
