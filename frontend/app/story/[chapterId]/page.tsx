@@ -39,27 +39,33 @@ export default function ChapterDetailPage() {
         onConfirm?: () => void;
     }>({ isOpen: false, title: '', message: '' });
 
+    const { consumeTokens, user } = useUser();
+
     useEffect(() => {
-        const allChapters = getChapters();
-        const found = allChapters.find((c: Chapter) => c.id === chapterId);
+        const load = async () => {
+            const allChapters = getChapters();
+            const found = allChapters.find((c: Chapter) => c.id === chapterId);
 
-        if (found) {
-            const progress = loadStoryProgress(chapterId);
+            if (found) {
+                // Async load with user ID if logged in
+                const progress = await loadStoryProgress(chapterId, user?.uid);
 
-            found.unlocked = true;
-            found.stages = found.stages.map((s: StoryStage) => ({
-                ...s,
-                isCleared: progress.completedStages.includes(s.id)
-            }));
+                found.unlocked = true;
+                found.stages = found.stages.map((s: StoryStage) => ({
+                    ...s,
+                    isCleared: progress.completedStages.includes(s.id)
+                }));
 
-            setChapter(found);
+                setChapter(found);
 
-            if (!selectedStage) {
-                const firstUncleared = found.stages.find((s: StoryStage) => !s.isCleared);
-                setSelectedStage(firstUncleared || found.stages[found.stages.length - 1]);
+                if (!selectedStage) {
+                    const firstUncleared = found.stages.find((s: StoryStage) => !s.isCleared);
+                    setSelectedStage(firstUncleared || found.stages[found.stages.length - 1]);
+                }
             }
-        }
-    }, [chapterId]); // eslint-disable-line react-hooks/exhaustive-deps
+        };
+        load();
+    }, [chapterId, user]);
 
     const handleStageSelect = (stage: StoryStage) => {
         if (stage.step > 1) {
@@ -76,8 +82,6 @@ export default function ChapterDetailPage() {
         }
         setSelectedStage(stage);
     };
-
-    const { consumeTokens } = useUser(); // [NEW] Get token function
 
     const handleBattleStart = async () => {
         if (!selectedStage) return;

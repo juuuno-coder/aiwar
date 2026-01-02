@@ -31,7 +31,7 @@ export default function StageBattlePage() {
     const router = useRouter();
     const { playSound } = useGameSound();
     const { t, language } = useTranslation();
-    const { inventory, loading: userLoading, coins, level } = useUser();
+    const { inventory, loading: userLoading, coins, level, user } = useUser(); // [Updated] Added user
 
     // Stage Data
     const [storyStage, setStoryStage] = useState<StoryStage | null>(null);
@@ -363,11 +363,11 @@ export default function StageBattlePage() {
         setPhase('result');
     };
 
-    const handleResultConfirm = () => {
+    const handleResultConfirm = async () => {
         if (battleResult?.winner === 'player') {
             if (storyStage) {
-                applyBattleResult(battleResult, activeBattleDeck, enemies);
-                completeStage(storyStage.id.split('-')[1] === '1' ? 'chapter-1' : storyStage.id.split('-')[1] === '2' ? 'chapter-2' : 'chapter-3', storyStage.id);
+                await applyBattleResult(battleResult, activeBattleDeck, enemies);
+                await completeStage(storyStage.id.split('-')[1] === '1' ? 'chapter-1' : storyStage.id.split('-')[1] === '2' ? 'chapter-2' : 'chapter-3', storyStage.id, user?.uid);
             }
             const chapterNum = storyStage?.id.split('-')[1] || '1';
             router.push(`/story/chapter-${chapterNum}`);

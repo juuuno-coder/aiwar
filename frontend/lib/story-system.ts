@@ -531,8 +531,30 @@ export function loadSeasonsWithProgress(): Season[] {
     }];
 }
 
-export function loadStoryProgress(chapterId: string): { completedStages: string[], unlockedStages: string[] } {
-    // Check localStorage (mock)
+
+import { saveStoryProgress, loadStoryProgressFromDB } from './firebase-db';
+
+// ... (existing code)
+
+export async function loadStoryProgress(chapterId: string, userId?: string): Promise<{ completedStages: string[], unlockedStages: string[] }> {
+    // 1. If User logged in, try DB first
+    if (userId) {
+        try {
+            const dbData = await loadStoryProgressFromDB(userId);
+            if (dbData && dbData[chapterId]) {
+                const { completedStages, unlockedStages } = dbData[chapterId];
+                return { completedStages: completedStages || [], unlockedStages: unlockedStages || [] };
+            }
+            // If logged in but no data, return default (clean slate). NO LocalStorage fallback.
+            return { completedStages: [], unlockedStages: ['stage-1-1'] };
+        } catch (e) {
+            console.error('Failed to load progress from DB', e);
+            // On error, maybe fallback? Or safer to return empty to prevent corruption.
+            return { completedStages: [], unlockedStages: ['stage-1-1'] };
+        }
+    }
+
+    // 2. Fallback to LocalStorage (Guest or Offline)
     if (typeof window !== 'undefined') {
         const completed = JSON.parse(localStorage.getItem(`story_${chapterId}_completed`) || '[]');
         const unlocked = JSON.parse(localStorage.getItem(`story_${chapterId}_unlocked`) || '["stage-1-1"]');
@@ -543,28 +565,46 @@ export function loadStoryProgress(chapterId: string): { completedStages: string[
     return { completedStages: [], unlockedStages: ['stage-1-1'] };
 }
 
-export function completeStage(chapterId: string, stageId: string) {
+export async function completeStage(chapterId: string, stageId: string, userId?: string) {
     if (typeof window === 'undefined') return;
 
-    const progress = loadStoryProgress(chapterId);
-    if (!progress.completedStages.includes(stageId)) {
-        progress.completedStages.push(stageId);
-        localStorage.setItem(`story_${chapterId}_completed`, JSON.stringify(progress.completedStages));
+    // Load current progress (from Local first for immediate update, then sync to DB)
+    // Actually, good practice is load -> update -> save. 
+    // Since we are decoupling, let's just read local for logic simplicity OR rely on passed state?
+    // Let's read local for now as "Guest/Cache" and update it, then Sync to DB.
+
+    // NOTE: To allow offline progress to sync later would be complex.
+    // Here we just update both.
+
+    // 1. Local Update
+    const completed = JSON.parse(localStorage.getItem(`story_${chapterId}_completed`) || '[]');
+    let unlocked = JSON.parse(localStorage.getItem(`story_${chapterId}_unlocked`) || '["stage-1-1"]');
+
+    if (!completed.includes(stageId)) {
+        completed.push(stageId);
+        localStorage.setItem(`story_${chapterId}_completed`, JSON.stringify(completed));
 
         // Unlock next stage
-        // Parse stage-1-1 -> 1-2
         const parts = stageId.split('-');
         const currentStep = parseInt(parts[2]);
         const nextStageId = `${parts[0]}-${parts[1]}-${currentStep + 1}`;
 
-        // If next stage exists in data, unlock it
         const stageExists = getStoryStage(nextStageId);
         if (stageExists) {
-            if (!progress.unlockedStages.includes(nextStageId)) {
-                progress.unlockedStages.push(nextStageId);
-                localStorage.setItem(`story_${chapterId}_unlocked`, JSON.stringify(progress.unlockedStages));
+            if (!unlocked.includes(nextStageId)) {
+                unlocked.push(nextStageId);
+                localStorage.setItem(`story_${chapterId}_unlocked`, JSON.stringify(unlocked));
             }
         }
+    } else {
+        // Already completed, but maybe we need unlocked list for DB sync
+        // Load unlocked again to be sure
+        unlocked = JSON.parse(localStorage.getItem(`story_${chapterId}_unlocked`) || '[]');
+    }
+
+    // 2. DB Update (if logged in)
+    if (userId) {
+        await saveStoryProgress(userId, chapterId, completed, unlocked);
     }
 }
 

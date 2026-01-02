@@ -1048,3 +1048,60 @@ export async function getLeaderboardData(limitCount = 50): Promise<UserProfile[]
         return [];
     }
 }
+
+// ==================== 스토리 진행도 (Story Progress) ====================
+
+export interface StoryProgressData {
+    chapterId: string;
+    completedStages: string[];
+    unlockedStages: string[];
+    updatedAt: any;
+}
+
+/**
+ * 스토리 진행도 저장 (DB)
+ */
+export async function saveStoryProgress(
+    userId: string,
+    chapterId: string,
+    completedStages: string[],
+    unlockedStages: string[]
+): Promise<void> {
+    if (!isFirebaseConfigured || !db) return;
+
+    try {
+        const progressRef = doc(db, 'users', userId, 'progress', 'story');
+
+        await setDoc(progressRef, {
+            [chapterId]: {
+                completedStages,
+                unlockedStages,
+                updatedAt: serverTimestamp()
+            }
+        }, { merge: true });
+
+        console.log(`✅ Story progress saved for ${chapterId}`);
+    } catch (error) {
+        console.error('❌ Failed to save story progress:', error);
+    }
+}
+
+/**
+ * 스토리 진행도 로드 (DB)
+ */
+export async function loadStoryProgressFromDB(userId: string): Promise<Record<string, { completedStages: string[], unlockedStages: string[] }> | null> {
+    if (!isFirebaseConfigured || !db) return null;
+
+    try {
+        const progressRef = doc(db, 'users', userId, 'progress', 'story');
+        const snapshot = await getDoc(progressRef);
+
+        if (snapshot.exists()) {
+            return snapshot.data() as Record<string, { completedStages: string[], unlockedStages: string[] }>;
+        }
+        return null;
+    } catch (error) {
+        console.error('❌ Failed to load story progress:', error);
+        return null;
+    }
+}
