@@ -175,7 +175,57 @@ async function generateBasicCards(userId: string, acquiredAt: Date): Promise<Inv
         faction: 'gemini'
     };
 
-    basicCards.push(commonCard, commonCard2, rareCard);
+    // Epic Reward
+    const epicCard: InventoryCard = {
+        id: generateId(),
+        instanceId: generateId(),
+        templateId: 'starter-epic-1',
+        name: 'Gemini Expert',
+        ownerId: userId,
+        level: 1,
+        experience: 0,
+        stats: {
+            creativity: 30,
+            accuracy: 30,
+            speed: 30,
+            stability: 20,
+            ethics: 20,
+            totalPower: 130
+        },
+        rarity: 'epic',
+        type: 'CREATIVITY',
+        imageUrl: geminiTemplate.imageUrl,
+        acquiredAt,
+        isLocked: false,
+        faction: 'gemini'
+    };
+
+    // Legendary Reward
+    const legendaryCard: InventoryCard = {
+        id: generateId(),
+        instanceId: generateId(),
+        templateId: 'starter-legend-1',
+        name: 'Gemini Master',
+        ownerId: userId,
+        level: 1,
+        experience: 0,
+        stats: {
+            creativity: 50,
+            accuracy: 50,
+            speed: 50,
+            stability: 40,
+            ethics: 40,
+            totalPower: 230
+        },
+        rarity: 'legendary',
+        type: 'FUNCTION',
+        imageUrl: geminiTemplate.imageUrl,
+        acquiredAt,
+        isLocked: false,
+        faction: 'gemini'
+    };
+
+    basicCards.push(commonCard, commonCard2, rareCard, epicCard, legendaryCard);
     return basicCards;
 }
 

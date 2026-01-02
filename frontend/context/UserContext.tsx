@@ -477,6 +477,30 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
     const hideStarterPack = () => setStarterPackAvailable(false);
 
+    // [CRITICAL] Force Clean Local Storage on Login to prevent "Zombie Data"
+    useEffect(() => {
+        if (user) {
+            // 로그인 감지 시, 이전 세션의 잔재가 남지 않도록 로컬 스토리지 클린업
+            // 단, 매번 렌더링마다 지우면 안되므로, uid가 변경되었을 때만 수행하는 로직이 필요.
+            // game-storage.ts의 clearAllSessionData는 상당히 강력하므로, 
+            // 여기서는 'ghost' 데이터를 방지하기 위해 특정 플래그를 확인하거나
+            // 단순히 현재 uid와 로컬스토리지의 uid가 다르면 지우는 로직이 game-storage 내부 또는 여기서 필요함.
+            // gameStorage 내부에서 이미 prevUid 체크를 하므로, 여기서는 명시적으로 호출해주거나
+            // gameStorage가 이를 수행하도록 보장해야 함.
+
+            // 더 강력한 방법: "방금 로그인했다"는 사실을 인지하고 초기화.
+            const lastUid = localStorage.getItem('last_known_uid');
+            if (lastUid && lastUid !== user.uid) {
+                console.log(`[UserContext] Detected User Change (${lastUid} -> ${user.uid}). Nuking LocalStorage.`);
+                gameStorage.clearAllSessionData();
+                localStorage.setItem('last_known_uid', user.uid);
+            } else if (!lastUid) {
+                // 첫 로그인 상황일 수도 있음.
+                localStorage.setItem('last_known_uid', user.uid);
+            }
+        }
+    }, [user]);
+
     const claimStarterPack = async (nickname: string): Promise<InventoryCard[]> => {
         if (!mounted || !user) return [];
 
@@ -486,9 +510,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         try {
             const uid = user.uid;
 
-            // 1. 카드 리스트 생성 (기존 방식 유지)
-            // inventory-system.ts의 distributeStarterPack 로직 중 카드 생성 부분만 필요하지만,
-            // 트랜잭션 내에서 모든 처리를 하기 위해 generateCardByRarity를 사용하여 수동 생성.
+            // 1. 카드 리스트 생성 (기존 방식 유지 - 5장 명시적 생성)
             const { generateCardByRarity: gen } = await import('@/lib/card-generation-system');
             const starterCards = [
                 gen('common', uid),
@@ -502,12 +524,14 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
             starterCards[4].name = `지휘관 ${nickname}`;
             starterCards[4].description = "전장에 새롭게 합류한 지휘관의 전용 유닉입니다.";
 
-            // 2. 트랜잭션 실행 (재화 지급 + 닉네임 설정 + 카드 추가)
-            await claimStarterPackTransaction(uid, nickname, starterCards, 1000);
+            // 2. Transaction 실행 (5장 지급 + 코인/토큰 설정 + 닉네임 설정)
+            // [Fix] pass entire card objects to transaction
+            await claimStarterPackTransaction(uid, nickname, starterCards);
 
-            // 3. 로컬 데이터 즉시 갱신
+            // 3. 상태 갱신
             await refreshData();
 
+            console.log(`✅ Starter Pack (5 Cards) Claimed for ${uid}`);
             addNotification({
                 type: 'reward',
                 title: '스타터팩 지급 완료!',
