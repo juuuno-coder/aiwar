@@ -160,7 +160,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
                 console.warn(`[UserContext] Negative Balance Detected: ${profile.coins}. Auto-correcting to 0.`);
                 setCoins(0);
                 // Optionally update Firebase immediately to fix persistence
-                firebaseUpdateCoins(user.uid, 0 - profile.coins).catch(e => console.error("Failed to auto-heal negative balance:", e));
+                firebaseUpdateCoins(0 - profile.coins, user.uid).catch(e => console.error("Failed to auto-heal negative balance:", e));
             } else {
                 setCoins(profile.coins);
             }
