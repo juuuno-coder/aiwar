@@ -29,6 +29,26 @@ import {
 } from './faction-subscription';
 import { Card } from './types';
 
+/**
+ * Firestore는 undefined 값을 허용하지 않으므로 객체에서 제거하거나 null로 변환합니다.
+ */
+export function cleanDataForFirestore(data: any): any {
+    if (data === undefined) return null;
+    if (data === null || typeof data !== 'object') return data;
+    if (data instanceof Date) return data;
+
+    const cleaned: any = Array.isArray(data) ? [] : {};
+    for (const key in data) {
+        if (Object.prototype.hasOwnProperty.call(data, key)) {
+            const value = data[key];
+            if (value === undefined) continue;
+            cleaned[key] = cleanDataForFirestore(value);
+        }
+    }
+    return cleaned;
+}
+
+
 // ==================== 사용자 프로필 ====================
 
 export interface UserProfile {
@@ -87,11 +107,12 @@ export async function purchaseCardPackTransaction(
             for (const card of cards) {
                 const instanceId = `${card.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
                 const cardRef = doc(db!, 'users', userId, 'inventory', instanceId);
-                transaction.set(cardRef, {
+                const cleanedCard = cleanDataForFirestore({
                     ...card,
                     instanceId,
                     acquiredAt: serverTimestamp()
                 });
+                transaction.set(cardRef, cleanedCard);
             }
         });
         console.log(`✅ 트랜잭션 성공: ${cards.length}매 지급, -${price} ${currencyType}`);
@@ -157,11 +178,12 @@ export async function claimStarterPackTransaction(
             for (const card of cards) {
                 const instanceId = `${card.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
                 const cardRef = doc(db!, 'users', userId, 'inventory', instanceId);
-                transaction.set(cardRef, {
+                const cleanedCard = cleanDataForFirestore({
                     ...card,
                     instanceId,
                     acquiredAt: serverTimestamp()
                 });
+                transaction.set(cardRef, cleanedCard);
             }
         });
         console.log(`✅ 스타터팩 트랜잭션 성공: ${nickname}, ${cards.length}매 지급`);
@@ -351,8 +373,9 @@ export async function saveUserProfile(profile: Partial<UserProfile>, uid?: strin
         const userId = uid || await getUserId();
         const userRef = doc(db, 'users', userId, 'profile', 'data');
 
+        const cleanedProfile = cleanDataForFirestore(profile);
         await setDoc(userRef, {
-            ...profile,
+            ...cleanedProfile,
             lastLogin: serverTimestamp()
         }, { merge: true });
 
@@ -396,7 +419,8 @@ export async function loadUserProfile(uid?: string): Promise<UserProfile | null>
             lastLogin: serverTimestamp()
         };
 
-        await setDoc(userRef, defaultProfile);
+        // [Fix] merge: true를 사용하여 초기화 시 기존 필드(예: 수령 플래그) 유실 방지
+        await setDoc(userRef, defaultProfile, { merge: true });
         if (process.env.NODE_ENV === 'development') {
             console.log('✅ 기본 프로필 생성:', defaultProfile);
         }

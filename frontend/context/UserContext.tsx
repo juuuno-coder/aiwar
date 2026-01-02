@@ -581,12 +581,20 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
             return starterCards as InventoryCard[];
 
-        } catch (error) {
-            console.error("Failed to claim starter pack:", error);
+        } catch (error: any) {
+            console.error("❌ Failed to claim starter pack - DETAILED ERROR:", error);
+
+            let message = '스타터팩 지급 중 서버 오류가 발생했습니다.';
+            if (error.message === 'ALREADY_CLAIMED') message = '이미 보급품을 수령하셨습니다.';
+            else if (error.message === 'Firebase NOT_CONFIGURED') message = '서버 설정이 완료되지 않았습니다.';
+
+            // Explicit alert for the user since this is a critical action
+            window.alert(`[보급 오류] ${message}\n(에러 상세: ${error.message || 'Unknown'})`);
+
             addNotification({
                 type: 'error',
                 title: '오류 발생',
-                message: '스타터팩 지급 중 문제가 발생했습니다. 관리자에게 문의해주세요.',
+                message: message,
                 icon: '⚠️'
             });
             return [];
