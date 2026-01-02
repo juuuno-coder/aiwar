@@ -341,7 +341,11 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
                 const isTutorialCompleted = localStorage.getItem(`tutorial_completed_${user.uid}`);
                 if (isTutorialCompleted && !isClaimingInSession && formattedInv.length === 0 && !profile.hasReceivedStarterPack) {
                     // DB에는 starterPack 수령 기록이 없는데, 인벤토리도 비어있고 튜토리얼은 깼다? -> 구조 요청
+                    console.log("[UserContext] Rescue Mode: Starter Pack Available.");
                     setStarterPackAvailable(true);
+                } else if (profile.hasReceivedStarterPack || formattedInv.length > 0) {
+                    // 수령했거나 인벤토리가 있으면 숨김
+                    setStarterPackAvailable(false);
                 }
 
                 // Clear Error if successful
@@ -608,7 +612,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
                 level, // Explicitly pass state
                 experience, // Explicitly pass state
                 user,
-                profile: profile ? { ...profile, coins, tokens } : null,
+                profile: profile, // [Fix] Use pure DB profile to prevent ghost data (600 coins)
                 inventory,
                 loading,
                 refreshData,

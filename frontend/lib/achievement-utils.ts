@@ -98,8 +98,12 @@ export function claimAchievementReward(achievementId: string): boolean {
     if (!achievement || !achievement.completed || achievement.claimed) return false;
 
     if (achievement.reward.coins) {
-        const currentCoins = storage.get<number>('userCoins', 1000);
-        storage.set('userCoins', currentCoins + achievement.reward.coins);
+        // [Fix] Directly use gameStorage to ensure consistency across account switches
+        (async () => {
+            const { gameStorage } = await import('./game-storage');
+            await gameStorage.addCoins(achievement.reward.coins!);
+            console.log(`[Achievement] Reward claimed: ${achievement.reward.coins} coins.`);
+        })();
     }
 
     data.achievements = data.achievements.map(a =>

@@ -314,11 +314,13 @@ export function saveGameState(state: GameState, userId?: string): void {
     const key = getGameStateKey(userId || state.userId);
     localStorage.setItem(key, JSON.stringify(state));
 
-    // 하위 호환성을 위해 레거시 키에도 저장 (유저가 지정되지 않았거나 게스트인 경우만)
+    // 레거시 키 쓰기 중단 (데이터 유령 현상 방지)
+    /*
     if (key === 'game-state') {
         localStorage.setItem('userCoins', JSON.stringify(state.tokens));
         localStorage.setItem('userCards', JSON.stringify(state.inventory));
     }
+    */
 
     // 이 함수에서는 이벤트를 발생시키지 않음 (순환 호출 방지 및 세부 제어)
 }

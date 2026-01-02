@@ -415,6 +415,15 @@ export async function distributeStarterPack(uid?: string, nickname?: string): Pr
         // 인벤토리에 추가
         await addCardsToInventory(starterPack, uid);
 
+        // [NEW] Award 1000 Coins via Unified Storage
+        try {
+            const { gameStorage } = await import('./game-storage');
+            await gameStorage.addCoins(1000, uid);
+            console.log('✅ 스타터팩 코인 지급 완료: 1000 Coins');
+        } catch (coinError) {
+            console.error('❌ 스타터팩 코인 지급 실패:', coinError);
+        }
+
         // InventoryCard 형태로 반환 (UI 표시용)
         const inventoryCards = starterPack.map(card => ({
             ...card,
@@ -422,8 +431,7 @@ export async function distributeStarterPack(uid?: string, nickname?: string): Pr
             acquiredAt: new Date()
         } as InventoryCard));
 
-
-        console.log('✅ 스타터팩 지급 완료 (5장, 포함: Commander Card)');
+        console.log('✅ 스타터팩 지급 완료 (5장, 1000코인, 포함: Commander Card)');
         return inventoryCards;
     } catch (error) {
         console.error('❌ 스타터팩 지급 실패:', error);

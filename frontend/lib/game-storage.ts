@@ -198,17 +198,32 @@ class UnifiedStorage {
             // 1. 게스트/기본 데이터 삭제
             this.clearState();
 
-            // 2. 모든 localStorage 키를 순회하며 게임 관련 데이터 삭제 (와일드카드 처리)
+            // 2. 명시적인 레거시 키 삭제 (안전장치)
+            const legacyKeys = [
+                'game-state',
+                'game-state-v1',
+                'userCoins',
+                'userCards',
+                'user-inventory',
+                'user_achievements',
+                'userAchievements',
+                'last_known_uid',
+                'tutorial_completed'
+            ];
+            legacyKeys.forEach(k => localStorage.removeItem(k));
+
+            // 3. 모든 localStorage 키를 순회하며 접두사 기반 삭제 (와일드카드)
             const keysToRemove: string[] = [];
             for (let i = 0; i < localStorage.length; i++) {
                 const key = localStorage.key(i);
                 if (key && (
                     key.startsWith('game-state') ||
-                    key.startsWith('gameState_') || // [Fix] gameState_guest 등 포함
+                    key.startsWith('gameState_') ||
                     key.startsWith('inventory_') ||
                     key.startsWith('userCoins') ||
                     key.startsWith('userCards') ||
                     key.startsWith('tutorial_') ||
+                    key.startsWith('story_') ||
                     key.startsWith('generation_slots')
                 )) {
                     keysToRemove.push(key);
@@ -217,7 +232,7 @@ class UnifiedStorage {
 
             keysToRemove.forEach(key => localStorage.removeItem(key));
 
-            console.log(`[GameStorage] All session data cleared (${keysToRemove.length} keys)`);
+            console.log(`[SafetySystem] GameStorage: Purged ${keysToRemove.length + legacyKeys.length} storage keys.`);
         } catch (error) {
             console.error('Failed to clear ALL session data:', error);
         }
