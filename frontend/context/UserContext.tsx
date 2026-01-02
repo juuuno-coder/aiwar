@@ -82,7 +82,8 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         setCoins(0);
         setTokens(0);
         setLevel(1);
-        // ... (keep existing)
+        setExperience(0);
+        setInventory([]);
         setIsClaimingInSession(false);
         setError(null); // Clear error on reset
     }, []);
@@ -90,35 +91,6 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
     // ... useEffects ...
 
-    // Render Error Screen if Critical Error exists
-    if (error) {
-        return (
-            <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-black/95 text-white font-mono p-4 text-center">
-                <div className="text-red-500 text-6xl mb-4">⚠️</div>
-                <h1 className="text-3xl font-black mb-4">SYSTEM CRITICAL FAILURE</h1>
-                <p className="text-red-400 mb-8">{error}</p>
-                <div className="flex gap-4">
-                    <button
-                        onClick={() => window.location.reload()}
-                        className="px-6 py-2 bg-red-600 hover:bg-red-700 rounded font-bold"
-                    >
-                        SYSTEM REBOOT (RELOAD)
-                    </button>
-                    <button
-                        onClick={() => {
-                            import('@/lib/firebase-auth').then(({ signOutUser }) => signOutUser());
-                            resetState();
-                            window.location.reload();
-                        }}
-                        className="px-6 py-2 border border-white/20 hover:bg-white/10 rounded"
-                    >
-                        FORCE LOGOUT
-                    </button>
-                </div>
-                <p className="mt-8 text-xs text-gray-500">Error Code: DB_SYNC_STRICT_ENFORCEMENT</p>
-            </div>
-        );
-    }
 
 
 
@@ -603,6 +575,36 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
             return [];
         }
     };
+
+    // Render Error Screen if Critical Error exists
+    if (error) {
+        return (
+            <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-black/95 text-white font-mono p-4 text-center">
+                <div className="text-red-500 text-6xl mb-4">⚠️</div>
+                <h1 className="text-3xl font-black mb-4">SYSTEM CRITICAL FAILURE</h1>
+                <p className="text-red-400 mb-8">{error}</p>
+                <div className="flex gap-4">
+                    <button
+                        onClick={() => window.location.reload()}
+                        className="px-6 py-2 bg-red-600 hover:bg-red-700 rounded font-bold"
+                    >
+                        SYSTEM REBOOT (RELOAD)
+                    </button>
+                    <button
+                        onClick={() => {
+                            import('@/lib/firebase-auth').then(({ signOutUser }) => signOutUser());
+                            resetState();
+                            window.location.reload();
+                        }}
+                        className="px-6 py-2 border border-white/20 hover:bg-white/10 rounded"
+                    >
+                        FORCE LOGOUT
+                    </button>
+                </div>
+                <p className="mt-8 text-xs text-gray-500">Error Code: DB_SYNC_STRICT_ENFORCEMENT</p>
+            </div>
+        );
+    }
 
     return (
         <UserContext.Provider
