@@ -558,11 +558,15 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
             await reloadProfile(); // 프로필(코인, 플래그) 갱신
             await refreshData(); // 인벤토리 갱신
 
-            // 인벤토리가 비어있다면, 방금 생성한 카드라도 로컬 상태에 주입하여 UI 반영 (Fallback)
-            if (inventory.length === 0) {
+            // 인벤토리가 여전히 비어있다면, 로우 레벨 API로 직접 확인
+            const invCheck = await loadInventory(uid);
+            if (invCheck.length > 0) {
+                setInventory(invCheck as InventoryCard[]);
+            } else if (starterCards.length > 0) {
+                // 정말로 DB 반영이 느리다면 로컬 상태에 주입하여 UI라도 먼저 보여줌
                 const claimedInventory = starterCards.map(c => ({
                     ...c,
-                    acquiredAt: new Date() // 로컬 표시용 타임스탬프
+                    acquiredAt: new Date()
                 })) as InventoryCard[];
                 setInventory(claimedInventory);
             }

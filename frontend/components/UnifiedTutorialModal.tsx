@@ -144,24 +144,16 @@ export default function UnifiedTutorialModal() {
             const cards = await claimStarterPack('신입 지휘관');
 
             if (cards && cards.length > 0) {
+                console.log("✅ Starter Pack claimed successfully via Tutorial");
                 setClaimedCards(cards);
                 setShowRewardModal(true);
-                setIsVisible(false); // Hide Tutorial Modal temporarily
-            } else {
-                // If already claimed, show a "Visual Only" re-play or just a message.
-                // The user complained about missing effect, so let's show the effect with "Default" cards to simulate it,
-                // or show a toast. But the user wants the "Effect".
-                // Let's create a dummy set for visual satisfaction if it returns empty (assuming already claimed).
-                const DEMO_CARDS: Card[] = [
-                    { id: 'demo-1', templateId: 'demo-t1', name: 'Code Red', rarity: 'rare', type: 'EFFICIENCY', description: 'Starter Unit', stats: { totalPower: 40, efficiency: 40, creativity: 0, function: 0 }, ownerId: 'demo', level: 1, experience: 0, acquiredAt: new Date(), isLocked: false },
-                    { id: 'demo-2', templateId: 'demo-t2', name: 'Analysis Bot', rarity: 'common', type: 'FUNCTION', description: 'Starter Unit', stats: { totalPower: 30, efficiency: 0, creativity: 0, function: 30 }, ownerId: 'demo', level: 1, experience: 0, acquiredAt: new Date(), isLocked: false },
-                    { id: 'demo-3', templateId: 'demo-t3', name: 'Firewall', rarity: 'common', type: 'EFFICIENCY', description: 'Defense Unit', stats: { totalPower: 35, efficiency: 35, creativity: 0, function: 0 }, ownerId: 'demo', level: 1, experience: 0, acquiredAt: new Date(), isLocked: false },
-                    { id: 'demo-4', templateId: 'demo-t4', name: 'Data Miner', rarity: 'epic', type: 'CREATIVITY', description: 'Resource Unit', stats: { totalPower: 55, efficiency: 0, creativity: 55, function: 0 }, ownerId: 'demo', level: 1, experience: 0, acquiredAt: new Date(), isLocked: false },
-                    { id: 'demo-5', templateId: 'demo-t5', name: 'System Admin', rarity: 'legendary', type: 'FUNCTION', description: 'Master Unit', stats: { totalPower: 85, efficiency: 0, creativity: 0, function: 85 }, ownerId: 'demo', level: 1, experience: 0, acquiredAt: new Date(), isLocked: false },
-                ];
-                setClaimedCards(DEMO_CARDS);
-                setShowRewardModal(true);
                 setIsVisible(false);
+            } else {
+                // [Logic] claimStarterPack returns [] if already claimed with content,
+                // or if it failed. But now it rescues broken users.
+                // So [] means "Actually already claimed and has content".
+                console.log("ℹ️ Starter Pack already claimed or rescue not needed.");
+                completeTutorial();
             }
         } catch (e) {
             console.error("Reward Claim Error", e);

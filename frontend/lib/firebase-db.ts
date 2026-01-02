@@ -121,7 +121,15 @@ export async function claimStarterPackTransaction(
             const userData = exists ? userDoc.data() as UserProfile : null;
 
             if (userData?.hasReceivedStarterPack) {
-                throw new Error('ALREADY_CLAIMED');
+                // [Rescue Mode] 만약 코인이 0이고 레벨이 1이라면, 수령 플래그가 있어도 
+                // 실제로 지급이 누락된 것으로 간주하고 재수령을 허용합니다.
+                const isBrokenState = (userData.coins || 0) === 0 && (userData.level || 1) <= 1;
+
+                if (!isBrokenState) {
+                    console.warn(`[Transaction] User ${userId} already claimed starter pack.`);
+                    throw new Error('ALREADY_CLAIMED');
+                }
+                console.log(`[Rescue] User ${userId} is in broken state. Allowing starter pack re-claim.`);
             }
 
             // 1. 프로필 업데이트 (코인 증액 + 닉네임 + 플래그)
