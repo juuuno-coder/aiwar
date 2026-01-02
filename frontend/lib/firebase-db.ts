@@ -398,6 +398,40 @@ export async function saveUserProfile(profile: Partial<UserProfile>, uid?: strin
 }
 
 /**
+ * [DEBUG] 유저 데이터 초기화 (Reset to Zero)
+ * 인벤토리 삭제 및 프로필 0 초기화
+ */
+export async function resetUserData(userId: string): Promise<void> {
+    if (!isFirebaseConfigured || !db) throw new Error('Firebase NOT_CONFIGURED');
+
+    const batch = writeBatch(db);
+
+    // 1. 프로필 초기화
+    const userRef = doc(db, 'users', userId, 'profile', 'data');
+    batch.set(userRef, {
+        coins: 0,
+        tokens: 0,
+        level: 1,
+        exp: 0,
+        hasReceivedStarterPack: false,
+        createdAt: serverTimestamp(),
+        lastLogin: serverTimestamp(),
+        nickname: "초기화된 지휘관"
+    }, { merge: true });
+
+    // 2. 인벤토리 삭제 (최대 500개 - MVP)
+    const inventoryRef = collection(db, 'users', userId, 'inventory');
+    const snapshot = await getDocs(inventoryRef);
+    snapshot.docs.forEach((doc) => {
+        batch.delete(doc.ref);
+    });
+
+    // 3. 커밋
+    await batch.commit();
+    console.log(`[DEBUG] User ${userId} has been reset to ZERO.`);
+}
+
+/**
  * 사용자 프로필 로드
  */
 export async function loadUserProfile(uid?: string): Promise<UserProfile | null> {
@@ -890,19 +924,26 @@ export interface SupportTicket {
 /**
  * 티켓 생성 (오류 제보 / 아이디어)
  */
-export async function createTicket(data: { type: 'error' | 'idea', title: string, description: string, userNickname: string }): Promise<string> {
+export async function createSupportTicket(data: { title: string, description: string, type: 'error' | 'idea' }): Promise<string> {
     if (!isFirebaseConfigured || !db) {
-        console.warn('Firebase가 설정되지 않았습니다.');
-        return 'local-id-' + Date.now();
+        throw new Error('Firebase not configured');
     }
 
     try {
         const userId = await getUserId();
+        // Try to get nickname if available, otherwise just use userId or Guest
+        let nickname = 'Guest';
+        if (userId) {
+            const userProfile = await loadUserProfile(userId);
+            if (userProfile?.nickname) nickname = userProfile.nickname;
+        }
+
         const ticketsRef = collection(db, 'support_tickets');
 
         const docRef = await addDoc(ticketsRef, {
             ...data,
-            userId,
+            userId: userId || 'anonymous',
+            userNickname: nickname,
             status: 'open',
             createdAt: serverTimestamp()
         });

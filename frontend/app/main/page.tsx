@@ -8,27 +8,53 @@ import TutorialOverlay from '@/components/tutorial/TutorialOverlay'; // [NEW]
 import { useGameSound } from '@/hooks/useGameSound'; // [NEW]
 import { BackgroundBeams } from "@/components/ui/aceternity/background-beams";
 import { CardBody, Card3D as CardContainer, CardItem } from "@/components/ui/aceternity/3d-card";
+import { useUser } from '@/context/UserContext';
+import CardRevealModal from '@/components/CardRevealModal';
 
 export default function MainPage() {
   const [showTutorial, setShowTutorial] = useState(false);
 
   const { playSound } = useGameSound();
+  const { user, profile, starterPackAvailable, claimStarterPack, hideStarterPack } = useUser();
+  const [showStarterPackModal, setShowStarterPackModal] = useState(false);
+  const [starterCards, setStarterCards] = useState<any[]>([]);
 
   useEffect(() => {
     // Play Main BGM
-    playSound('bgm_main', 'bgm'); // [NEW]
+    playSound('bgm_main', 'bgm');
 
-    // Check if tutorial has been seen
-    const hasSeenTutorial = localStorage.getItem('hasSeenCommandTutorial_v3'); // Version up
-    if (!hasSeenTutorial) {
-      const timer = setTimeout(() => setShowTutorial(true), 1000);
-      return () => clearTimeout(timer);
+    // Check if tutorial has been seen (User Specific)
+    if (user?.uid) {
+      const tutorialKey = `hasSeenCommandTutorial_v3_${user.uid}`;
+      const hasSeenTutorial = localStorage.getItem(tutorialKey);
+
+      if (!hasSeenTutorial) {
+        const timer = setTimeout(() => setShowTutorial(true), 1000);
+        return () => clearTimeout(timer);
+      }
     }
-  }, [playSound]);
+  }, [playSound, user?.uid]);
+
+  // Starter Pack Check
+  useEffect(() => {
+    if (starterPackAvailable && !showTutorial) {
+      // 튜토리얼이 닫혀있고, 스타터팩을 아직 안 받았다면
+      setShowStarterPackModal(true);
+    }
+  }, [starterPackAvailable, showTutorial]);
+
+  const handleClaimStarterPack = async () => {
+    if (!profile?.nickname) return;
+    const cards = await claimStarterPack(profile.nickname);
+    setStarterCards(cards);
+    // 모달은 CardRevealModal 내부에서 보여줌
+  };
 
   const handleTutorialClose = () => {
     setShowTutorial(false);
-    localStorage.setItem('hasSeenCommandTutorial_v3', 'true');
+    if (user?.uid) {
+      localStorage.setItem(`hasSeenCommandTutorial_v3_${user.uid}`, 'true');
+    }
   };
 
   const menuItems = [
@@ -165,6 +191,41 @@ export default function MainPage() {
       */}
 
       <TutorialOverlay isOpen={showTutorial} onClose={handleTutorialClose} />
+
+      {/* Starter Pack Modal - using CardRevealModal for the reveal effect */}
+      {/* First, show a prompt, then on click, trigger claim and show reveal */}
+      {showStarterPackModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
+          <div className="bg-slate-900 border border-cyan-500/50 p-8 rounded-2xl max-w-md text-center shadow-[0_0_50px_rgba(6,182,212,0.2)]">
+            <div className="text-6xl mb-4">🎁</div>
+            <h2 className="text-2xl font-black text-white orbitron mb-2">WELCOME COMMANDER</h2>
+            <p className="text-gray-400 mb-6">
+              신규 지휘관을 위한 특별 보급품이 도착했습니다.<br />
+              지금 바로 수령하여 군단을 지휘하세요.
+            </p>
+            <button
+              onClick={handleClaimStarterPack}
+              className="w-full py-4 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold rounded-xl transition-all shadow-lg hover:shadow-cyan-500/25"
+            >
+              보급품 수령하기
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Actual Reveal Modal */}
+      <CardRevealModal
+        isOpen={starterCards.length > 0}
+        card={starterCards[4]} // Show the Unique Commander Card as the highlight
+        onClose={() => {
+          setStarterCards([]);
+          setShowStarterPackModal(false);
+          hideStarterPack(); // Update context state
+        }}
+        onAddToInventory={() => {
+          // Already added by claimStarterPack logic, just close UI
+        }}
+      />
     </CyberPageLayout>
   );
 }

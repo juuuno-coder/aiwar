@@ -79,25 +79,24 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
     // [Safety] Reset state to prevent data bleed from previous sessions/users
     const resetState = useCallback(() => {
+        console.log("🧹 [UserContext] Resetting State to Defaults");
         setCoins(0);
         setTokens(0);
         setLevel(1);
         setExperience(0);
         setInventory([]);
+        setSubscriptions([]);
         setIsClaimingInSession(false);
-        setError(null); // Clear error on reset
+        setStarterPackAvailable(false);
+        setError(null);
     }, []);
 
-
     // ... useEffects ...
-
-
-
 
     // Initial mount check
     useEffect(() => {
         setMounted(true);
-        console.log('✅ UserProvider Mounted - Version: 2026-01-02-HOTFIX-PERSISTENCE');
+        console.log('✅ UserProvider Mounted - Version: 2026-01-03-ISOLATION-FIX');
     }, []);
 
     const prevUserRef = React.useRef<string | null>(null);
@@ -135,14 +134,6 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
                 try {
                     console.log(`[Auth] User logged in: ${user.uid}. Starting migration check...`);
 
-                    // 순차적으로 마이그레이션 진행
-                    // [Disable Migration] User requested strict DB-only data. No merging from local guest data.
-                    // migrateLegacyGameState(user.uid);
-                    // migrateLegacySlots(user.uid);
-                    // await migrateLegacySubscriptions(user.uid);
-
-                    console.log(`[Auth] Migration check completed for ${user.uid}`);
-
                     // 마이그레이션 후 Firebase 동기화
                     await syncSubscriptionsWithFirebase(user.uid);
 
@@ -154,13 +145,12 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
             };
 
             runMigration();
-        } else if (!loading && !user) {
+        } else if (!user) {
             // User logged out or no user: Clear state immediately
             resetState();
+            setLoading(false);
         }
-
-        // Data will be reloaded by the profile sync or refreshData effect
-    }, [mounted, user, resetState, loading]);
+    }, [mounted, user, resetState]); // Removed loading from deps to avoid loop
 
     // Sync state from Firebase profile
     useEffect(() => {
@@ -335,33 +325,14 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
             }
 
         } else {
-            setLoading(true);
-            try {
-                const state = await gameStorage.loadGameState(user?.uid);
-                setCoins(state.coins || 0);
-                setTokens(state.tokens || 0);
-                setLevel(state.level || 1);
-                setLevel(state.level || 1);
-                setExperience(state.experience || 0);
-                const inv = await loadInventory(user?.uid);
-                const formattedInv = inv.map(c => ({
-                    ...c,
-                    acquiredAt: (c.acquiredAt && 'toDate' in c.acquiredAt) ? (c.acquiredAt as any).toDate() : new Date(c.acquiredAt as any)
-                })) as InventoryCard[];
-                setInventory(formattedInv);
-
-                // Starter Pack Check
-                const hasReceived = !!(state as any).hasReceivedStarterPack;
-                if ((!formattedInv || formattedInv.length === 0) && !hasReceived) {
-                    setStarterPackAvailable(true);
-                }
-            } catch (err) {
-                console.error("Failed to load state:", err);
-            } finally {
-                setLoading(false);
-            }
+            // [Strict Auth Mode] Do NOT load guest state.
+            // If user is null, we should simply reset state and wait for auth.
+            // Loading guest state here causes "Zombie Data" bleeding when switching accounts.
+            console.log("[UserContext] No User/Profile -> Resetting State (Strict Mode)");
+            setLoading(false);
+            resetState();
         }
-    }, [mounted, profile, reloadProfile, user?.uid, isClaimingInSession]);
+    }, [mounted, profile, reloadProfile, user?.uid, isClaimingInSession, resetState]);
 
     // Initial load for non-logged-in users or when profile load completes as null
     useEffect(() => {

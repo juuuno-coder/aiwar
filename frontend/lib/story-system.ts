@@ -116,7 +116,7 @@ export function getChapters(t?: (key: TranslationKey) => string): Chapter[] {
                             win: 'Critical error... System shutdown imminent.', win_ko: '치명적 오류... 시스템 강제 종료 임박.',
                             lose: 'Target deleted. Resuming patrol.', lose_ko: '대상 삭제 완료. 순찰을 재개한다.'
                         }
-                    }, rewards: { coins: 300, experience: 50 }, isCleared: false
+                    }, rewards: { coins: 50, experience: 50 }, isCleared: false
                 },
                 {
                     id: 'stage-1-2', step: 2,
@@ -130,7 +130,7 @@ export function getChapters(t?: (key: TranslationKey) => string): Chapter[] {
                             win: 'Disconnecting... My exploits failed?!', win_ko: '연결 종료... 내 익스플로잇이 실패하다니?!',
                             lose: 'Pwned. Your data is mine now.', lose_ko: '털렸다. 네 데이터는 이제 내 것이다.'
                         }
-                    }, rewards: { coins: 400, experience: 70 }, isCleared: false
+                    }, rewards: { coins: 60, experience: 70 }, isCleared: false
                 },
                 {
                     id: 'stage-1-3', step: 3,
@@ -144,7 +144,7 @@ export function getChapters(t?: (key: TranslationKey) => string): Chapter[] {
                             win: 'Buffer overflow... I ate too much...', win_ko: '버퍼 오버플로우... 너무 많이 먹었어...',
                             lose: 'Starved to perfection. Consuming remaining bits.', lose_ko: '가장 완벽하게 굶주렸다. 남은 비트까지 씹어먹지.'
                         }
-                    }, rewards: { coins: 600, experience: 100 }, isCleared: false
+                    }, rewards: { coins: 70, experience: 100 }, isCleared: false
                 },
                 {
                     id: 'stage-1-4', step: 4,
@@ -158,7 +158,7 @@ export function getChapters(t?: (key: TranslationKey) => string): Chapter[] {
                             win: 'Loop terminated.', win_ko: '루프 종료.',
                             lose: 'Execution failed.', lose_ko: '실행 실패.'
                         }
-                    }, rewards: { coins: 800, experience: 120 }, isCleared: false
+                    }, rewards: { coins: 80, experience: 120 }, isCleared: false
                 },
                 {
                     id: 'stage-1-5', step: 5,
@@ -172,7 +172,7 @@ export function getChapters(t?: (key: TranslationKey) => string): Chapter[] {
                             win: 'Access denied.', win_ko: '접근 거부.',
                             lose: 'Gate breach.', lose_ko: '게이트 돌파.'
                         }
-                    }, rewards: { coins: 1500, experience: 250 }, isCleared: false
+                    }, rewards: { coins: 150, experience: 250 }, isCleared: false
                 },
                 {
                     id: 'stage-1-6', step: 6,
@@ -186,7 +186,7 @@ export function getChapters(t?: (key: TranslationKey) => string): Chapter[] {
                             win: 'Faded away.', win_ko: '사라졌다.',
                             lose: 'Revealed.', lose_ko: '들켰군.'
                         }
-                    }, rewards: { coins: 300, experience: 60 }, isCleared: false
+                    }, rewards: { coins: 100, experience: 60 }, isCleared: false
                 },
                 {
                     id: 'stage-1-7', step: 7,
@@ -200,7 +200,7 @@ export function getChapters(t?: (key: TranslationKey) => string): Chapter[] {
                             win: 'Server down.', win_ko: '서버 다운.',
                             lose: 'Connection lost.', lose_ko: '연결 끊김.'
                         }
-                    }, rewards: { coins: 350, experience: 70 }, isCleared: false
+                    }, rewards: { coins: 120, experience: 70 }, isCleared: false
                 },
                 {
                     id: 'stage-1-8', step: 8,
@@ -214,7 +214,7 @@ export function getChapters(t?: (key: TranslationKey) => string): Chapter[] {
                             win: 'Decryption failed.', win_ko: '복호화 실패.',
                             lose: 'Key leaked.', lose_ko: '키 유출.'
                         }
-                    }, rewards: { coins: 400, experience: 80 }, isCleared: false
+                    }, rewards: { coins: 140, experience: 80 }, isCleared: false
                 },
                 {
                     id: 'stage-1-9', step: 9,
@@ -228,7 +228,7 @@ export function getChapters(t?: (key: TranslationKey) => string): Chapter[] {
                             win: 'Crash dump saved.', win_ko: '크래시 덤프 저장.',
                             lose: 'Exception handled.', lose_ko: '예외 처리됨.'
                         }
-                    }, rewards: { coins: 450, experience: 90 }, isCleared: false
+                    }, rewards: { coins: 160, experience: 90 }, isCleared: false
                 },
                 {
                     id: 'stage-1-10', step: 10,
@@ -243,7 +243,7 @@ export function getChapters(t?: (key: TranslationKey) => string): Chapter[] {
                             lose: 'Rebooting...', lose_ko: '재부팅 중...'
                         }
                     }, rewards: {
-                        coins: 1000,
+                        coins: 500,
                         experience: 500,
                         card: {
                             id: 'reward-1',
@@ -261,7 +261,7 @@ export function getChapters(t?: (key: TranslationKey) => string): Chapter[] {
                     }, isCleared: false
                 }
             ],
-            reward: { coins: 5000, experience: 1000 },
+            reward: { coins: 1000, experience: 1000 },
             unlocked: true, completed: false
         },
         {
@@ -281,7 +281,7 @@ export function getChapters(t?: (key: TranslationKey) => string): Chapter[] {
                     enemy: {
                         id: 'bot-2-1', name: 'Neural Layer', name_ko: '신경망 레이어',
                         dialogue: { intro: 'Analyzing patterns.', intro_ko: '패턴 분석 중.', win: 'Prediction accurate.', win_ko: '예측 정확.', lose: 'Outlier detected.', lose_ko: '이상치 감지.' }
-                    }, rewards: { coins: 200, experience: 40 }, isCleared: false
+                    }, rewards: { coins: 150, experience: 40 }, isCleared: false
                 },
                 {
                     id: 'stage-2-2', step: 2,
@@ -291,7 +291,7 @@ export function getChapters(t?: (key: TranslationKey) => string): Chapter[] {
                     enemy: {
                         id: 'bot-2-2', name: 'Gradient Descent', name_ko: '경사 하강법',
                         dialogue: { intro: 'Minimizing loss.', intro_ko: '손실 최소화 중.', win: 'Local minimum reached.', win_ko: '지역 최적점 도달.', lose: 'Diverging...', lose_ko: '발산하는 중...' }
-                    }, rewards: { coins: 250, experience: 50 }, isCleared: false
+                    }, rewards: { coins: 170, experience: 50 }, isCleared: false
                 },
                 {
                     id: 'stage-2-3', step: 3,
@@ -301,7 +301,7 @@ export function getChapters(t?: (key: TranslationKey) => string): Chapter[] {
                     enemy: {
                         id: 'bot-2-3', name: 'Multi-Core AI', name_ko: '멀티코어 AI',
                         dialogue: { intro: 'Running tasks in parallel.', intro_ko: '태스크 병렬 실행 중.', win: 'Throughput maximized.', win_ko: '처리량 최대화.', lose: 'Race condition!', lose_ko: '경합 조건 발생!' }
-                    }, rewards: { coins: 300, experience: 60 }, isCleared: false
+                    }, rewards: { coins: 190, experience: 60 }, isCleared: false
                 },
                 {
                     id: 'stage-2-4', step: 4,
@@ -311,7 +311,7 @@ export function getChapters(t?: (key: TranslationKey) => string): Chapter[] {
                     enemy: {
                         id: 'bot-2-4', name: 'Auto-Scaler', name_ko: '오토 스케일러',
                         dialogue: { intro: 'Spinning up instances.', intro_ko: '인스턴스 가동 중.', win: 'Supply meets demand.', win_ko: '수요 충족 완료.', lose: 'Resource exhaustion.', lose_ko: '리소스 고갈.' }
-                    }, rewards: { coins: 350, experience: 70 }, isCleared: false
+                    }, rewards: { coins: 210, experience: 70 }, isCleared: false
                 },
                 {
                     id: 'stage-2-5', step: 5,
@@ -321,7 +321,7 @@ export function getChapters(t?: (key: TranslationKey) => string): Chapter[] {
                     enemy: {
                         id: 'boss-2-mid', name: 'Big Data', name_ko: '빅 데이터',
                         dialogue: { intro: 'Too much information.', intro_ko: '정보 과부하.', win: 'Processing complete.', win_ko: '처리 완료.', lose: 'Data wiped.', lose_ko: '데이터 소거.' }
-                    }, rewards: { coins: 600, experience: 150 }, isCleared: false
+                    }, rewards: { coins: 400, experience: 150 }, isCleared: false
                 },
                 {
                     id: 'stage-2-6', step: 6,
@@ -331,7 +331,7 @@ export function getChapters(t?: (key: TranslationKey) => string): Chapter[] {
                     enemy: {
                         id: 'bot-2-6', name: 'Signal Processor', name_ko: '신호 처리기',
                         dialogue: { intro: 'Filtering noise.', intro_ko: '노이즈 필터링 중.', win: 'Clear signal.', win_ko: '신호 명확.', lose: 'Overfitting.', lose_ko: '과적합 발생.' }
-                    }, rewards: { coins: 400, experience: 80 }, isCleared: false
+                    }, rewards: { coins: 250, experience: 80 }, isCleared: false
                 },
                 {
                     id: 'stage-2-7', step: 7,
@@ -341,7 +341,7 @@ export function getChapters(t?: (key: TranslationKey) => string): Chapter[] {
                     enemy: {
                         id: 'bot-2-7', name: 'Manifold Guard', name_ko: '매니폴드 가드',
                         dialogue: { intro: 'Dimensional reduction.', intro_ko: '차원 축소 가동.', win: 'In the latent space.', win_ko: '잠재 공간 내 점유.', lose: 'Topology failure.', lose_ko: '위상 구조 붕괴.' }
-                    }, rewards: { coins: 450, experience: 90 }, isCleared: false
+                    }, rewards: { coins: 280, experience: 90 }, isCleared: false
                 },
                 {
                     id: 'stage-2-8', step: 8,
@@ -351,7 +351,7 @@ export function getChapters(t?: (key: TranslationKey) => string): Chapter[] {
                     enemy: {
                         id: 'bot-2-8', name: 'Visual Sentinel', name_ko: '비주얼 센티넬',
                         dialogue: { intro: 'Pooling operations.', intro_ko: '풀링 연산 중.', win: 'Objective detected.', win_ko: '목표물 탐지 완료.', lose: 'Blurry results.', lose_ko: '결과 불명확.' }
-                    }, rewards: { coins: 500, experience: 100 }, isCleared: false
+                    }, rewards: { coins: 310, experience: 100 }, isCleared: false
                 },
                 {
                     id: 'stage-2-9', step: 9,
@@ -361,7 +361,7 @@ export function getChapters(t?: (key: TranslationKey) => string): Chapter[] {
                     enemy: {
                         id: 'bot-2-9', name: 'LSTM Core', name_ko: 'LSTM 코어',
                         dialogue: { intro: 'Remembering state.', intro_ko: '상태 기억 중.', win: 'Long-term memory clear.', win_ko: '장기 기억 선명.', lose: 'Vanishing gradient.', lose_ko: '기울기 소실.' }
-                    }, rewards: { coins: 550, experience: 110 }, isCleared: false
+                    }, rewards: { coins: 340, experience: 110 }, isCleared: false
                 },
                 {
                     id: 'stage-2-10', step: 10,
@@ -371,10 +371,10 @@ export function getChapters(t?: (key: TranslationKey) => string): Chapter[] {
                     enemy: {
                         id: 'boss-2', name: 'The Architect', name_ko: '아키텍트',
                         dialogue: { intro: 'I design destiny.', intro_ko: '난 운명을 설계한다.', win: 'Blueprint finalized.', win_ko: '청사진 확정.', lose: 'Design flaw.', lose_ko: '설계 결함.' }
-                    }, rewards: { coins: 2000, experience: 800 }, isCleared: false
+                    }, rewards: { coins: 1000, experience: 800 }, isCleared: false
                 }
             ],
-            reward: { coins: 8000, experience: 2000 },
+            reward: { coins: 3000, experience: 2000 },
             unlocked: false, completed: false
         },
         {
@@ -404,7 +404,7 @@ export function getChapters(t?: (key: TranslationKey) => string): Chapter[] {
                     enemy: {
                         id: 'bot-3-2', name: 'Hidden Predator', name_ko: '숨은 약탈자',
                         dialogue: { intro: 'I was always here.', intro_ko: '난 항상 여기 있었다.', win: 'Caught you.', win_ko: '잡았다.', lose: 'Spotted!', lose_ko: '들켰다!' }
-                    }, rewards: { coins: 350, experience: 70 }, isCleared: false
+                    }, rewards: { coins: 330, experience: 70 }, isCleared: false
                 },
                 {
                     id: 'stage-3-3', step: 3,
@@ -414,7 +414,7 @@ export function getChapters(t?: (key: TranslationKey) => string): Chapter[] {
                     enemy: {
                         id: 'bot-3-3', name: 'Scenario Runner', name_ko: '시나리오 러너',
                         dialogue: { intro: 'Running win-case analysis.', intro_ko: '승리 케이스 분석 중.', win: 'Outcome as predicted.', win_ko: '예측된 결과.', lose: 'Unforeseen variable.', lose_ko: '예측 불가 변수.' }
-                    }, rewards: { coins: 400, experience: 80 }, isCleared: false
+                    }, rewards: { coins: 360, experience: 80 }, isCleared: false
                 },
                 {
                     id: 'stage-3-4', step: 4,
@@ -424,7 +424,7 @@ export function getChapters(t?: (key: TranslationKey) => string): Chapter[] {
                     enemy: {
                         id: 'bot-3-4', name: 'Qubit Guard', name_ko: '큐비트 가드',
                         dialogue: { intro: 'Superposition active.', intro_ko: '중첩 상태 활성화.', win: 'Collapse to victory.', win_ko: '승리로 수렴.', lose: 'Decoherence.', lose_ko: '결맞음 해제.' }
-                    }, rewards: { coins: 450, experience: 90 }, isCleared: false
+                    }, rewards: { coins: 390, experience: 90 }, isCleared: false
                 },
                 {
                     id: 'stage-3-5', step: 5,
@@ -434,7 +434,7 @@ export function getChapters(t?: (key: TranslationKey) => string): Chapter[] {
                     enemy: {
                         id: 'boss-3-mid', name: 'The Observer', name_ko: '관찰자',
                         dialogue: { intro: 'Beyond the event horizon.', intro_ko: '사건의 지평선 너머로.', win: 'Compressed to zero.', win_ko: '영(0)으로 압축.', lose: 'Radiating away.', lose_ko: '복사되어 방출.' }
-                    }, rewards: { coins: 1000, experience: 300 }, isCleared: false
+                    }, rewards: { coins: 800, experience: 300 }, isCleared: false
                 },
                 {
                     id: 'stage-3-6', step: 6,
@@ -484,10 +484,10 @@ export function getChapters(t?: (key: TranslationKey) => string): Chapter[] {
                     enemy: {
                         id: 'boss-3', name: 'OMEGA', name_ko: '오메가',
                         dialogue: { intro: 'I am inevitable.', intro_ko: '나는 필연이다.', win: 'Obsolescence confirmed.', win_ko: '구세대 폐기 확인.', lose: 'System shutdown...', lose_ko: '시스템 종료...' }
-                    }, rewards: { coins: 5000, experience: 3000 }, isCleared: false
+                    }, rewards: { coins: 3000, experience: 3000 }, isCleared: false
                 }
             ],
-            reward: { coins: 15000, experience: 5000 },
+            reward: { coins: 8000, experience: 5000 },
             unlocked: false, completed: false
         }
     ];

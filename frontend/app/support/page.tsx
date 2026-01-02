@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 import { Bug, Lightbulb, Coffee, ArrowRight, Github, Mail, MessageSquare } from 'lucide-react';
 import CyberPageLayout from '@/components/CyberPageLayout';
 import { cn } from '@/lib/utils';
+import { createSupportTicket } from '@/lib/firebase-db';
 import SupportFormModal from '@/components/SupportFormModal';
 import { Input } from '@/components/ui/custom/Input';
 import { Textarea } from '@/components/ui/custom/Textarea';
@@ -40,12 +41,23 @@ export default function SupportPage() {
     };
 
     const handleSubmit = async () => {
+        if (!subject.trim() || !content.trim()) return;
+
         setIsSubmitting(true);
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        console.log('Submitting:', { type: modalData?.type, subject, content });
-        handleCloseModal();
-        alert('Your feedback has been submitted!'); // Or a more sophisticated notification
+        try {
+            await createSupportTicket({
+                title: subject,
+                description: content,
+                type: modalData?.type === 'report' ? 'error' : 'idea'
+            });
+            handleCloseModal();
+            alert(t('support.alert.success.desc'));
+        } catch (error) {
+            console.error(error);
+            alert(t('support.alert.error.desc'));
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     const menuItems = [
@@ -82,8 +94,8 @@ export default function SupportPage() {
             icon: '☕',
             actionIndex: t('support.menu.donate.action'),
             type: 'link' as const,
-            url: 'https://buymeacoffee.com/juuunocorder',
-            onClick: () => window.open('https://buymeacoffee.com/juuunocorder', '_blank'),
+            url: 'https://buymeacoffee.com/bababapet',
+            onClick: () => window.open('https://buymeacoffee.com/bababapet', '_blank'),
             borderColor: "border-pink-500/50",
             glowColor: "shadow-pink-500/20",
             bgGradient: "from-pink-900/10 to-transparent",
