@@ -324,11 +324,11 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
                 setError(null);
 
             } catch (err) {
-                console.error("CRITICAL: Failed to refresh user data from DB", err);
-                // [Strict Mode] Block app if refresh fails
-                setError("데이터 동기화 실패: 서버와 통신할 수 없습니다. (Network/DB Error)");
+                console.error("WARNING: Failed to refresh user data from DB (Non-fatal)", err);
+                // [Relaxed Mode] Do not block app, just log error. 
+                // The UI might show empty data, but user can retry or navigation works.
+                // setError("데이터 동기화 실패: 서버와 통신할 수 없습니다. (Network/DB Error)");
                 setLoading(false);
-                return; // Stop execution
             }
 
         } else {
