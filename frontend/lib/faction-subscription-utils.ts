@@ -162,8 +162,13 @@ function processRecurringBilling(subscriptions: FactionSubscription[], userId?: 
 
     if (changed && totalDeduction > 0) {
         // 코인이 부족할 경우? 일단 차감 (마이너스 허용 혹은 0으로 수렴)
-        // 여기서는 마이너스를 허용하여 사용자가 '빚'을 지게 하여 구독 취소를 유도 (마켓 이코노미)
-        const newCoins = state.coins - totalDeduction;
+        // [User Request] -1000이 되지 않도록 0을 최저치로 설정 (빚 방지)
+        let newCoins = state.coins - totalDeduction;
+        if (newCoins < 0) {
+            console.log(`[Billing] Coins insufficient for deduction. Clamping to 0. (Debt: ${Math.abs(newCoins)})`);
+            newCoins = 0;
+        }
+
         updateGameState({ coins: newCoins }, userId);
         return { billedSubs, updatedCoins: newCoins };
     }
