@@ -98,6 +98,7 @@ export async function purchaseCardPackTransaction(
     if (!isFirebaseConfigured || !db) throw new Error('Firebase NOT_CONFIGURED');
 
     const userRef = doc(db, 'users', userId, 'profile', 'data');
+    console.log(`[Transaction] Purchasing Pack for ${userId}. Price: ${price}, Currency: ${currencyType}`);
 
     try {
         await runTransaction(db, async (transaction) => {

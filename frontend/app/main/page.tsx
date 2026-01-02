@@ -25,7 +25,7 @@ export default function MainPage() {
 
     // Check if tutorial has been seen (User Specific)
     if (user?.uid) {
-      const tutorialKey = `hasSeenCommandTutorial_v3_${user.uid}`;
+      const tutorialKey = `tutorial_completed_${user.uid}`;
       const hasSeenTutorial = localStorage.getItem(tutorialKey);
 
       if (!hasSeenTutorial) {
@@ -53,7 +53,7 @@ export default function MainPage() {
   const handleTutorialClose = () => {
     setShowTutorial(false);
     if (user?.uid) {
-      localStorage.setItem(`hasSeenCommandTutorial_v3_${user.uid}`, 'true');
+      localStorage.setItem(`tutorial_completed_${user.uid}`, 'true');
     }
   };
 
