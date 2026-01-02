@@ -31,11 +31,22 @@ import { Card } from './types';
 
 /**
  * Firestore는 undefined 값을 허용하지 않으므로 객체에서 제거하거나 null로 변환합니다.
+ * FieldValue(serverTimestamp, increment 등)는 원본을 유지해야 합니다.
  */
 export function cleanDataForFirestore(data: any): any {
     if (data === undefined) return null;
     if (data === null || typeof data !== 'object') return data;
     if (data instanceof Date) return data;
+
+    // Firebase FieldValue(sentinel) 인지 확인 (내부 속성 또는 생성자 이름으로 판단)
+    if (data.constructor && (data.constructor.name === 'FieldValue' || data.constructor.name === 'n')) {
+        return data;
+    }
+
+    // 더 안전한 방법: Firestore 특수 객체는 변환하지 않음
+    if (data._methodName || (data.constructor && data.constructor.name.includes('FieldValue'))) {
+        return data;
+    }
 
     const cleaned: any = Array.isArray(data) ? [] : {};
     for (const key in data) {

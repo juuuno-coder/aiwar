@@ -97,7 +97,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     // Initial mount check
     useEffect(() => {
         setMounted(true);
-        console.log('✅ UserProvider Mounted - Version: 2026-01-02-HOTFIX-5CARDS');
+        console.log('✅ UserProvider Mounted - Version: 2026-01-02-HOTFIX-PERSISTENCE');
     }, []);
 
     const prevUserRef = React.useRef<string | null>(null);
@@ -107,6 +107,9 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         if (!mounted) return;
 
         const currentUid = user?.uid || null;
+        if (currentUid) {
+            console.log(`🔑 [DEBUG] Current Firebase UID: ${currentUid}`);
+        }
         const prevUid = prevUserRef.current;
 
         // If user changed (logged out or switched)
