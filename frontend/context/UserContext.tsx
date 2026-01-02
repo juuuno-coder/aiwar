@@ -54,6 +54,7 @@ interface UserContextType {
     consumeTokens: (baseAmount: number, category?: string) => Promise<boolean>; // Added
     subscriptions: UserSubscription[];
     buyCardPack: (cards: Card[], price: number, currencyType: 'coin' | 'token') => Promise<void>;
+    completeTutorial: () => void;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -284,6 +285,17 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
             icon: '🆙'
         });
     };
+
+    const completeTutorial = useCallback(() => {
+        if (!user?.uid) return;
+        localStorage.setItem(`tutorial_completed_${user.uid}`, 'true');
+        console.log(`[UserContext] Tutorial completed for ${user.uid}. Re-evaluating starter pack...`);
+
+        // Re-evaluate starter pack eligibility immediately
+        if (inventory.length === 0 && !profile?.hasReceivedStarterPack) {
+            setStarterPackAvailable(true);
+        }
+    }, [user?.uid, inventory.length, profile?.hasReceivedStarterPack]);
 
     const refreshData = useCallback(async () => {
         if (!mounted || !user) return;
@@ -647,7 +659,8 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
                     await purchaseCardPackTransaction(user.uid, cards, price, currencyType);
                     // Force refresh to ensure coins and inventory are in sync
                     await refreshData();
-                }
+                },
+                completeTutorial // [NEW]
             }}
         >
             {children}

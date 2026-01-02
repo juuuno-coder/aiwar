@@ -15,7 +15,7 @@ export default function MainPage() {
   const [showTutorial, setShowTutorial] = useState(false);
 
   const { playSound } = useGameSound();
-  const { user, profile, starterPackAvailable, claimStarterPack, hideStarterPack } = useUser();
+  const { user, profile, starterPackAvailable, claimStarterPack, hideStarterPack, completeTutorial } = useUser();
   const [showStarterPackModal, setShowStarterPackModal] = useState(false);
   const [starterCards, setStarterCards] = useState<any[]>([]);
 
@@ -29,6 +29,8 @@ export default function MainPage() {
       const hasSeenTutorial = localStorage.getItem(tutorialKey);
 
       if (!hasSeenTutorial) {
+        // [Fix] Tutorial modal race condition
+        // 1초 뒤에 켜지도록 하여 초기 로딩 안정화
         const timer = setTimeout(() => setShowTutorial(true), 1000);
         return () => clearTimeout(timer);
       }
@@ -52,9 +54,8 @@ export default function MainPage() {
 
   const handleTutorialClose = () => {
     setShowTutorial(false);
-    if (user?.uid) {
-      localStorage.setItem(`tutorial_completed_${user.uid}`, 'true');
-    }
+    // [Fix] Context 상태 동기화를 위해 함수 사용
+    completeTutorial();
   };
 
   const menuItems = [
