@@ -145,6 +145,7 @@ export async function claimStarterPackTransaction(
     if (!isFirebaseConfigured || !db) throw new Error('Firebase NOT_CONFIGURED');
 
     const userRef = doc(db, 'users', userId, 'profile', 'data');
+    console.log(`[Transaction] Claiming Starter Pack for ${userId}. Reward: ${coinReward}`);
 
     try {
         await runTransaction(db, async (transaction) => {
@@ -1195,6 +1196,8 @@ export async function resetAccountData(userId: string): Promise<void> {
 
         // 1. Reset Profile to Default
         const userRef = doc(db, 'users', userId, 'profile', 'data');
+        console.log(`[Reset] Resetting coins to 0 for ${userId}`);
+        console.log(`[Reset] Resetting tokens to 100 for ${userId}`);
         const defaultProfile = {
             coins: 0,
             tokens: 100,
