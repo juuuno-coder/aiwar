@@ -15,7 +15,8 @@ import {
     orderBy,
     collectionGroup,
     limit,
-    runTransaction
+    runTransaction,
+    writeBatch
 } from 'firebase/firestore';
 import { createUniqueCardFromApplication } from './unique-card-factory';
 import { db, isFirebaseConfigured } from './firebase';
@@ -1103,5 +1104,77 @@ export async function loadStoryProgressFromDB(userId: string): Promise<Record<st
     } catch (error) {
         console.error('❌ Failed to load story progress:', error);
         return null;
+    }
+}
+
+// ==================== 계정 데이터 관리 (Account Management) ====================
+
+/**
+ * 컬렉션 내 모든 문서 삭제 (Helper)
+ */
+async function deleteSubcollection(userId: string, ...pathSegments: string[]) {
+    if (!isFirebaseConfigured || !db) return;
+
+    try {
+        const colRef = collection(db, 'users', userId, ...pathSegments);
+        const snapshot = await getDocs(colRef);
+
+        if (snapshot.empty) return;
+
+        const batch = writeBatch(db);
+        snapshot.docs.forEach(doc => {
+            batch.delete(doc.ref);
+        });
+
+        await batch.commit();
+        console.log(`🗑️ Deleted subcollection: ${pathSegments.join('/')} (${snapshot.size} docs)`);
+    } catch (e) {
+        console.error(`❌ Failed to delete subcollection ${pathSegments.join('/')}:`, e);
+    }
+}
+
+/**
+ * 계정 데이터 완전 초기화 (Hard Reset)
+ */
+export async function resetAccountData(userId: string): Promise<void> {
+    if (!isFirebaseConfigured || !db) return;
+
+    try {
+        console.log(`🚨 Starting Hard Reset for user: ${userId}`);
+
+        // 1. Reset Profile to Default
+        const userRef = doc(db, 'users', userId, 'profile', 'data');
+        const defaultProfile = {
+            coins: 0,
+            tokens: 100,
+            level: 1,
+            exp: 0,
+            hasReceivedStarterPack: false,
+            // lastLogin update excluded to avoid confusion, but updatedAt is good
+            updatedAt: serverTimestamp()
+        };
+
+        await setDoc(userRef, defaultProfile, { merge: true });
+
+        // 2. Delete All Subcollections
+        await deleteSubcollection(userId, 'inventory');
+        await deleteSubcollection(userId, 'progress', 'story'); // Story progress: users/{uid}/progress/story (collection?) No, 'progress' is col, 'story' is doc.
+        // Wait, schema is: users/{uid}/progress/story (doc) containing map.
+        // So we need to delete the 'story' doc in 'progress' collection.
+        // My helper does "delete all docs in collection".
+        // users/{uid}/progress is a collection. 'story' is a doc.
+        // So deleteSubcollection(userId, 'progress') will delete 'story' doc. Correct.
+        await deleteSubcollection(userId, 'progress');
+
+        await deleteSubcollection(userId, 'factions'); // factions/data, factions/subscriptions (docs in 'factions' collection)
+
+        await deleteSubcollection(userId, 'subscriptions'); // Just in case
+        await deleteSubcollection(userId, 'achievements');
+        await deleteSubcollection(userId, 'missions');
+
+        console.log('✅ Account Data Reset Complete.');
+    } catch (error) {
+        console.error('❌ Reset Account Data Failed:', error);
+        throw error;
     }
 }

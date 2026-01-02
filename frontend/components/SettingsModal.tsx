@@ -39,28 +39,18 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
 
     const handleResetGameData = async () => {
         if (!user) return;
-        if (confirm('⚠️ 경고: 모든 게임 데이터가 초기화됩니다.\n\n보유한 카드, 코인, 진행 상황이 모두 영구적으로 삭제됩니다. 계속하시겠습니까?')) {
-            if (confirm('정말로 초기화하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) {
+        if (confirm(language === 'ko' ? '⚠️ 경고: 모든 게임 데이터가 초기화됩니다.\n\n보유한 카드, 스토리 진행도, 재화가 모두 영구적으로 삭제됩니다. 계속하시겠습니까?' : '⚠️ Warning: All game data will be reset.\n\nCards, story progress, and currency will be permanently deleted. Continue?')) {
+            if (confirm(language === 'ko' ? '정말로 초기화하시겠습니까? 이 작업은 되돌릴 수 없습니다.' : 'Are you sure? This cannot be undone.')) {
                 try {
-                    // 1. Inventory Clear
-                    const { clearInventory } = await import('@/lib/inventory-system');
-                    await clearInventory(user.uid);
+                    // Full Account Reset (Inventory, Profile, Progress, etc.)
+                    const { resetAccountData } = await import('@/lib/firebase-db');
+                    await resetAccountData(user.uid);
 
-                    // 2. Profile Reset
-                    await saveUserProfile({
-                        coins: 0,
-                        tokens: 100,
-                        level: 1,
-                        exp: 0,
-                        hasReceivedStarterPack: false,
-                        lastLogin: new Date()
-                    }, user.uid);
-
-                    alert('초기화되었습니다. 게임을 다시 시작합니다.');
+                    alert(language === 'ko' ? '초기화되었습니다. 게임을 다시 시작합니다.' : 'Reset complete. Restarting game.');
                     window.location.reload();
                 } catch (error) {
                     console.error('Reset failed:', error);
-                    alert('초기화 실패. 잠시 후 다시 시도해주세요.');
+                    alert(language === 'ko' ? '초기화 실패. 잠시 후 다시 시도해주세요.' : 'Reset failed. Please try again.');
                 }
             }
         }
