@@ -551,8 +551,21 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
             // [Fix] pass entire card objects to transaction
             await claimStarterPackTransaction(uid, nickname, starterCards);
 
-            // 3. 상태 갱신
-            await refreshData();
+            // [Fix] Wait for Firebase propagation
+            await new Promise(resolve => setTimeout(resolve, 500));
+
+            // 3. 상태 갱신 (강제 리로드)
+            await reloadProfile(); // 프로필(코인, 플래그) 갱신
+            await refreshData(); // 인벤토리 갱신
+
+            // 인벤토리가 비어있다면, 방금 생성한 카드라도 로컬 상태에 주입하여 UI 반영 (Fallback)
+            if (inventory.length === 0) {
+                const claimedInventory = starterCards.map(c => ({
+                    ...c,
+                    acquiredAt: new Date() // 로컬 표시용 타임스탬프
+                })) as InventoryCard[];
+                setInventory(claimedInventory);
+            }
 
             console.log(`✅ Starter Pack (5 Cards) Claimed for ${uid}`);
             addNotification({
