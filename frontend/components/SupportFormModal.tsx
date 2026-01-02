@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Send, Loader2, AlertCircle, Lightbulb } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { createTicket } from '@/lib/firebase-db';
+import { createSupportTicket } from '@/lib/firebase-db';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useAlert } from '@/context/AlertContext';
 import { useEscapeKey } from '@/hooks/useEscapeKey';
@@ -31,11 +31,10 @@ export default function SupportFormModal({ isOpen, onClose, type, title }: Suppo
 
         setIsSubmitting(true);
         try {
-            const ticketId = await createTicket({
+            const ticketId = await createSupportTicket({
                 type,
                 title: subject,
-                description,
-                userNickname: profile?.nickname || 'Unknown User'
+                description
             });
 
             // [NEW] Send Email Notification (Non-blocking)
