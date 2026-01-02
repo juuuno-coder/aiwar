@@ -88,9 +88,10 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     }, []);
 
 
-    // Initial mount check to prevent hydration mismatch
+    // Initial mount check
     useEffect(() => {
         setMounted(true);
+        console.log('✅ UserProvider Mounted - Version: 2026-01-02-HOTFIX-5CARDS');
     }, []);
 
     const prevUserRef = React.useRef<string | null>(null);
@@ -512,6 +513,9 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
             // 1. 카드 리스트 생성 (기존 방식 유지 - 5장 명시적 생성)
             const { generateCardByRarity: gen } = await import('@/lib/card-generation-system');
+
+            console.log("⚡️ [DEBUG] Generating 5 Starter Cards...");
+
             const starterCards = [
                 gen('common', uid),
                 gen('rare', uid),
@@ -519,6 +523,10 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
                 gen('legendary', uid),
                 gen('unique', uid)
             ];
+
+            if (starterCards.length !== 5) {
+                console.error("❌ Generated card count mismatch:", starterCards.length);
+            }
 
             // 닉네임 커스터마이징
             starterCards[4].name = `지휘관 ${nickname}`;
