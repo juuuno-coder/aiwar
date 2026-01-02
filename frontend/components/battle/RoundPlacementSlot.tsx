@@ -92,36 +92,36 @@ function RoundPlacementSlot({
                 draggable={!!mainCard}
                 onDragStart={(e) => mainCard && handleDragStart(e, mainCard, mainSlotId)}
                 className={cn(
-                    "relative w-24 h-32 rounded-xl border-2 transition-all overflow-hidden",
+                    "relative w-28 h-40 rounded-2xl border-2 transition-all overflow-hidden",
                     mainCard
-                        ? "border-cyan-500 bg-cyan-500/10 shadow-lg shadow-cyan-500/30 cursor-grab active:cursor-grabbing"
-                        : "border-dashed border-white/30 bg-white/5 hover:border-cyan-400 hover:bg-cyan-500/5"
+                        ? "border-cyan-500 bg-cyan-900/20 shadow-[0_0_20px_rgba(6,182,212,0.3)] cursor-grab active:cursor-grabbing backdrop-blur-md scale-105"
+                        : "border-dashed border-white/20 bg-white/2 hover:border-cyan-400 hover:bg-cyan-500/5"
                 )}
             >
                 {mainCard ? (
                     <>
                         {/* Card Image */}
                         <div
-                            className="absolute inset-0 bg-cover bg-center pointer-events-none"
+                            className="absolute inset-0 bg-cover bg-center pointer-events-none transition-transform hover:scale-110"
                             style={{
                                 backgroundImage: `url(${getCardImage(mainCard)})`,
                             }}
                         />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent pointer-events-none" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/40 to-transparent pointer-events-none" />
 
                         {/* Rarity Badge */}
                         {(() => {
                             const rarityInfo: Record<string, { text: string; bg: string }> = {
-                                legendary: { text: '전설', bg: 'bg-gradient-to-r from-yellow-500 to-orange-500' },
-                                commander: { text: '군단장', bg: 'bg-gradient-to-r from-purple-600 to-pink-600' },
-                                epic: { text: '영웅', bg: 'bg-gradient-to-r from-purple-500 to-indigo-500' },
-                                rare: { text: '희귀', bg: 'bg-gradient-to-r from-blue-500 to-cyan-500' },
-                                unique: { text: '유니크', bg: 'bg-gradient-to-r from-green-500 to-emerald-500' },
-                                common: { text: '일반', bg: 'bg-gradient-to-r from-gray-500 to-slate-500' }
+                                legendary: { text: '전설', bg: 'bg-gradient-to-r from-amber-500 to-orange-500 shadow-[0_0_10px_rgba(245,158,11,0.5)]' },
+                                commander: { text: '군단장', bg: 'bg-gradient-to-r from-emerald-500 to-cyan-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]' },
+                                epic: { text: '영웅', bg: 'bg-gradient-to-r from-purple-600 to-indigo-600 shadow-[0_0_10px_rgba(147,51,234,0.5)]' },
+                                rare: { text: '희귀', bg: 'bg-gradient-to-r from-blue-600 to-cyan-600 shadow-[0_0_10px_rgba(37,99,235,0.5)]' },
+                                unique: { text: '유니크', bg: 'bg-gradient-to-r from-red-600 to-pink-600 shadow-[0_0_10px_rgba(220,38,38,0.5)]' },
+                                common: { text: '일반', bg: 'bg-zinc-700 shadow-[0_0_10px_rgba(0,0,0,0.5)]' }
                             };
                             const info = rarityInfo[mainCard.rarity || 'common'] || rarityInfo.common;
                             return (
-                                <div className={`absolute top-0.5 left-0.5 px-1 py-0.5 rounded text-[7px] font-black text-white shadow-lg z-10 ${info.bg} pointer-events-none`}>
+                                <div className={`absolute top-1.5 left-1.5 px-2 py-1 rounded-full text-[8px] font-black text-white shadow-xl z-20 ${info.bg} border border-white/20 pointer-events-none uppercase tracking-tighter`}>
                                     {info.text}
                                 </div>
                             );
@@ -130,31 +130,35 @@ function RoundPlacementSlot({
                         {/* Type Icon - Large and Prominent */}
                         {mainCard.type && (
                             <div
-                                className="absolute top-1 right-8 w-8 h-8 rounded-full border-2 border-white flex items-center justify-center text-lg shadow-xl z-20 pointer-events-none"
+                                className="absolute top-1 right-1 w-9 h-9 rounded-full border-2 border-white/50 flex items-center justify-center text-xl shadow-2xl z-30 pointer-events-none backdrop-blur-sm"
                                 style={{ backgroundColor: getTypeColor(mainCard.type) }}
                             >
-                                {getTypeIcon(mainCard.type)}
+                                <span className="drop-shadow-md">{getTypeIcon(mainCard.type)}</span>
                             </div>
                         )}
 
                         {/* Level Badge */}
-                        <div className="absolute bottom-6 right-0.5 z-10 pointer-events-none">
-                            <div className="px-1 py-0.5 bg-gradient-to-r from-yellow-500 to-orange-500 rounded text-[7px] font-black text-white shadow-lg">
+                        <div className="absolute bottom-8 right-1.5 z-20 pointer-events-none">
+                            <div className="px-2 py-0.5 bg-black/80 rounded border border-white/20 text-[9px] font-black text-white shadow-xl">
                                 LV.{mainCard.level || 1}
                             </div>
                         </div>
 
                         {/* Card Name + Power */}
-                        <div className="absolute bottom-0 left-0 right-0 text-center bg-black/70 py-0.5 pointer-events-none">
-                            <div className="text-[9px] font-bold text-white truncate px-1">
+                        <div className="absolute bottom-0 left-0 right-0 text-center bg-black/80 py-1.5 border-t border-white/10 pointer-events-none backdrop-blur-sm">
+                            <div className="text-[10px] font-black text-white truncate px-2 mb-0.5">
                                 {mainCard.name}
                             </div>
-                            <div className="text-[8px] text-cyan-400">⚡{Math.floor(mainCard.stats?.totalPower || 0)}</div>
+                            <div className="text-[9px] font-bold text-cyan-400 tracking-widest orbitron">PWR {Math.floor(mainCard.stats?.totalPower || 0)}</div>
                         </div>
+
+                        {/* Hover Overlay */}
+                        <div className="absolute inset-0 bg-white/0 hover:bg-white/5 transition-colors pointer-events-none" />
                     </>
                 ) : (
-                    <div className="absolute inset-0 flex items-center justify-center text-white/40 text-2xl pointer-events-none">
-                        +
+                    <div className="absolute inset-0 flex flex-col items-center justify-center text-white/10 pointer-events-none group-hover:text-cyan-400/20 transition-colors">
+                        <div className="text-4xl font-thin mb-1">+</div>
+                        <div className="text-[10px] uppercase tracking-[0.2em] font-black">Main Slot</div>
                     </div>
                 )}
             </div>
@@ -167,57 +171,57 @@ function RoundPlacementSlot({
                     draggable={!!hiddenCard}
                     onDragStart={(e) => hiddenCard && handleDragStart(e, hiddenCard, hiddenSlotId)}
                     className={cn(
-                        "relative w-24 h-32 rounded-xl border-2 transition-all overflow-hidden",
+                        "relative w-28 h-40 rounded-2xl border-2 transition-all overflow-hidden mt-2",
                         hiddenCard
-                            ? "border-purple-500 bg-purple-500/10 shadow-lg shadow-purple-500/30 cursor-grab active:cursor-grabbing"
-                            : "border-dashed border-purple-400/40 bg-purple-500/5 hover:border-purple-400 hover:bg-purple-500/10"
+                            ? "border-purple-500 bg-purple-900/20 shadow-[0_0_20px_rgba(168,85,247,0.3)] cursor-grab active:cursor-grabbing backdrop-blur-md"
+                            : "border-dashed border-purple-400/30 bg-purple-500/5 hover:border-purple-400 hover:bg-purple-500/10"
                     )}
                 >
                     {hiddenCard ? (
                         <>
                             {/* Card Image */}
                             <div
-                                className="absolute inset-0 bg-cover bg-center pointer-events-none"
+                                className="absolute inset-0 bg-cover bg-center pointer-events-none group-hover:scale-110"
                                 style={{
                                     backgroundImage: `url(${getCardImage(hiddenCard)})`,
                                 }}
                             />
-                            <div className="absolute inset-0 bg-gradient-to-t from-purple-900/80 via-purple-900/20 to-transparent pointer-events-none" />
+                            <div className="absolute inset-0 bg-gradient-to-t from-purple-900/95 via-purple-900/40 to-transparent pointer-events-none" />
 
                             {/* Hidden Badge */}
-                            <div className="absolute top-0.5 left-0.5 px-1 py-0.5 bg-purple-600 rounded text-[7px] font-black text-white z-10 pointer-events-none">
+                            <div className="absolute top-1.5 left-1.5 px-2 py-1 bg-purple-600 rounded-full text-[8px] font-black text-white z-20 shadow-xl border border-white/20 pointer-events-none">
                                 🎭
                             </div>
 
                             {/* Type Icon - Large and Prominent */}
                             {hiddenCard.type && (
                                 <div
-                                    className="absolute top-1 right-8 w-8 h-8 rounded-full border-2 border-white flex items-center justify-center text-lg shadow-xl z-20 pointer-events-none"
+                                    className="absolute top-1 right-1 w-9 h-9 rounded-full border-2 border-white/50 flex items-center justify-center text-xl shadow-2xl z-30 pointer-events-none backdrop-blur-sm"
                                     style={{ backgroundColor: getTypeColor(hiddenCard.type) }}
                                 >
-                                    {getTypeIcon(hiddenCard.type)}
+                                    <span className="drop-shadow-md">{getTypeIcon(hiddenCard.type)}</span>
                                 </div>
                             )}
 
                             {/* Level Badge */}
-                            <div className="absolute bottom-6 right-0.5 z-10 pointer-events-none">
-                                <div className="px-1 py-0.5 bg-gradient-to-r from-yellow-500 to-orange-500 rounded text-[7px] font-black text-white shadow-lg">
+                            <div className="absolute bottom-8 right-1.5 z-20 pointer-events-none">
+                                <div className="px-2 py-0.5 bg-black/80 rounded border border-white/20 text-[9px] font-black text-white shadow-xl">
                                     LV.{hiddenCard.level || 1}
                                 </div>
                             </div>
 
                             {/* Card Name + Power */}
-                            <div className="absolute bottom-0 left-0 right-0 text-center bg-black/70 py-0.5 pointer-events-none">
-                                <div className="text-[9px] font-bold text-white truncate px-1">
+                            <div className="absolute bottom-0 left-0 right-0 text-center bg-black/80 py-1.5 border-t border-white/10 pointer-events-none backdrop-blur-sm">
+                                <div className="text-[10px] font-black text-white truncate px-2 mb-0.5">
                                     {hiddenCard.name}
                                 </div>
-                                <div className="text-[8px] text-purple-400">⚡{Math.floor(hiddenCard.stats?.totalPower || 0)}</div>
+                                <div className="text-[9px] font-bold text-purple-400 tracking-widest orbitron">PWR {Math.floor(hiddenCard.stats?.totalPower || 0)}</div>
                             </div>
                         </>
                     ) : (
-                        <div className="absolute inset-0 flex flex-col items-center justify-center text-purple-400/60 text-xs pointer-events-none">
-                            <div className="text-2xl mb-1">🎭</div>
-                            <div className="text-[10px]">Hidden</div>
+                        <div className="absolute inset-0 flex flex-col items-center justify-center text-purple-400/20 group-hover:text-purple-400/40 transition-colors pointer-events-none">
+                            <div className="text-3xl mb-1">🎭</div>
+                            <div className="text-[10px] uppercase tracking-widest font-black">Hidden</div>
                         </div>
                     )}
                 </div>

@@ -8,7 +8,7 @@ import { getStoryStage, completeStage, StoryStage } from '@/lib/story-system';
 import { generateEnemies, StageConfig } from '@/lib/stage-system';
 import { simulateBattle, BattleResult, BattleParticipant, applyBattleResult, determineRoundWinner } from '@/lib/pvp-battle-system';
 import { useGameSound } from '@/hooks/useGameSound';
-import Button from '@/components/ui/Button';
+import { Button } from '@/components/ui/custom/Button';
 import CardPlacementBoard, { RoundPlacement as BoardPlacement } from '@/components/battle/CardPlacementBoard';
 import { useTranslation } from '@/context/LanguageContext';
 import BattleDeckSelection from '@/components/battle/BattleDeckSelection';
@@ -16,6 +16,13 @@ import { useUser } from '@/context/UserContext';
 import { Award, Trophy, XCircle, Zap, Users, Shield, Eye, Swords, ArrowLeft } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import GameCard from '@/components/GameCard';
+import { BackgroundBeams } from '@/components/ui/aceternity/background-beams';
+
+interface BattleLog {
+    id: string;
+    message: string;
+    type: 'system' | 'player' | 'enemy' | 'winner' | 'draw' | 'advantage';
+}
 
 // Shared Phase Type
 type Phase =
@@ -49,6 +56,10 @@ export default function StageBattlePage() {
     const [animating, setAnimating] = useState(false);
     const [animationPhase, setAnimationPhase] = useState<'idle' | 'ready' | 'clash' | 'reveal'>('idle');
 
+    // Mini Card States
+    const [alivePlayerCards, setAlivePlayerCards] = useState<boolean[]>([true, true, true, true, true]);
+    const [aliveEnemyCards, setAliveEnemyCards] = useState<boolean[]>([true, true, true, true, true]);
+
     // Double Battle State (Shared from PVP)
     const [doubleBattleState, setDoubleBattleState] = useState<{
         round: number;
@@ -71,6 +82,8 @@ export default function StageBattlePage() {
         opponentWins: 0,
         history: []
     });
+
+    const [battleLogs, setBattleLogs] = useState<BattleLog[]>([]);
 
     // ⚠️ Active Deck for Battle (Ordered)
     const [activeBattleDeck, setActiveBattleDeck] = useState<Card[]>([]);
@@ -337,36 +350,151 @@ export default function StageBattlePage() {
             }
         };
 
+        addBattleLog(language === 'ko' ? "실시간 전투 시작!" : "Live Battle Initiated!", 'system');
         setBattleResult(result);
         setPhase('result');
     };
 
 
+    // --- UI Helpers (Ported from PVP Fight) ---
+    const getTypeColor = (type: string | undefined) => {
+        switch (type) {
+            case 'EFFICIENCY': return 'rgba(239, 68, 68, 0.6)';
+            case 'COST': return 'rgba(245, 158, 11, 0.6)';
+            case 'CREATIVITY': return 'rgba(59, 130, 246, 0.6)';
+            case 'FUNCTION': return 'rgba(168, 85, 247, 0.6)';
+            default: return 'rgba(255, 255, 255, 0.2)';
+        }
+    };
+
+    const getTypeGlow = (type: string | undefined) => {
+        switch (type) {
+            case 'EFFICIENCY': return 'shadow-[0_0_20px_rgba(239,68,68,0.5)] border-red-500/50';
+            case 'COST': return 'shadow-[0_0_20px_rgba(245,158,11,0.5)] border-amber-500/50';
+            case 'CREATIVITY': return 'shadow-[0_0_20px_rgba(59,130,246,0.5)] border-blue-500/50';
+            case 'FUNCTION': return 'shadow-[0_0_20px_rgba(168,85,247,0.5)] border-purple-500/50';
+            default: return 'border-white/10';
+        }
+    };
+
+    const getTypeIcon = (type: string | undefined) => {
+        switch (type) {
+            case 'EFFICIENCY': return '✊';
+            case 'COST': return '✌️';
+            case 'CREATIVITY': return '✋';
+            case 'FUNCTION': return '✂️';
+            default: return '❓';
+        }
+    };
+
+    const addBattleLog = (message: string, type: BattleLog['type'] = 'system') => {
+        const id = Math.random().toString(36).substring(2, 9);
+        setBattleLogs(prev => [...prev, { id, message, type }]);
+        setTimeout(() => {
+            setBattleLogs(prev => prev.filter(log => log.id !== id));
+        }, 6000);
+    };
+
+    const CombatLogDisplay = () => (
+        <div className="fixed bottom-32 left-8 z-50 flex flex-col gap-2 max-w-sm pointer-events-none">
+            <AnimatePresence mode="popLayout">
+                {battleLogs.map((log) => (
+                    <motion.div
+                        key={log.id}
+                        initial={{ opacity: 0, x: -20, scale: 0.9 }}
+                        animate={{ opacity: 1, x: 0, scale: 1 }}
+                        exit={{ opacity: 0, x: 20, scale: 0.8, filter: 'blur(10px)' }}
+                        className={cn(
+                            "px-4 py-2 rounded-xl backdrop-blur-md border shadow-lg text-[11px] font-bold orbitron tracking-tight",
+                            log.type === 'system' ? "bg-black/60 border-white/10 text-gray-300" :
+                                log.type === 'advantage' ? "bg-yellow-500/20 border-yellow-500/40 text-yellow-400" :
+                                    log.type === 'player' ? "bg-blue-500/20 border-blue-500/40 text-blue-400" :
+                                        log.type === 'enemy' ? "bg-red-500/20 border-red-500/40 text-red-400" :
+                                            log.type === 'winner' ? "bg-green-500/20 border-green-500/40 text-green-400" :
+                                                "bg-gray-500/20 border-gray-500/40 text-gray-400"
+                        )}
+                    >
+                        {log.message}
+                    </motion.div>
+                ))}
+            </AnimatePresence>
+        </div>
+    );
+
+
     // --- Generic Battle Animation ---
     const runBattleAnimation = async (result: BattleResult) => {
+        setAlivePlayerCards(new Array(5).fill(true));
+        setAliveEnemyCards(new Array(5).fill(true));
+
         for (let i = 0; i < result.rounds.length; i++) {
-            setCurrentRound(i);
+            const round = result.rounds[i];
+            setCurrentRound(i + 1);
+
+            // Log Round Start
+            addBattleLog((language === 'ko' ? `라운드 ${i + 1} 시작!` : `Round ${i + 1} Started!`), 'system');
+
             setAnimationPhase('ready');
             setAnimating(true);
             await new Promise(resolve => setTimeout(resolve, 800));
+
+            // Log Clash
+            addBattleLog((language === 'ko'
+                ? `${round.playerCard.name} (${round.playerCard.stats.totalPower}) vs ${round.opponentCard.name} (${round.opponentCard.stats.totalPower})`
+                : `${round.playerCard.name} (${round.playerCard.stats.totalPower}) vs ${round.opponentCard.name} (${round.opponentCard.stats.totalPower})`), 'system');
 
             setAnimationPhase('clash');
             await new Promise(resolve => setTimeout(resolve, 1500));
 
             setAnimationPhase('reveal');
+
+            // Update Alive States & Log Winner
+            if (round.winner === 'player') {
+                setAliveEnemyCards(prev => {
+                    const next = [...prev];
+                    next[i] = false;
+                    return next;
+                });
+                addBattleLog((language === 'ko' ? `${round.playerCard.name} 승리!` : `${round.playerCard.name} Victory!`), 'winner');
+            } else if (round.winner === 'opponent') {
+                setAlivePlayerCards(prev => {
+                    const next = [...prev];
+                    next[i] = false;
+                    return next;
+                });
+                addBattleLog((language === 'ko' ? `${round.opponentCard.name} 승리!` : `${round.opponentCard.name} Victory!`), 'enemy');
+            } else {
+                addBattleLog((language === 'ko' ? "무승부!" : "Draw!"), 'draw');
+            }
+
             await new Promise(resolve => setTimeout(resolve, 2000));
 
             setAnimationPhase('idle');
             setAnimating(false);
             await new Promise(resolve => setTimeout(resolve, 500));
         }
+
+        // Final Result Log
+        const isWin = result.winner === 'player';
+        addBattleLog(
+            isWin
+                ? (language === 'ko' ? "최종 승리!" : "Final Victory!")
+                : (language === 'ko' ? "패배..." : "Defeat..."),
+            isWin ? 'winner' : 'enemy'
+        );
+
         setPhase('result');
     };
 
     const handleResultConfirm = async () => {
         if (battleResult?.winner === 'player') {
             if (storyStage) {
-                await applyBattleResult(battleResult, activeBattleDeck, enemies);
+                // Pass manual rewards to bypass PVP "practice mode" penalties
+                const manualRewards = {
+                    coins: storyStage.rewards.coins,
+                    experience: storyStage.rewards.experience
+                };
+                await applyBattleResult(battleResult, activeBattleDeck, enemies, false, false, manualRewards);
                 await completeStage(storyStage.id.split('-')[1] === '1' ? 'chapter-1' : storyStage.id.split('-')[1] === '2' ? 'chapter-2' : 'chapter-3', storyStage.id, user?.uid);
             }
             const chapterNum = storyStage?.id.split('-')[1] || '1';
@@ -391,13 +519,16 @@ export default function StageBattlePage() {
             <div className="fixed inset-0 z-0">
                 <div className="absolute inset-0 bg-gradient-to-br from-gray-900 to-black" />
                 <div className="absolute inset-0 opacity-20 bg-[url('/assets/grid.png')] bg-center bg-repeat" />
+                <BackgroundBeams className="opacity-35" />
             </div>
+
+            <CombatLogDisplay />
 
             {/* Header - Only layout for non-battle phases */}
             {phase !== 'battle' && phase !== 'double-battle' && (
                 <div className="relative z-10 p-4 flex justify-between items-start shrink-0">
-                    <Button variant="ghost" className="text-white hover:text-cyan-400 gap-2" onClick={() => router.back()}>
-                        <ArrowLeft size={16} /> BACK
+                    <Button variant="ghost" className="text-white hover:text-cyan-400 gap-2" onPress={() => router.back()} startContent={<ArrowLeft size={16} />}>
+                        BACK
                     </Button>
                     <div className="text-right">
                         <h1 className="text-2xl font-black italic orbitron text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-600">
@@ -451,7 +582,7 @@ export default function StageBattlePage() {
                                 </div>
                             </div>
                         </motion.div>
-                        <Button size="lg" className="w-full text-xl py-8 bg-cyan-600 hover:bg-cyan-500" onClick={startDeckSelection}>
+                        <Button size="lg" className="w-full text-xl py-8 font-black bg-cyan-600 hover:bg-cyan-500 rounded-2xl" onPress={startDeckSelection}>
                             {language === 'ko' ? '전투 준비' : 'PREPARE BATTLE'}
                         </Button>
                     </div>
@@ -481,43 +612,155 @@ export default function StageBattlePage() {
                     </div>
                 )}
 
-                {/* 4. Battle Animation (Auto) */}
+                {/* 4. Battle Animation (PVP Sync) */}
                 {phase === 'battle' && battleResult && (
-                    <div className="flex-1 flex items-center justify-center">
-                        <div className="text-center">
-                            <h2 className="text-4xl font-black mb-8">ROUND {currentRound + 1}</h2>
-                            <div className="flex gap-12 items-center justify-center">
-                                {/* Player Card */}
-                                <div className={cn("transition-all duration-500 transform", animationPhase === 'reveal' ? "rotate-y-0" : "")}>
-                                    <GameCard
-                                        card={activeBattleDeck[currentRound] || activeBattleDeck[0]}
-                                        isFlipped={animationPhase !== 'reveal'}
-                                    />
-                                    <p className="mt-4 font-bold text-cyan-400">YOU</p>
+                    <div className="flex-1 flex flex-col p-4">
+                        {/* Floating Header (Round & Score) */}
+                        <div className="text-center mb-6 pt-2">
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.9 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                className="bg-black/60 backdrop-blur-xl border border-white/10 px-6 py-3 rounded-2xl inline-flex items-center gap-8 shadow-2xl mx-auto"
+                            >
+                                <div className="text-center">
+                                    <p className="text-[8px] text-gray-500 font-bold orbitron uppercase tracking-[0.2em] mb-0.5">ROUND</p>
+                                    <p className="text-2xl font-black text-white orbitron italic">{currentRound}/5</p>
                                 </div>
 
-                                <div className="text-6xl font-black italic text-red-500">VS</div>
-
-                                {/* Enemy Card */}
-                                <div className={cn("transition-all duration-500 transform", animationPhase === 'reveal' ? "rotate-y-0" : "")}>
-                                    <GameCard
-                                        card={enemies[currentRound] || enemies[0]}
-                                        isFlipped={animationPhase !== 'reveal'}
-                                    />
-                                    <p className="mt-4 font-bold text-red-500">ENEMY</p>
+                                <div className="flex items-center gap-6">
+                                    <div className="text-right">
+                                        <p className="text-[8px] text-blue-400 font-bold orbitron uppercase tracking-widest">YOU</p>
+                                        <p className="text-3xl font-black text-white orbitron">{battleResult.rounds.slice(0, currentRound).filter(r => r.winner === 'player').length}</p>
+                                    </div>
+                                    <div className="text-lg font-black text-gray-700 font-mono">VS</div>
+                                    <div className="text-left">
+                                        <p className="text-[8px] text-red-500 font-bold orbitron uppercase tracking-widest">ENEMY</p>
+                                        <p className="text-3xl font-black text-white orbitron">{battleResult.rounds.slice(0, currentRound).filter(r => r.winner === 'opponent').length}</p>
+                                    </div>
                                 </div>
-                            </div>
+                            </motion.div>
+                        </div>
 
-                            {animationPhase === 'reveal' && (
-                                <motion.div
-                                    initial={{ scale: 2, opacity: 0 }}
-                                    animate={{ scale: 1, opacity: 1 }}
-                                    className="mt-12 text-5xl font-black text-yellow-400"
-                                >
-                                    {battleResult.rounds[currentRound]?.winner === 'player' ? 'WIN!' :
-                                        battleResult.rounds[currentRound]?.winner === 'opponent' ? 'LOSE' : 'DRAW'}
-                                </motion.div>
-                            )}
+                        {/* Enemy Mini Deck */}
+                        <div className="grid grid-cols-5 gap-2 h-16 max-w-lg mx-auto w-full mb-4">
+                            {enemies.slice(0, 5).map((card, index) => (
+                                <AnimatePresence key={index}>
+                                    {aliveEnemyCards[index] && (
+                                        <motion.div
+                                            initial={{ opacity: 1, scale: 1 }}
+                                            animate={{
+                                                scale: (currentRound - 1) === index ? 1.05 : 1,
+                                                y: (currentRound - 1) === index && animationPhase === 'clash' ? 30 : 0,
+                                            }}
+                                            exit={{ opacity: 0, scale: 0.5, rotate: 15, filter: 'blur(8px)' }}
+                                            className={cn(
+                                                "bg-black/40 border border-red-500/20 rounded-xl flex flex-col items-center justify-center p-1 relative overflow-hidden",
+                                                (currentRound - 1) === index ? "border-red-500 bg-red-500/5 shadow-[0_0_15px_rgba(239,68,68,0.15)]" : "opacity-40"
+                                            )}
+                                        >
+                                            <div className="text-lg">{getTypeIcon(card.type)}</div>
+                                            <div className="text-[9px] font-black text-red-400 orbitron">{card.stats.totalPower}</div>
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
+                            ))}
+                        </div>
+
+                        {/* Clash Arena */}
+                        <div className="flex-1 flex items-center justify-center py-4">
+                            <AnimatePresence>
+                                {animationPhase !== 'idle' && (
+                                    <motion.div
+                                        initial={{ opacity: 0, scale: 0.8 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        exit={{ opacity: 0, scale: 1.1, filter: 'blur(15px)' }}
+                                        className="flex items-center gap-6"
+                                    >
+                                        {/* Player Card Container */}
+                                        <motion.div
+                                            animate={{ x: animationPhase === 'clash' ? [0, 30, 0] : 0 }}
+                                            transition={{ duration: 0.6, repeat: animationPhase === 'clash' ? Infinity : 0 }}
+                                            className={cn(
+                                                "relative p-6 rounded-[2rem] border-2 bg-black/60 backdrop-blur-3xl min-w-[160px] text-center transition-all duration-500",
+                                                animationPhase === 'reveal' ? getTypeGlow(activeBattleDeck[currentRound - 1]?.type || activeBattleDeck[0].type) : "border-white/10"
+                                            )}
+                                        >
+                                            <div className="text-4xl mb-3 filter drop-shadow-xl">
+                                                {animationPhase === 'reveal' ? getTypeIcon(activeBattleDeck[currentRound - 1]?.type) : "❓"}
+                                            </div>
+                                            <div className="text-[10px] font-bold text-gray-400 mb-0.5 truncate max-w-[120px] mx-auto">
+                                                {animationPhase === 'reveal' ? activeBattleDeck[currentRound - 1]?.name : "???"}
+                                            </div>
+                                            <div className="text-2xl font-black text-blue-500 orbitron">
+                                                {animationPhase === 'reveal' ? activeBattleDeck[currentRound - 1]?.stats.totalPower : "--"}
+                                            </div>
+                                            <h2 className="text-[7px] font-black text-white/20 orbitron mt-1 tracking-[0.2em]">COMMANDER UNIT</h2>
+                                        </motion.div>
+
+                                        {/* Vs Zap Icon */}
+                                        <div className="relative">
+                                            <motion.div
+                                                animate={{ scale: [1, 1.3, 1], rotate: [0, 5, -5, 0] }}
+                                                transition={{ duration: 0.4, repeat: Infinity }}
+                                                className="w-12 h-12 rounded-full bg-white flex items-center justify-center z-10 relative"
+                                            >
+                                                <Zap size={24} fill="black" className="text-black" />
+                                            </motion.div>
+                                            <motion.div
+                                                animate={{ scale: [1, 2, 1], opacity: [0.3, 0, 0.3] }}
+                                                transition={{ duration: 1, repeat: Infinity }}
+                                                className="absolute inset-0 bg-white/20 blur-xl rounded-full"
+                                            />
+                                        </div>
+
+                                        {/* Enemy Card Container */}
+                                        <motion.div
+                                            animate={{ x: animationPhase === 'clash' ? [0, -30, 0] : 0 }}
+                                            transition={{ duration: 0.6, repeat: animationPhase === 'clash' ? Infinity : 0 }}
+                                            className={cn(
+                                                "relative p-6 rounded-[2rem] border-2 bg-black/60 backdrop-blur-3xl min-w-[160px] text-center transition-all duration-500",
+                                                animationPhase === 'reveal' ? getTypeGlow(enemies[currentRound - 1]?.type || enemies[0].type) : "border-white/10"
+                                            )}
+                                        >
+                                            <div className="text-4xl mb-3 filter drop-shadow-xl">
+                                                {animationPhase === 'reveal' ? getTypeIcon(enemies[currentRound - 1]?.type) : "❓"}
+                                            </div>
+                                            <div className="text-[10px] font-bold text-gray-400 mb-0.5 truncate max-w-[120px] mx-auto">
+                                                {animationPhase === 'reveal' ? enemies[currentRound - 1]?.name : "???"}
+                                            </div>
+                                            <div className="text-2xl font-black text-red-500 orbitron">
+                                                {animationPhase === 'reveal' ? enemies[currentRound - 1]?.stats.totalPower : "--"}
+                                            </div>
+                                            <h2 className="text-[7px] font-black text-white/20 orbitron mt-1 tracking-[0.2em]">ENEMY MODEL</h2>
+                                        </motion.div>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+                        </div>
+
+                        {/* Player Mini Deck */}
+                        <div className="grid grid-cols-5 gap-2 h-16 max-w-lg mx-auto w-full mt-4">
+                            {activeBattleDeck.slice(0, 5).map((card, index) => (
+                                <AnimatePresence key={index}>
+                                    {alivePlayerCards[index] && (
+                                        <motion.div
+                                            initial={{ opacity: 1, scale: 1 }}
+                                            animate={{
+                                                scale: (currentRound - 1) === index ? 1.05 : 1,
+                                                y: (currentRound - 1) === index && animationPhase === 'clash' ? -30 : 0,
+                                            }}
+                                            exit={{ opacity: 0, scale: 0.5, rotate: -15, filter: 'blur(8px)' }}
+                                            className={cn(
+                                                "bg-black/40 border border-blue-500/20 rounded-xl flex flex-col items-center justify-center p-1 relative overflow-hidden",
+                                                (currentRound - 1) === index ? "border-blue-500 bg-blue-500/5 shadow-[0_0_15px_rgba(59,130,246,0.15)]" : "opacity-40"
+                                            )}
+                                        >
+                                            <div className="text-lg">{getTypeIcon(card.type)}</div>
+                                            <div className="text-[9px] font-black text-blue-400 orbitron">{card.stats.totalPower}</div>
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
+                            ))}
                         </div>
                     </div>
                 )}
@@ -615,48 +858,79 @@ export default function StageBattlePage() {
                     </div>
                 )}
 
-                {/* 5. Result */}
+                {/* 5. Result (PVP Sync) */}
                 {phase === 'result' && battleResult && (
-                    <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md p-4">
+                    <div className="absolute inset-0 z-50 flex items-center justify-center bg-[#050505]/95 backdrop-blur-xl p-4 overflow-hidden">
+                        <BackgroundBeams className="opacity-40" />
                         <motion.div
-                            initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
-                            className="bg-zinc-900/90 border border-white/10 rounded-3xl p-12 text-center max-w-sm w-full shadow-2xl relative overflow-hidden"
+                            initial={{ scale: 0.5, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            className="relative z-10 w-full max-w-sm text-center"
                         >
-                            <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent pointer-events-none" />
-
-                            <div className="text-7xl mb-6">{battleResult.winner === 'player' ? '🏆' : '💀'}</div>
-                            <h2 className={`text-6xl font-black mb-2 orbitron italic tracking-tighter ${battleResult.winner === 'player' ? 'text-yellow-400' : 'text-red-500'}`}>
-                                {battleResult.winner === 'player'
-                                    ? (language === 'ko' ? '승리' : 'VICTORY')
-                                    : (language === 'ko' ? '패배' : 'DEFEAT')}
-                            </h2>
-                            <div className="w-full h-px bg-white/10 my-6" />
-
-                            {battleResult.winner === 'player' ? (
-                                <div className="space-y-4 mb-8">
-                                    <div className="flex justify-between items-center bg-black/30 p-3 rounded-lg">
-                                        <span className="text-gray-400">보상</span>
-                                        <span className="text-yellow-400 font-bold text-xl flex items-center gap-1">
-                                            <img src="/assets/icons/coin.png" className="w-5 h-5" /> {storyStage.rewards.coins}
-                                        </span>
+                            <motion.div
+                                animate={{ scale: [1, 1.05, 1], rotate: [0, 3, -3, 0] }}
+                                transition={{ repeat: 3, duration: 0.8 }}
+                                className="mb-4"
+                            >
+                                {battleResult.winner === 'player' ? (
+                                    <div className="relative inline-block">
+                                        <Trophy size={80} className="mx-auto text-yellow-500" />
+                                        <motion.div animate={{ opacity: [0, 1, 0] }} transition={{ repeat: Infinity, duration: 1 }} className="absolute inset-0 bg-yellow-500/20 blur-2xl rounded-full" />
                                     </div>
-                                    <div className="flex justify-between items-center bg-black/30 p-3 rounded-lg">
-                                        <span className="text-gray-400">경험치</span>
-                                        <span className="text-cyan-400 font-bold text-xl flex items-center gap-1">
-                                            <Zap size={16} /> {storyStage.rewards.experience}
-                                        </span>
+                                ) : (
+                                    <XCircle size={80} className="mx-auto text-red-500 opacity-60" />
+                                )}
+                            </motion.div>
+
+                            <h1 className={cn(
+                                "text-4xl font-black orbitron italic mb-1 tracking-[0.1em]",
+                                battleResult.winner === 'player' ? 'text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.2)]' : 'text-red-500/60'
+                            )}>
+                                {battleResult.winner === 'player' ? t('pvp.battle.victory') : t('pvp.battle.defeat')}
+                            </h1>
+                            <p className="text-[8px] font-black orbitron text-gray-500 tracking-[0.3em] mb-4">
+                                {battleResult.winner === 'player' ? "MISSION_OBJECTIVE_COMPLETE" : "TACTICAL_FAILURE_RETRY"}
+                            </p>
+
+                            <div className="text-2xl text-white orbitron font-black mb-4 p-3 bg-white/5 rounded-2xl border border-white/5 inline-block px-8">
+                                {battleResult.playerWins} <span className="text-gray-600 px-2">-</span> {battleResult.opponentWins}
+                            </div>
+
+                            <div className="grid grid-cols-3 gap-2 mb-6">
+                                <div className="bg-black/40 backdrop-blur-xl rounded-xl p-3 border border-white/5">
+                                    <div className="text-[8px] text-gray-500 orbitron uppercase mb-0.5">Stage</div>
+                                    <div className="text-lg font-black orbitron text-cyan-400">
+                                        {storyStage.id.split('-').slice(1).join('-')}
                                     </div>
                                 </div>
-                            ) : (
-                                <p className="text-gray-400 italic mb-8">
-                                    전략을 재정비하고 다시 도전하세요.
-                                </p>
-                            )}
+                                <div className="bg-black/40 backdrop-blur-xl rounded-xl p-3 border border-white/5">
+                                    <div className="text-[8px] text-gray-500 orbitron uppercase mb-0.5">Coins</div>
+                                    <div className="text-lg font-black orbitron text-yellow-400">
+                                        +{battleResult.winner === 'player' ? storyStage.rewards.coins : 0}
+                                    </div>
+                                </div>
+                                <div className="bg-black/40 backdrop-blur-xl rounded-xl p-3 border border-white/5">
+                                    <div className="text-[8px] text-gray-500 orbitron uppercase mb-0.5">EXP</div>
+                                    <div className="text-lg font-black orbitron text-purple-400">
+                                        +{battleResult.winner === 'player' ? storyStage.rewards.experience : 10}
+                                    </div>
+                                </div>
+                            </div>
 
-                            <Button size="lg" className={`w-full text-xl py-8 font-black rounded-xl ${battleResult.winner === 'player' ? 'bg-yellow-600 hover:bg-yellow-500 text-black' : 'bg-gray-700 hover:bg-gray-600'}`} onClick={handleResultConfirm}>
+                            <Button
+                                fullWidth
+                                size="lg"
+                                onPress={handleResultConfirm}
+                                className={cn(
+                                    "h-14 font-black orbitron text-sm rounded-xl shadow-lg transition-all",
+                                    battleResult.winner === 'player'
+                                        ? "bg-white text-black hover:bg-gray-200"
+                                        : "bg-zinc-800 text-white hover:bg-zinc-700"
+                                )}
+                            >
                                 {battleResult.winner === 'player'
-                                    ? (language === 'ko' ? '다음으로' : 'CONTINUE')
-                                    : (language === 'ko' ? '재도전' : 'RETRY')}
+                                    ? (language === 'ko' ? '다음 단계로' : 'NEXT STAGE')
+                                    : (language === 'ko' ? '다시 도전' : 'RETRY MISSION')}
                             </Button>
                         </motion.div>
                     </div>

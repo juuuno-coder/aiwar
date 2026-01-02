@@ -131,7 +131,8 @@ export async function applyBattleResult(
     playerDeck: Card[],
     opponentDeck: Card[],
     isRanked: boolean = false,
-    isGhost: boolean = false
+    isGhost: boolean = false,
+    manualRewards?: { coins: number; experience: number }
 ): Promise<void> {
     console.log(`📊 Applying battle result (Ranked: ${isRanked}, Ghost: ${isGhost})...`);
 
@@ -172,8 +173,8 @@ export async function applyBattleResult(
             isGhost: isGhost,
         };
 
-        let coinsEarned = Math.floor(result.rewards.coins * rewardMultiplier);
-        let expEarned = Math.floor(result.rewards.experience * rewardMultiplier);
+        let coinsEarned = manualRewards ? manualRewards.coins : Math.floor(result.rewards.coins * rewardMultiplier);
+        let expEarned = manualRewards ? manualRewards.experience : Math.floor(result.rewards.experience * rewardMultiplier);
 
         const updatedState = {
             ...state,

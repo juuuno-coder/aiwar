@@ -424,10 +424,10 @@ export default function CardPlacementBoard({ selectedCards, onPlacementComplete,
     return (
         <div className="w-full h-full max-h-screen flex flex-col overflow-hidden relative">
             {/* Compact Header */}
-            <div className="shrink-0 pt-4 pb-2 text-center relative z-10">
-                <h2 className="text-2xl font-black text-white italic tracking-tighter flex items-center justify-center gap-2">
+            <div className="shrink-0 pt-6 pb-2 text-center relative z-10">
+                <h2 className="text-3xl font-black text-white italic tracking-tighter flex items-center justify-center gap-2">
                     <span className="text-cyan-500">TACTICAL</span> DEPLOYMENT
-                    <span className="text-xs font-normal text-gray-500 bg-black/50 px-2 py-1 rounded-full border border-white/10 ml-2">
+                    <span className="text-xs font-normal text-gray-500 bg-black/50 px-3 py-1.5 rounded-full border border-white/10 ml-3 backdrop-blur-md">
                         {battleMode === 'ambush' ? '전략 승부 (6장)' : battleMode === 'double' ? '두장 승부 (6장)' : '전술 승부 (5장)'}
                     </span>
                 </h2>
@@ -438,23 +438,23 @@ export default function CardPlacementBoard({ selectedCards, onPlacementComplete,
 
                 {/* 1. TOP: Opponent Intel */}
                 {opponentDeck && opponentDeck.length > 0 && (
-                    <div className="w-full max-w-4xl flex items-center justify-center gap-4 bg-red-950/20 border-y border-red-500/20 py-2">
+                    <div className="w-full max-w-5xl flex items-center justify-center gap-6 bg-gradient-to-r from-transparent via-red-950/30 to-transparent border-y border-red-500/20 py-3 mb-4 backdrop-blur-sm">
                         <div className="text-center shrink-0">
-                            <span className="text-2xl">😈</span>
-                            <div className="text-[10px] font-bold text-red-400">ENEMY</div>
+                            <span className="text-3xl drop-shadow-[0_0_10px_rgba(255,0,0,0.5)]">😈</span>
+                            <div className="text-[10px] font-black text-red-500 tracking-widest mt-1">ENEMY</div>
                         </div>
-                        <div className="flex justify-center gap-2">
+                        <div className="flex justify-center gap-3">
                             {opponentDeck.map((card, idx) => (
-                                <div key={idx} className="relative w-12 h-16 rounded border border-red-500/30 overflow-hidden opacity-90">
+                                <div key={idx} className="relative w-14 h-20 rounded-lg border border-red-500/30 overflow-hidden opacity-90 shadow-lg shadow-red-950/20">
                                     <div
-                                        className="absolute inset-0 bg-cover bg-center"
+                                        className="absolute inset-0 bg-cover bg-center transition-transform hover:scale-110"
                                         style={{ backgroundImage: `url(${getCardImage(card)})` }}
                                     />
                                     {/* Obscure opponent cards slightly */}
                                     <div className="absolute inset-0 bg-red-900/40" />
                                     {/* Type Hint */}
                                     {card.type && (
-                                        <div className="absolute top-0 right-0 w-3 h-3 bg-black rounded-bl text-[8px] flex items-center justify-center text-white">
+                                        <div className="absolute top-1 right-1 w-4 h-4 bg-black/80 rounded flex items-center justify-center text-[10px] text-white border border-white/10">
                                             {getTypeIcon(card.type)}
                                         </div>
                                     )}
@@ -576,14 +576,19 @@ export default function CardPlacementBoard({ selectedCards, onPlacementComplete,
                 </div>
 
                 {/* 3. BOTTOM: My Card Pool */}
-                <div className="shrink-0 w-full max-w-5xl bg-black/40 border-t border-white/10 p-4 backdrop-blur-md rounded-t-2xl">
-                    <div className="flex items-center justify-between mb-2">
-                        <div className="text-xs font-bold text-gray-400 flex items-center gap-2">
-                            <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                <div className="shrink-0 w-full max-w-6xl bg-black/60 border-t border-white/20 p-6 backdrop-blur-xl rounded-t-[32px] shadow-[0_-20px_50px_rgba(0,0,0,0.5)]">
+                    <div className="flex items-center justify-between mb-4">
+                        <div className="text-sm font-black text-gray-400 flex items-center gap-3 tracking-widest px-2">
+                            <div className="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_10px_#22c55e] animate-pulse" />
                             MY CARDS ({availableCards.length})
                         </div>
+                        {availableCards.length === 0 && (
+                            <div className="text-[10px] font-bold text-cyan-400 animate-bounce bg-cyan-950/30 px-3 py-1 rounded-full border border-cyan-500/30">
+                                ALL CARDS DEPLOYED ✨
+                            </div>
+                        )}
                     </div>
-                    <div className="flex justify-center gap-2 overflow-x-auto pb-2 no-scrollbar min-h-[90px]">
+                    <div className="flex justify-center gap-3 overflow-x-auto pb-4 no-scrollbar min-h-[140px] px-2">
                         {availableCards.length > 0 ? availableCards.map((card) => (
                             <motion.div
                                 key={card.id}
@@ -595,18 +600,19 @@ export default function CardPlacementBoard({ selectedCards, onPlacementComplete,
                                 }}
                                 onDragEnd={handleDragEnd}
                                 onClick={() => handleAutoPlace(card)}
-                                whileHover={{ scale: 1.05, y: -5 }}
+                                whileHover={{ scale: 1.1, y: -10, rotate: 1 }}
                                 whileTap={{ scale: 0.95 }}
-                                className="relative w-16 h-24 rounded-lg border border-white/20 overflow-hidden cursor-pointer shadow hover:border-cyan-400 shrink-0"
+                                className="relative w-20 h-28 rounded-xl border border-white/20 overflow-hidden cursor-pointer shadow-2xl hover:border-cyan-400 transition-colors group shrink-0"
                             >
                                 <div
-                                    className="absolute inset-0 bg-cover bg-center"
+                                    className="absolute inset-0 bg-cover bg-center transition-transform group-hover:scale-110"
                                     style={{ backgroundImage: `url(${getCardImage(card)})` }}
                                 />
-                                <div className="absolute bottom-0 inset-x-0 bg-black/80 text-[8px] text-white text-center py-0.5 truncate px-1">
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
+                                <div className="absolute bottom-1 inset-x-0 text-[9px] font-bold text-white text-center py-1 truncate px-2 group-hover:text-cyan-400">
                                     {card.name}
                                 </div>
-                                <div className="absolute top-0.5 right-0.5 w-3 h-3 bg-black/50 rounded flex items-center justify-center text-[8px]">
+                                <div className="absolute top-1.5 right-1.5 w-5 h-5 bg-black/60 rounded-full flex items-center justify-center text-xs border border-white/10 shadow-lg">
                                     {getTypeIcon(card.type)}
                                 </div>
                             </motion.div>
