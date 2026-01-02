@@ -799,6 +799,29 @@ class UnifiedStorage {
         await this.saveGameState({ research });
         return research;
     }
+
+    /**
+     * 세션 데이터 완전 삭제 (로그아웃/초기화 시)
+     */
+    clearAllSessionData() {
+        if (typeof window !== 'undefined') {
+            console.log("🧹 Clearing all local session data...");
+            // 1. Remove specific keys
+            localStorage.removeItem('gameState_guest');
+            // Remove all user-specific game states
+            Object.keys(localStorage).forEach(key => {
+                if (key.startsWith('gameState_') ||
+                    key.startsWith('factionSubscriptions') ||
+                    key.startsWith('cancellationHistory') ||
+                    key.startsWith('tutorial_completed_') ||
+                    key.startsWith('hasSeenCommandTutorial_') ||
+                    key.includes('firebase:authUser')) {
+                    localStorage.removeItem(key);
+                }
+            });
+            console.log("✅ Session data cleared.");
+        }
+    }
 }
 
 // 싱글톤 인스턴스
