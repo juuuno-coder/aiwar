@@ -397,39 +397,6 @@ export async function saveUserProfile(profile: Partial<UserProfile>, uid?: strin
     }
 }
 
-/**
- * [DEBUG] 유저 데이터 초기화 (Reset to Zero)
- * 인벤토리 삭제 및 프로필 0 초기화
- */
-export async function resetUserData(userId: string): Promise<void> {
-    if (!isFirebaseConfigured || !db) throw new Error('Firebase NOT_CONFIGURED');
-
-    const batch = writeBatch(db);
-
-    // 1. 프로필 초기화
-    const userRef = doc(db, 'users', userId, 'profile', 'data');
-    batch.set(userRef, {
-        coins: 0,
-        tokens: 0,
-        level: 1,
-        exp: 0,
-        hasReceivedStarterPack: false,
-        createdAt: serverTimestamp(),
-        lastLogin: serverTimestamp(),
-        nickname: "초기화된 지휘관"
-    }, { merge: true });
-
-    // 2. 인벤토리 삭제 (최대 500개 - MVP)
-    const inventoryRef = collection(db, 'users', userId, 'inventory');
-    const snapshot = await getDocs(inventoryRef);
-    snapshot.docs.forEach((doc) => {
-        batch.delete(doc.ref);
-    });
-
-    // 3. 커밋
-    await batch.commit();
-    console.log(`[DEBUG] User ${userId} has been reset to ZERO.`);
-}
 
 /**
  * 사용자 프로필 로드
