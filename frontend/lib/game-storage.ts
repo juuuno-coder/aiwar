@@ -268,44 +268,38 @@ class UnifiedStorage {
                 if (profile) {
                     // Firebase에서 로드 성공
                     const storageKey = this.getStorageKey(uid);
-                    const localState = storage.get<Partial<GameState>>(storageKey, {});
-                    // Check if inventory needs initialization (Starter Deck)
-                    let inventory = localState.inventory || [];
-                    if (inventory.length === 0) {
-                        // Inject Starter Deck logic placeholder if needed
-                    }
+                    const localState = storage.get<Partial<GameState>>(storageKey, {}); // Only for non-critical fallback if needed, but we ignore it for main stats
 
                     loadedState = {
                         coins: profile.coins,
                         tokens: profile.tokens,
                         level: profile.level,
                         experience: profile.exp,
-                        inventory: inventory,
-                        unlockedFactions: localState.unlockedFactions || [],
-                        slots: localState.slots || [],
-                        equipment: localState.equipment || [],
-                        research: localState.research,
-                        decks: localState.decks || []
+                        // Inventory MUST come from DB (UserContext loads it separately via loadInventory)
+                        // But here we might want to ensure we don't accidentally overwrite it with localState
+                        inventory: [],
+                        unlockedFactions: [], // Load from DB if implemented, otherwise default
+                        slots: [],
+                        equipment: [],
+                        research: undefined,
+                        decks: []
                     };
+                } else {
+                    // Profile load returned null -> This essentially means "New User" or "DB Error"
+                    // If New User logic handles it, fine. But if it's an error, we should stop.
+                    // For now, let's treat null profile as "New User" and allow default state ONLY if it's creating a new profile.
+                    // But wait, loadUserProfile creates a default profile if missing. So null means catastrophic error.
+                    throw new Error("CRITICAL_DB_SYNC_FAILURE: Could not load user profile.");
                 }
             } catch (error) {
-                this.logError('Firebase load failed, falling back to localStorage', error);
+                this.logError('Firebase load failed', error);
+                // [STRICT DB ONLY] Do NOT fallback to localStorage. Rethrow to block app access.
+                throw error;
             }
-        }
-
-        // Firebase 로드 실패했거나 미사용 시 localStorage 확인
-        // [Unique Request] "일단 로컬스토리지 내용을 불러오는 것부터 완전히 차단시켜봐"
-        // If logged in and using Firebase, DO NOT load from localStorage even if Firebase failed or returned nothing.
-        // We force clean slate if DB is empty to prevent ghost data.
-        if (Object.keys(loadedState).length === 0) {
-            if (uid && this.useFirebase) {
-                console.warn('[GameStorage] DB Only Mode: Ignoring localStorage fallback for logged-in user.');
-                loadedState = defaultState;
-            } else {
-                // Guest mode or No DB -> Use LocalStorage
-                const storageKey = this.getStorageKey(uid);
-                loadedState = storage.get(storageKey, defaultState);
-            }
+        } else {
+            // Guest mode or No DB -> Use LocalStorage
+            const storageKey = this.getStorageKey(uid);
+            loadedState = storage.get(storageKey, defaultState);
         }
 
         // 데이터 검증 및 복구
