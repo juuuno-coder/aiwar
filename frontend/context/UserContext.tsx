@@ -155,7 +155,16 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     // Sync state from Firebase profile
     useEffect(() => {
         if (mounted && profile && user?.uid) {
-            setCoins(profile.coins);
+            // [Safety] Negative Balance Healer
+            if (profile.coins < 0) {
+                console.warn(`[UserContext] Negative Balance Detected: ${profile.coins}. Auto-correcting to 0.`);
+                setCoins(0);
+                // Optionally update Firebase immediately to fix persistence
+                firebaseUpdateCoins(user.uid, 0 - profile.coins).catch(e => console.error("Failed to auto-heal negative balance:", e));
+            } else {
+                setCoins(profile.coins);
+            }
+
             setTokens(profile.tokens);
             setLevel(profile.level);
             setExperience(profile.exp);
