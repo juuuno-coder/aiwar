@@ -127,7 +127,15 @@ function processRecurringBilling(subscriptions: FactionSubscription[], userId?: 
 
         // 24시간 이상 지났을 경우 정산
         if (hoursDiff >= 24) {
-            const daysPassed = Math.floor(hoursDiff / 24);
+            let daysPassed = Math.floor(hoursDiff / 24);
+
+            // [Safety] 최대 3일 까지만 청구 (장기 미접속 시 폭탄 방지)
+            const MAX_BILLABLE_DAYS = 3;
+            if (daysPassed > MAX_BILLABLE_DAYS) {
+                console.log(`[Billing] Capped billing days from ${daysPassed} to ${MAX_BILLABLE_DAYS} for faction ${sub.factionId}`);
+                daysPassed = MAX_BILLABLE_DAYS;
+            }
+
             const cost = sub.dailyCost * daysPassed;
 
             if (cost > 0) {
