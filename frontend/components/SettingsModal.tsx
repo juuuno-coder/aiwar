@@ -46,6 +46,11 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                     const { resetAccountData } = await import('@/lib/firebase-db');
                     await resetAccountData(user.uid);
 
+                    // [Critical] Also nuke local storage to prevent ghost data persisting
+                    const { gameStorage } = await import('@/lib/game-storage');
+                    gameStorage.clearAllSessionData();
+                    localStorage.clear(); // Nuclear option just in case
+
                     alert(language === 'ko' ? '초기화되었습니다. 게임을 다시 시작합니다.' : 'Reset complete. Restarting game.');
                     window.location.reload();
                 } catch (error) {
