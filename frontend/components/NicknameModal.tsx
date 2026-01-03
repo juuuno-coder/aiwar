@@ -83,10 +83,10 @@ export default function NicknameModal({ onComplete }: NicknameModalProps) {
                             닉네임 설정
                         </h2>
                         <p className="font-mono text-[10px] text-purple-400/60 tracking-[0.3em] uppercase mb-4">
-                            군단장 등록 절차
+                            지휘관 등록 절차
                         </p>
                         <p className="text-gray-400 text-sm leading-relaxed max-w-xs">
-                            군단장님의 닉네임을 입력해 주세요. 이 이름은 모든 군단장에게 표시됩니다.
+                            지휘관님의 닉네임을 입력해 주세요. 이 이름은 모든 지휘관에게 표시됩니다.
                         </p>
                     </div>
 

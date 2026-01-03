@@ -148,7 +148,7 @@ export default function UnifiedTutorialModal() {
 
         try {
             // Claim Logic
-            const cards = await claimStarterPack('신입 군단장');
+            const cards = await claimStarterPack('신입 지휘관');
 
             if (cards && cards.length > 0) {
                 console.log("✅ Starter Pack claimed successfully via Tutorial");
