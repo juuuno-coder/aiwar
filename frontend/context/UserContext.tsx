@@ -1,7 +1,6 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { gameStorage, GameState } from '@/lib/game-storage';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import {
     updateCoins as firebaseUpdateCoins,
@@ -12,25 +11,19 @@ import {
     claimStarterPackTransaction,
     purchaseCardPackTransaction
 } from '@/lib/firebase-db';
-import { generateCardByRarity } from '@/lib/card-generation-system';
-import { addCardToInventory, loadInventory, distributeStarterPack, InventoryCard } from '@/lib/inventory-system';
-import type { Card, Rarity } from '@/lib/types';
-import { useNotification } from '@/context/NotificationContext';
+import { loadInventory, InventoryCard } from '@/lib/inventory-system';
+import type { Card } from '@/lib/types';
 import { useFirebase } from '@/components/FirebaseProvider';
 import { addNotification } from '@/components/NotificationCenter';
 import {
     syncSubscriptionsWithFirebase,
-    migrateLegacySubscriptions
 } from '@/lib/faction-subscription-utils';
-import { migrateLegacyGameState } from '@/lib/game-state';
-import { migrateLegacySlots } from '@/lib/generation-utils';
+
 
 import { // [NEW]
     CATEGORY_TOKEN_BONUS, // [NEW]
-    FACTION_CATEGORY_MAP, // [NEW]
-    TIER_MULTIPLIER // [NEW]
 } from '@/lib/token-constants'; // [NEW]
-import { SubscriptionTier, UserSubscription } from '@/lib/faction-subscription'; // [NEW]
+import { UserSubscription } from '@/lib/faction-subscription'; // [NEW]
 import { UserProfile, fetchUserSubscriptions } from '@/lib/firebase-db'; // [NEW]
 import { User } from 'firebase/auth'; // [NEW]
 
@@ -100,89 +93,59 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         console.log('✅ UserProvider Mounted - Version: 2026-01-03-ISOLATION-FIX');
     }, []);
 
-    const prevUserRef = React.useRef<string | null>(null);
-
-    // Reset state and clear storage when user logs out or changes
+    // [REFACTORED] Centralized Auth State and Data Loading Effect
     useEffect(() => {
         if (!mounted) return;
 
-        const currentUid = user?.uid || null;
-        if (currentUid) {
-            console.log(`🔑 [DEBUG] Current Firebase UID: ${currentUid}`);
-        }
-        const prevUid = prevUserRef.current;
-
-        // If user changed (logged out or switched)
-        if (prevUid !== currentUid) {
-            console.log(`[Auth] User changed from ${prevUid} to ${currentUid}. Clearing ALL session data to prevent bleed.`);
-
-            // 더욱 강력한 초기화: 단순히 UID별 삭제가 아니라 전체 세션 클린업
-            gameStorage.clearAllSessionData();
-
-            // UI 상태 초기화
-            resetState();
-            setLoading(true);
-        }
-
-        // Update ref
-        prevUserRef.current = currentUid;
-
-
-        // Sync subscriptions from Firebase if user is logged in
-        if (user?.uid) {
-            // 마이그레이션 우선 실행 (게스트 데이터 -> 유저 데이터)
-            const runMigration = async () => {
-                try {
-                    console.log(`[Auth] User logged in: ${user.uid}. Starting migration check...`);
-
-                    // 마이그레이션 후 Firebase 동기화
-                    await syncSubscriptionsWithFirebase(user.uid);
-
-                    // 프로필 및 데이터 리프레시
-                    refreshData();
-                } catch (err) {
-                    console.error("[Auth] Migration or Sync failed:", err);
-                }
-            };
-
-            runMigration();
-        } else if (!user) {
-            // User logged out or no user: Clear state immediately
+        // Case 1: User is logged out or session is cleared
+        if (!user) {
+            console.log("[Auth] No user detected. Resetting state and stopping loading.");
             resetState();
             setLoading(false);
+            return;
         }
-    }, [mounted, user, resetState]); // Removed loading from deps to avoid loop
 
-    // Sync state from Firebase profile
-    useEffect(() => {
-        if (mounted && profile && user?.uid) {
-            // [Safety] Negative Balance Healer
-            if (profile.coins < 0) {
-                console.warn(`[UserContext] Negative Balance Detected: ${profile.coins}. Auto-correcting to 0.`);
-                setCoins(0);
-                // Optionally update Firebase immediately to fix persistence
-                firebaseUpdateCoins(0 - profile.coins, user.uid).catch(e => console.error("Failed to auto-heal negative balance:", e));
-            } else {
-                setCoins(profile.coins);
-            }
+        // Case 2: User is logged in, but profile is still loading
+        if (user && profileLoading) {
+            console.log(`[Auth] User ${user.uid} detected, waiting for profile...`);
+            setLoading(true);
+            return;
+        }
 
-            setTokens(profile.tokens);
-            setLevel(profile.level);
-            setExperience(profile.exp);
+        // Case 3: User is logged in and profile is loaded
+        if (user && profile) {
+            console.log(`[Auth] User ${user.uid} and profile loaded. Syncing data...`);
+            setLoading(true);
 
-            // [NEW] Load inventory and subscriptions with commander logic
-            const loadData = async () => {
+            const syncUserData = async () => {
                 try {
-                    const cards = await loadInventory(user.uid);
+                    // [Auto-Heal] Negative Balance Check
+                    if (profile.coins < 0) {
+                        console.warn(`[Auto-Heal] Negative balance of ${profile.coins} detected. Resetting to 0.`);
+                        await firebaseUpdateCoins(Math.abs(profile.coins), user.uid);
+                        setCoins(0); // Set local state immediately
+                    } else {
+                        setCoins(profile.coins);
+                    }
+
+                    // Sync basic profile data
+                    setTokens(profile.tokens);
+                    setLevel(profile.level);
+                    setExperience(profile.exp);
+
+                    // Sync inventory and subscriptions
+                    const [cards, subs] = await Promise.all([
+                        loadInventory(user.uid),
+                        fetchUserSubscriptions(user.uid),
+                        syncSubscriptionsWithFirebase(user.uid) // Syncs local with remote
+                    ]);
+
                     const formattedCards = cards.map(c => ({
                         ...c,
                         acquiredAt: (c.acquiredAt && 'toDate' in (c.acquiredAt as any)) ? (c.acquiredAt as any).toDate() : new Date(c.acquiredAt as any)
-                    })) as Card[];
+                    })) as InventoryCard[];
 
-                    // [NEW] Add Commander cards from Ultra subscriptions
-                    const subs = await fetchUserSubscriptions(user.uid);
-                    setSubscriptions(subs);
-
+                    // [Restored] Add Commander cards from Ultra subscriptions
                     const { COMMANDERS } = await import('@/data/card-database');
                     const ultraCommanders: Card[] = [];
 
@@ -223,33 +186,38 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
                     const finalInventory = [...formattedCards, ...ultraCommanders] as InventoryCard[];
                     setInventory(finalInventory);
+                    setSubscriptions(subs);
 
-                    // Emergency Rescue (기존 로직 유지)
-                    if (profile.level === 1 && profile.hasReceivedStarterPack && formattedCards.length === 0) {
+                    // [Restored] Emergency Rescue for starter pack
+                    if (profile.level === 1 && profile.hasReceivedStarterPack && finalInventory.length === 0) {
                         console.log("[SafetySystem] Rescue: Found claimed flag but 0 cards. Re-distributing...");
-                        const rescuedCards = await claimStarterPack(profile.nickname || '지휘관');
-                        if (rescuedCards && rescuedCards.length > 0) {
-                            // refreshData will handle the update
-                        }
+                        await claimStarterPack(profile.nickname || '지휘관');
                     }
 
-                    // Starter Pack Check
-                    const isTutorialCompleted = localStorage.getItem(`tutorial_completed_${user.uid}`);
-                    if (isTutorialCompleted && !isClaimingInSession && formattedCards.length === 0 && !profile.hasReceivedStarterPack) {
+
+                    // Check for starter pack eligibility
+                    const isTutorialCompleted = profile.tutorialCompleted || false;
+                    if (isTutorialCompleted && !profile.hasReceivedStarterPack && finalInventory.length === 0) {
+                        console.log("[Auth] User is eligible for the starter pack.");
                         setStarterPackAvailable(true);
                     } else {
                         setStarterPackAvailable(false);
                     }
-
-                } catch (e) {
-                    console.error("Error loading user data:", e);
+                } catch (error) {
+                    console.error("[Auth] Failed to sync user data:", error);
+                    setError("Failed to synchronize your account data. Please try again later.");
+                } finally {
+                    setLoading(false);
+                    console.log("[Auth] User data sync complete.");
                 }
             };
 
-            loadData();
-            setLoading(false);
+            syncUserData();
         }
-    }, [mounted, profile, user?.uid, isClaimingInSession]);
+
+    }, [mounted, user, profile, profileLoading, resetState]);
+
+
 
     const checkFeatureUnlocks = (newLevel: number) => {
         if (newLevel === 3) {
@@ -286,16 +254,27 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         });
     };
 
-    const completeTutorial = useCallback(() => {
-        if (!user?.uid) return;
-        localStorage.setItem(`tutorial_completed_${user.uid}`, 'true');
-        console.log(`[UserContext] Tutorial completed for ${user.uid}. Re-evaluating starter pack...`);
+    const completeTutorial = useCallback(async () => {
+        if (!user?.uid || !profile) return;
 
-        // Re-evaluate starter pack eligibility immediately
-        if (inventory.length === 0 && !profile?.hasReceivedStarterPack) {
-            setStarterPackAvailable(true);
+        console.log(`[UserContext] Completing tutorial for ${user.uid}...`);
+
+        try {
+            // Update Firebase state first
+            await saveUserProfile({ tutorialCompleted: true }, user.uid);
+
+            // Then, update local state to trigger UI changes
+            // The reloadProfile() from useUserProfile will fetch the latest profile
+            await reloadProfile();
+
+            // After profile reloads, the main useEffect will re-evaluate starter pack eligibility.
+            console.log("[UserContext] Tutorial status saved to Firebase. State will update.");
+
+        } catch (error) {
+            console.error("Failed to save tutorial completion status:", error);
+            // Optionally: show an error to the user
         }
-    }, [user?.uid, inventory.length, profile?.hasReceivedStarterPack]);
+    }, [user?.uid, profile, reloadProfile]);
 
     const refreshData = useCallback(async () => {
         if (!mounted || !user) return;
@@ -355,87 +334,64 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         }
     }, [mounted, profile, reloadProfile, user?.uid, isClaimingInSession, resetState]);
 
-    // Initial load for non-logged-in users or when profile load completes as null
-    useEffect(() => {
-        if (mounted && !profileLoading && !profile) {
-            refreshData();
-        }
-    }, [mounted, profileLoading, profile, refreshData]);
 
     const addCoinsByContext = async (amount: number) => {
-        if (!mounted) return;
+        if (!mounted || !profile || !user) return;
 
-        if (profile) {
-            // Firestore increment handles negative amounts, 
-            // but we ensure local state doesn't dip below 0 if it were local-only
-            await firebaseUpdateCoins(amount, user?.uid);
+        try {
+            await firebaseUpdateCoins(amount, user.uid);
             await reloadProfile();
-        } else {
-            try {
-                const newCoins = await gameStorage.addCoins(amount, user?.uid);
-                setCoins(newCoins);
-            } catch (err) {
-                console.error("Failed to add coins:", err);
-            }
+        } catch (err) {
+            console.error("Failed to add coins:", err);
         }
     };
 
     const addTokensByContext = async (amount: number) => {
-        if (!mounted) return; // Changed return type
+        if (!mounted || !profile || !user) return;
 
-        if (profile) {
-            await firebaseUpdateTokens(amount, user?.uid);
+        try {
+            await firebaseUpdateTokens(amount, user.uid);
             await reloadProfile();
-            // No need to return newTokens, as reloadProfile will update state
-        } else {
-            try {
-                const newTokens = await gameStorage.addTokens(amount, user?.uid);
-                setTokens(newTokens);
-            } catch (err) {
-                console.error("Failed to add tokens:", err);
-            }
+        } catch (err) {
+            console.error("Failed to add tokens:", err);
         }
     };
 
     const addExperienceByContext = async (amount: number) => {
-        if (profile) {
-            // Replicate Level Up Logic locally to calculate new state to send to Firebase
-            // Logic mirrored from game-storage.ts
-            let currentExp = experience + amount;
-            let currentLevel = level;
-            let leveledUp = false;
+        if (!profile || !user) {
+            // Return a default or empty state if there's no user
+            return { level: 1, experience: 0, leveledUp: false };
+        }
 
-            while (currentExp >= currentLevel * 100) {
-                currentExp -= currentLevel * 100;
-                currentLevel++;
-                leveledUp = true;
-            }
+        // Replicate Level Up Logic locally to calculate new state to send to Firebase
+        let currentExp = experience + amount;
+        let currentLevel = level;
+        let leveledUp = false;
 
-            // Apply limits if any (game-storage has Math.max(1), Math.max(0))
-            currentLevel = Math.max(1, currentLevel);
-            currentExp = Math.max(0, currentExp);
+        while (currentExp >= currentLevel * 100) {
+            currentExp -= currentLevel * 100;
+            currentLevel++;
+            leveledUp = true;
+        }
 
-            await firebaseUpdateExpAndLevel(currentExp, currentLevel, user?.uid);
+        // Apply limits
+        currentLevel = Math.max(1, currentLevel);
+        currentExp = Math.max(0, currentExp);
+
+        try {
+            await firebaseUpdateExpAndLevel(currentExp, currentLevel, user.uid);
             await reloadProfile();
 
-            // Trigger Notification for Feature Unlocks (Firebase Mode)
             if (leveledUp) {
                 checkFeatureUnlocks(currentLevel);
             }
-
-            return { level: currentLevel, experience: currentExp, leveledUp };
-        } else {
-            const result = await gameStorage.addExperience(amount, user?.uid);
-
-            // Check for local storage level up
-            if (result.leveledUp) {
-                checkFeatureUnlocks(result.level);
-            }
-
-            setLevel(result.level);
-            setExperience(result.experience);
-            return result;
+        } catch (err) {
+            console.error("Failed to add experience:", err);
+            // In case of error, should we revert local state?
+            // For now, we rely on reloadProfile to sync the source of truth.
         }
+
+        return { level: currentLevel, experience: currentExp, leveledUp };
     };
 
     // [NEW] 토큰 소모 (확률적 페이백 및 할인 적용)
@@ -488,29 +444,6 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
     const hideStarterPack = () => setStarterPackAvailable(false);
 
-    // [CRITICAL] Force Clean Local Storage on Login to prevent "Zombie Data"
-    useEffect(() => {
-        if (user) {
-            // 로그인 감지 시, 이전 세션의 잔재가 남지 않도록 로컬 스토리지 클린업
-            // 단, 매번 렌더링마다 지우면 안되므로, uid가 변경되었을 때만 수행하는 로직이 필요.
-            // game-storage.ts의 clearAllSessionData는 상당히 강력하므로, 
-            // 여기서는 'ghost' 데이터를 방지하기 위해 특정 플래그를 확인하거나
-            // 단순히 현재 uid와 로컬스토리지의 uid가 다르면 지우는 로직이 game-storage 내부 또는 여기서 필요함.
-            // gameStorage 내부에서 이미 prevUid 체크를 하므로, 여기서는 명시적으로 호출해주거나
-            // gameStorage가 이를 수행하도록 보장해야 함.
-
-            // 더 강력한 방법: "방금 로그인했다"는 사실을 인지하고 초기화.
-            const lastUid = localStorage.getItem('last_known_uid');
-            if (lastUid && lastUid !== user.uid) {
-                console.log(`[UserContext] Detected User Change (${lastUid} -> ${user.uid}). Nuking LocalStorage.`);
-                gameStorage.clearAllSessionData();
-                localStorage.setItem('last_known_uid', user.uid);
-            } else if (!lastUid) {
-                // 첫 로그인 상황일 수도 있음.
-                localStorage.setItem('last_known_uid', user.uid);
-            }
-        }
-    }, [user]);
 
     const claimStarterPack = async (nickname: string): Promise<InventoryCard[]> => {
         if (!mounted || !user) return [];
