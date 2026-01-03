@@ -400,8 +400,8 @@ export async function distributeStarterPack(uid?: string, nickname?: string): Pr
 
         // Customize Unique Card with Nickname
         if (nickname) {
-            uniqueCard.name = `지휘관 ${nickname}`;
-            uniqueCard.description = "전장에 새롭게 합류한 지휘관의 전용 유닛입니다.";
+            uniqueCard.name = `군단장 ${nickname}`;
+            uniqueCard.description = "전장에 새롭게 합류한 군단장의 전용 유닛입니다.";
         }
 
         const starterPack = [
@@ -431,7 +431,7 @@ export async function distributeStarterPack(uid?: string, nickname?: string): Pr
             acquiredAt: new Date()
         } as InventoryCard));
 
-        console.log('✅ 스타터팩 지급 완료 (5장, 1000코인, 포함: Commander Card)');
+        console.log('✅ 스타터팩 지급 완료 (5장, 1000코인, 포함: 군단장 카드)');
         return inventoryCards;
     } catch (error) {
         console.error('❌ 스타터팩 지급 실패:', error);

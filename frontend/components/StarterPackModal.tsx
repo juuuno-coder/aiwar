@@ -110,7 +110,7 @@ export default function StarterPackModal() {
                                 WELCOME TO AI WAR
                             </h1>
                             <p className="text-gray-300 text-lg mb-8 leading-relaxed">
-                                인류의 마지막 희망, 새로운 지휘관님을 환영합니다.<br />
+                                인류의 마지막 희망, 새로운 군단장님을 환영합니다.<br />
                                 전장에서 사용할 특별 보급품이 도착했습니다.
                             </p>
                             <Button
@@ -125,7 +125,7 @@ export default function StarterPackModal() {
                     {step === 'nickname' && (
                         <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="relative z-10">
                             <div className="text-5xl mb-6 text-cyan-400">🆔</div>
-                            <h2 className="text-2xl font-bold text-white mb-2">지휘관의 이름을 정해주세요</h2>
+                            <h2 className="text-2xl font-bold text-white mb-2">군단장의 이름을 정해주세요</h2>
                             <p className="text-gray-400 text-sm mb-8 italic">이 이름은 전설적인 전공으로 역사에 기록될 것입니다.</p>
 
                             <div className="space-y-4 mb-8">
@@ -134,7 +134,7 @@ export default function StarterPackModal() {
                                         type="text"
                                         value={nickname}
                                         onChange={(e) => setNickname(e.target.value)}
-                                        placeholder="지휘관 닉네임 입력"
+                                        placeholder="군단장 닉네임 입력"
                                         className={cn(
                                             "w-full h-16 px-6 bg-white/5 border rounded-2xl text-center text-xl font-bold text-white focus:outline-none focus:ring-2 transition-all",
                                             error ? "border-red-500/50 focus:ring-red-500/30" : "border-white/10 focus:border-cyan-500/50 focus:ring-cyan-500/20"
@@ -159,7 +159,7 @@ export default function StarterPackModal() {
                         <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="relative z-10">
                             <div className="text-5xl mb-6">📦</div>
                             <h2 className="text-3xl font-black text-white mb-2 italic">"{nickname}" </h2>
-                            <p className="text-gray-400 text-sm mb-6">지휘관님께 전달될 보급 목록입니다.</p>
+                            <p className="text-gray-400 text-sm mb-6">군단장님께 전달될 보급 목록입니다.</p>
 
                             <div className="grid grid-cols-2 gap-4 mb-6">
                                 <div className="bg-white/5 rounded-2xl p-5 border border-white/5 text-center">

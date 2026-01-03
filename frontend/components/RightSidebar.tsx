@@ -59,7 +59,7 @@ export default function RightSidebar() {
                                     className="mt-2 text-center overflow-hidden"
                                 >
                                     <p className="text-xs font-black text-white orbitron truncate">
-                                        {profile?.nickname || '지휘관'}
+                                        {profile?.nickname || '군단장'}
                                     </p>
                                     <p className="text-[10px] text-cyan-400/60 font-mono">프로필 보기</p>
                                 </motion.div>

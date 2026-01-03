@@ -12,7 +12,7 @@ export function validateGameState(state: any): GameState {
         tokens: Math.max(0, Number(state?.tokens) || 0),
         level: Math.max(1, Math.min(100, Number(state?.level) || 1)),
         experience: Math.max(0, Number(state?.experience) || 0),
-        nickname: state?.nickname || '지휘관',
+        nickname: state?.nickname || '군단장',
         username: state?.username || '',
         hasReceivedStarterPack: Boolean(state?.hasReceivedStarterPack),
         inventory: Array.isArray(state?.inventory) ? state.inventory : [],

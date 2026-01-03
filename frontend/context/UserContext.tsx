@@ -147,15 +147,15 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
                     // [Restored] Add Commander cards from Ultra subscriptions
                     const { COMMANDERS } = await import('@/data/card-database');
-                    const ultraCommanders: Card[] = [];
+                    const rentalCommanders: Card[] = [];
 
                     for (const sub of subs) {
-                        if (sub.tier === 'ultra' && sub.status === 'active') {
+                        if (sub.status === 'active') {
                             const cmdTemplate = COMMANDERS.find(c => c.aiFactionId === sub.factionId);
                             if (cmdTemplate) {
                                 const alreadyExists = formattedCards.some(c => c.templateId === cmdTemplate.id || c.id === cmdTemplate.id);
                                 if (!alreadyExists) {
-                                    ultraCommanders.push({
+                                    rentalCommanders.push({
                                         id: `commander-${cmdTemplate.id}`,
                                         instanceId: `commander-${cmdTemplate.id}-${user.uid}`,
                                         templateId: cmdTemplate.id,
@@ -184,7 +184,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
                         }
                     }
 
-                    const finalInventory = [...formattedCards, ...ultraCommanders] as InventoryCard[];
+                    const finalInventory = [...formattedCards, ...rentalCommanders] as InventoryCard[];
                     setInventory(finalInventory);
                     setSubscriptions(subs);
 

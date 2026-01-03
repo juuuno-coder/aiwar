@@ -47,7 +47,7 @@ export const ko: Translations = {
 
     'page.ranking.title': '글로벌 랭킹',
     'page.ranking.englishTitle': 'Global Rankings',
-    'page.ranking.description': '전 세계 지휘관들의 순위를 확인하세요.',
+    'page.ranking.description': '전 세계 군단장들의 순위를 확인하세요.',
 
     'page.training.title': '연구소',
     'page.training.englishTitle': 'Research Lab',
@@ -88,7 +88,7 @@ export const ko: Translations = {
     'settings.automation': '자동화 설정',
     'settings.automation.desc': '개방된 AI 군단에서 자동으로 유닛을 생성합니다',
     'settings.profile': '프로필 설정',
-    'settings.avatar': '지휘관 아바타',
+    'settings.avatar': '군단장 아바타',
     'settings.uploadPhoto': '사진 업로드',
     'settings.reset': '초기화',
     'settings.dataManagement': '데이터 관리',
@@ -114,10 +114,10 @@ export const ko: Translations = {
     'settings.help.autoDesc': '자동 생성을 활성화하면 개방된 AI 군단에서 자동으로 유닛이 생성됩니다.',
 
     // 사이드바 & 탑바 (New)
-    'sidebar.commander': '지휘관',
+    'sidebar.commander': '군단장',
     'sidebar.eliteCommander': 'Elite Commander',
     'sidebar.quickAccess': '빠른 접근',
-    'topbar.commanderRegistry': '지휘관 등록 정보',
+    'topbar.commanderRegistry': '군단장 등록 정보',
     'topbar.syncLevel': '동기화 레벨',
     'topbar.token': '토큰',
 
@@ -170,7 +170,7 @@ export const ko: Translations = {
     'pvp.history.empty': '대전 기록이 없습니다.',
     'pvp.strategy.hint': '전략적으로 카드를 배치하세요 (버튼으로 순서 변경 가능)',
     'pvp.battle.round': '라운드',
-    'pvp.battle.playerScore': '지휘관 점수',
+    'pvp.battle.playerScore': '군단장 점수',
     'pvp.battle.enemyScore': '상대 점수',
     'pvp.battle.commanderUnit': '군단장 유닛',
     'pvp.battle.enemyModel': '적 모델',
@@ -182,7 +182,7 @@ export const ko: Translations = {
     'pvp.battle.randomize': '무작위 배치',
     'pvp.battle.enemyArchitecture': '적 코어 아키텍처',
     'pvp.battle.formation': '주요 전투 대안',
-    'pvp.modal.searching': '상대 지휘관 탐색 중',
+    'pvp.modal.searching': '상대 군단장 탐색 중',
     'pvp.modal.cancel': '링크 해제',
     'pvp.modal.forceSync': '강제 동기화',
     'pvp.log.roundStart': '라운드 {n} 개시 - 시스템 매트릭스 충돌 중...',

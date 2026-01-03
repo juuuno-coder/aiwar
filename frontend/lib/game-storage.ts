@@ -273,7 +273,7 @@ class UnifiedStorage {
             decks: [],
             research: undefined,
             subscriptions: [],
-            nickname: '지휘관',
+            nickname: '군단장',
             uniqueApplications: [],
         };
 

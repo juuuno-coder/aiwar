@@ -134,7 +134,7 @@ export default function LevelUpModal({ isOpen, onClose, newLevel, reward }: Leve
                                         LEVEL UP!
                                     </h2>
                                     <p className="text-white/80">
-                                        축하합니다! 지휘관 레벨이 <span className="text-yellow-400 font-bold">{newLevel}</span>이 되었습니다!
+                                        축하합니다! 군단장 레벨이 <span className="text-yellow-400 font-bold">{newLevel}</span>이 되었습니다!
                                     </p>
                                 </motion.div>
 

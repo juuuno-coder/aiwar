@@ -1,4 +1,4 @@
-// 연구소 시스템 - 지휘관 스탯 강화를 통한 게임 전반 효율 향상
+// 연구소 시스템 - 군단장 스탯 강화를 통한 게임 전반 효율 향상
 
 // ============================================
 // 연구 카테고리 및 스탯
@@ -26,7 +26,7 @@ export interface ResearchStat {
     costMultiplier: number;    // 레벨당 비용 증가율
     baseTime: number;          // 레벨 1 연구 시간 (분)
     timeMultiplier: number;    // 레벨당 시간 증가율
-    requiredLevel: number;     // 개방에 필요한 지휘관 레벨
+    requiredLevel: number;     // 개방에 필요한 군단장 레벨
     requiredResearchId?: ResearchCategory; // 개방에 필요한 선행 연구 ID
     requiredResearchLevel?: number;        // 개방에 필요한 선행 연구 레벨
     color: string;
@@ -375,7 +375,7 @@ export function createInitialResearchState(): CommanderResearch {
 }
 
 /**
- * 연구 가능한 카테고리 목록 반환 (지휘관 레벨 기반)
+ * 연구 가능한 카테고리 목록 반환 (군단장 레벨 기반)
  */
 export function getAvailableResearch(commanderLevel: number): ResearchStat[] {
     return RESEARCH_STATS.filter(stat => stat.requiredLevel <= commanderLevel);
