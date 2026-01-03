@@ -187,7 +187,8 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
                     const ultraCommanders: Card[] = [];
 
                     for (const sub of subs) {
-                        if (sub.tier === 'ultra' && sub.status === 'active') {
+                        // [Policy Change] All active subscribers get Commander access (Free included)
+                        if (sub.status === 'active') {
                             const cmdTemplate = COMMANDERS.find(c => c.aiFactionId === sub.factionId);
                             if (cmdTemplate) {
                                 const alreadyExists = formattedCards.some(c => c.templateId === cmdTemplate.id || c.id === cmdTemplate.id);
