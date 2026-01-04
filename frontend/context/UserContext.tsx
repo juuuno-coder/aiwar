@@ -580,11 +580,9 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
                 const newlyCompleted = updated.find(q => q.completed && !prevQuests.find(pq => pq.id === q.id)?.completed);
                 if (newlyCompleted) {
                     addNotification({
-                        id: Date.now().toString(),
                         title: "MISSION COMPLETE!",
                         message: newlyCompleted.title,
-                        type: "achievement",
-                        timestamp: new Date()
+                        type: "achievement"
                     });
                 }
             }
