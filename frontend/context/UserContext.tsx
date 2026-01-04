@@ -12,6 +12,14 @@ import {
     claimStarterPackTransaction,
     purchaseCardPackTransaction
 } from '@/lib/firebase-db';
+import {
+    Quest,
+    QuestCategory,
+    loadQuests,
+    saveQuests,
+    updateQuestProgress,
+    claimQuestReward as processQuestReward
+} from '@/lib/quest-system';
 import { generateCardByRarity } from '@/lib/card-generation-system';
 import { addCardToInventory, loadInventory, distributeStarterPack, InventoryCard } from '@/lib/inventory-system';
 import type { Card, Rarity } from '@/lib/types';
@@ -55,6 +63,10 @@ interface UserContextType {
     subscriptions: UserSubscription[];
     buyCardPack: (cards: Card[], price: number, currencyType: 'coin' | 'token') => Promise<void>;
     completeTutorial: () => void;
+    // [NEW] Quest System Integration
+    quests: Quest[];
+    trackMissionEvent: (action: string, amount?: number) => void;
+    claimQuest: (questId: string) => Promise<boolean>;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -73,6 +85,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     const [loading, setLoading] = useState(true);
     const [starterPackAvailable, setStarterPackAvailable] = useState(false);
     const [subscriptions, setSubscriptions] = useState<UserSubscription[]>([]);
+    const [quests, setQuests] = useState<Quest[]>([]); // [NEW] Quest State
     const [isClaimingInSession, setIsClaimingInSession] = useState(false);
     const [mounted, setMounted] = useState(false);
 
@@ -89,6 +102,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         setSubscriptions([]);
         setIsClaimingInSession(false);
         setStarterPackAvailable(false);
+        setQuests([]); // [NEW] Reset Quests
         setError(null);
     }, []);
 
@@ -169,6 +183,10 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
             setTokens(profile.tokens);
             setLevel(profile.level);
             setExperience(profile.exp);
+
+            // [NEW] Load quests using local storage (for now)
+            const loadedQuests = loadQuests();
+            setQuests(loadedQuests);
 
             // [NEW] Load inventory and subscriptions with commander logic
             const loadData = async () => {
@@ -604,6 +622,59 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         }
     };
 
+    // [NEW] Quest Event Bus
+    const trackMissionEvent = useCallback((action: string, amount: number = 1) => {
+        setQuests(prevQuests => {
+            // Determine category based on action roughly (logic is inside updateQuestProgress too)
+            // Ideally updateQuestProgress should handle category filtering or we pass 'general' if unknown.
+            // For simplicity, we check all relevant categories or rely on updateQuestProgress to ignore mismatches.
+
+            let updated = [...prevQuests];
+            const categories: QuestCategory[] = ['battle', 'card', 'fusion', 'general'];
+
+            categories.forEach(cat => {
+                updated = updateQuestProgress(updated, cat, action, amount);
+            });
+
+            // If changes detected, save
+            if (JSON.stringify(updated) !== JSON.stringify(prevQuests)) {
+                saveQuests(updated);
+
+                // Optional: Check for newly completed quests to notify
+                const newlyCompleted = updated.find(q => q.completed && !prevQuests.find(pq => pq.id === q.id)?.completed);
+                if (newlyCompleted) {
+                    addNotification({
+                        id: Date.now().toString(),
+                        title: "MISSION COMPLETE!",
+                        message: newlyCompleted.title,
+                        type: "achievement",
+                        timestamp: new Date()
+                    });
+                }
+            }
+            return updated;
+        });
+    }, []);
+
+    // [NEW] Claim Quest Reward
+    const claimQuest = useCallback(async (questId: string): Promise<boolean> => {
+        const quest = quests.find(q => q.id === questId);
+        if (!quest || !quest.completed || quest.claimed) return false;
+
+        const { rewards, updatedQuest } = processQuestReward(quest);
+
+        if (rewards.coins > 0) await addCoinsByContext(rewards.coins);
+        if (rewards.experience > 0) await addExperienceByContext(rewards.experience);
+        // Card rewards would ideally call addCardToInventory logic here if card templates provided
+
+        // Update state
+        const newQuests = quests.map(q => q.id === questId ? updatedQuest : q);
+        setQuests(newQuests);
+        saveQuests(newQuests);
+
+        return true;
+    }, [quests, addCoinsByContext, addExperienceByContext]);
+
     // Render Error Screen if Critical Error exists
     if (error) {
         return (
@@ -661,7 +732,10 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
                     // Force refresh to ensure coins and inventory are in sync
                     await refreshData();
                 },
-                completeTutorial // [NEW]
+                completeTutorial, // [NEW]
+                quests,            // [NEW]
+                trackMissionEvent, // [NEW]
+                claimQuest         // [NEW]
             }}
         >
             {children}

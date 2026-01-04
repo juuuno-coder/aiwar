@@ -19,7 +19,7 @@ import { FACTION_CATEGORY_MAP } from '@/lib/token-constants'; // [NEW]
 export default function FusionPage() {
     const { addNotification } = useNotification();
     const { showAlert } = useAlert();
-    const { refreshData, consumeTokens } = useUser(); // [NEW] consumeTokens
+    const { refreshData, consumeTokens, trackMissionEvent } = useUser(); // [NEW] consumeTokens & Track Mission
     const { profile, reload } = useUserProfile(); // Firebase profile
 
     const [allCards, setAllCards] = useState<InventoryCard[]>([]);
@@ -163,6 +163,7 @@ export default function FusionPage() {
             refreshData(); // 유저 데이터(토큰 등) 새로고침
 
             addNotification('fusion', '합성 성공!', `${fusedCard.name} 카드를 획득했습니다!`, '/fusion');
+            trackMissionEvent('card-fusion', 1); // [NEW] Track Mission
         } catch (error) {
             console.error(error);
             showAlert({ title: '오류', message: '합성 중 문제가 발생했습니다.', type: 'error' });

@@ -51,7 +51,7 @@ type Phase =
 export default function PVPArenaPage() {
     const router = useRouter();
     const { showAlert } = useAlert();
-    const { coins, level } = useUser(); // [NEW] Use generic coins/level from context
+    const { coins, level, trackMissionEvent } = useUser(); // [NEW] Use generic coins/level/trackMission from context
 
     const [phase, setPhase] = useState<Phase>('stats');
     const [selectedMode, setSelectedMode] = useState<BattleMode>('double');
@@ -519,6 +519,12 @@ export default function PVPArenaPage() {
 
         // 전투 종료 - 결과 화면으로
         await applyBattleResult(result, playerDeck, opponentDeck);
+
+        // [NEW] Track Mission Event
+        if (result.winner === 'player') {
+            trackMissionEvent('battle-win', 1);
+        }
+
         setPhase('result');
     };
 

@@ -38,7 +38,7 @@ export default function StageBattlePage() {
     const router = useRouter();
     const { playSound } = useGameSound();
     const { t, language } = useTranslation();
-    const { inventory, loading: userLoading, coins, level, user } = useUser(); // [Updated] Added user
+    const { inventory, loading: userLoading, coins, level, user, trackMissionEvent } = useUser(); // [Updated] Added user & trackMissionEvent
 
     // Stage Data
     const [storyStage, setStoryStage] = useState<StoryStage | null>(null);
@@ -496,6 +496,9 @@ export default function StageBattlePage() {
                 };
                 await applyBattleResult(battleResult, activeBattleDeck, enemies, false, false, manualRewards);
                 await completeStage(storyStage.id.split('-')[1] === '1' ? 'chapter-1' : storyStage.id.split('-')[1] === '2' ? 'chapter-2' : 'chapter-3', storyStage.id, user?.uid);
+
+                // [NEW] Track Mission Event
+                trackMissionEvent('battle-win', 1);
             }
             const chapterNum = storyStage?.id.split('-')[1] || '1';
             router.push(`/story/chapter-${chapterNum}`);

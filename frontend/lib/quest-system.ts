@@ -17,6 +17,7 @@ export interface Quest {
         cards?: number;
     };
     completed: boolean;
+    claimed: boolean; // [NEW] Track if reward has been claimed
     expiresAt?: string; // ISO string for daily/weekly quests
 }
 
@@ -35,6 +36,7 @@ export function generateDailyQuests(): Quest[] {
             target: 3,
             reward: { coins: 300, experience: 50 },
             completed: false,
+            claimed: false,
             expiresAt: getEndOfDay()
         },
         {
@@ -47,6 +49,7 @@ export function generateDailyQuests(): Quest[] {
             target: 5,
             reward: { coins: 200, experience: 30 },
             completed: false,
+            claimed: false,
             expiresAt: getEndOfDay()
         },
         {
@@ -59,6 +62,7 @@ export function generateDailyQuests(): Quest[] {
             target: 1,
             reward: { coins: 150, experience: 20 },
             completed: false,
+            claimed: false,
             expiresAt: getEndOfDay()
         }
     ];
@@ -79,6 +83,7 @@ export function generateWeeklyQuests(): Quest[] {
             target: 20,
             reward: { coins: 2000, experience: 300, cards: 3 },
             completed: false,
+            claimed: false,
             expiresAt: getEndOfWeek()
         },
         {
@@ -91,6 +96,7 @@ export function generateWeeklyQuests(): Quest[] {
             target: 30,
             reward: { coins: 1500, experience: 200, cards: 2 },
             completed: false,
+            claimed: false,
             expiresAt: getEndOfWeek()
         }
     ];
@@ -110,7 +116,8 @@ export function getAchievementQuests(): Quest[] {
             progress: 0,
             target: 10,
             reward: { coins: 1000, experience: 0, cards: 1 },
-            completed: false
+            completed: false,
+            claimed: false
         },
         {
             id: 'achievement-battle-100',
@@ -121,7 +128,8 @@ export function getAchievementQuests(): Quest[] {
             progress: 0,
             target: 100,
             reward: { coins: 5000, experience: 500, cards: 5 },
-            completed: false
+            completed: false,
+            claimed: false
         },
         {
             id: 'achievement-card-100',
@@ -132,7 +140,8 @@ export function getAchievementQuests(): Quest[] {
             progress: 0,
             target: 100,
             reward: { coins: 3000, experience: 300, cards: 3 },
-            completed: false
+            completed: false,
+            claimed: false
         },
         {
             id: 'achievement-mythic-1',
@@ -143,7 +152,8 @@ export function getAchievementQuests(): Quest[] {
             progress: 0,
             target: 1,
             reward: { coins: 2000, experience: 200 },
-            completed: false
+            completed: false,
+            claimed: false
         }
     ];
 }
@@ -192,18 +202,23 @@ export function updateQuestProgress(
  * 완료된 퀘스트 보상 수령
  */
 export function claimQuestReward(quest: Quest): {
-    coins: number;
-    experience: number;
-    cards: number;
+    rewards: { coins: number; experience: number; cards: number };
+    updatedQuest: Quest;
 } {
-    if (!quest.completed) {
-        return { coins: 0, experience: 0, cards: 0 };
+    if (!quest.completed || quest.claimed) {
+        return {
+            rewards: { coins: 0, experience: 0, cards: 0 },
+            updatedQuest: quest
+        };
     }
 
     return {
-        coins: quest.reward.coins || 0,
-        experience: quest.reward.experience || 0,
-        cards: quest.reward.cards || 0
+        rewards: {
+            coins: quest.reward.coins || 0,
+            experience: quest.reward.experience || 0,
+            cards: quest.reward.cards || 0
+        },
+        updatedQuest: { ...quest, claimed: true }
     };
 }
 

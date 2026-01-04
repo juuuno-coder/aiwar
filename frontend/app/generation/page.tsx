@@ -24,12 +24,14 @@ import { COMMANDERS, CARD_DATABASE } from '@/data/card-database';
 import { createCardFromTemplate } from '@/lib/card-generation-system';
 import { loadInventory, removeCardFromInventory } from '@/lib/inventory-system';
 import { useFirebase } from '@/components/FirebaseProvider';
+import { useUser } from '@/context/UserContext'; // [NEW]
 import GenerationSlot from '@/components/GenerationSlot';
 
 export default function GenerationPage() {
     const router = useRouter();
     const { user } = useFirebase();
     const { showAlert, showConfirm } = useAlert();
+    const { trackMissionEvent } = useUser(); // [NEW] Use UserContext for missions
 
     const userId = user?.uid;
 
@@ -162,6 +164,7 @@ export default function GenerationPage() {
                 setRewardCards([result.card]);
                 setRewardModalOpen(true);
                 loadData();
+                trackMissionEvent('unit-claim', 1); // [NEW] Track Mission
             } catch (error) {
                 console.error('Failed to save card:', error);
                 showAlert({ title: '오류', message: '카드 저장 중 오류가 발생했습니다.', type: 'error' });
@@ -202,6 +205,7 @@ export default function GenerationPage() {
                 setRewardModalTitle("모두 받기 완료!");
                 setRewardModalOpen(true);
                 loadData();
+                trackMissionEvent('unit-claim', successCount); // [NEW] Track Mission
             }
         } catch (error) {
             console.error("Batch receipt error:", error);
