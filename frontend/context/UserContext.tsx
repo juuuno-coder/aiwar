@@ -106,7 +106,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     // Initial mount check
     useEffect(() => {
         setMounted(true);
-        console.log('✅ UserProvider Mounted - Version: 2026-01-03-ISOLATION-FIX');
+        console.log('✅ UserProvider Mounted - Version: 2026-01-04-NUCLEAR-CLEANUP-FIX');
     }, []);
 
     // [REFACTORED] Centralized Auth State and Data Loading Effect
