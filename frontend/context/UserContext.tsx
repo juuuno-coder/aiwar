@@ -582,7 +582,8 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
                     addNotification({
                         title: "MISSION COMPLETE!",
                         message: newlyCompleted.title,
-                        type: "achievement"
+                        type: "achievement",
+                        icon: "🏆"
                     });
                 }
             }
