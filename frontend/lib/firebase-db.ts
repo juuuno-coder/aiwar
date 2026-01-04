@@ -74,6 +74,7 @@ export interface UserProfile {
     exp: number;
     avatarUrl?: string; // commander avatar
     hasReceivedStarterPack?: boolean;
+    tutorialCompleted?: boolean;
     createdAt?: any;
     lastLogin?: any;
     lastTokenUpdate?: any; // [NEW] 토큰 자동 충전 기준 시간
@@ -515,49 +516,87 @@ export async function updateNickname(nickname: string, uid?: string): Promise<vo
 
 /**
  * 코인 업데이트 (증감)
+ * @description Uses a transaction to safely update coins, preventing negative balances.
  */
 export async function updateCoins(amount: number, uid?: string): Promise<void> {
     if (!isFirebaseConfigured || !db) {
-        console.warn('Firebase가 설정되지 않았습니다.');
+        console.warn('Firebase not configured. Skipping coin update.');
         return;
     }
 
-    try {
-        const userId = uid || await getUserId();
-        const userRef = doc(db, 'users', userId, 'profile', 'data');
+    const userId = uid || await getUserId();
+    if (!userId) {
+        console.error('User ID not found for coin update.');
+        return;
+    }
 
-        await updateDoc(userRef, {
-            coins: increment(amount)
+    const userRef = doc(db, 'users', userId, 'profile', 'data');
+
+    try {
+        await runTransaction(db, async (transaction) => {
+            const userDoc = await transaction.get(userRef);
+            if (!userDoc.exists()) {
+                throw new Error(`User profile ${userId} not found.`);
+            }
+
+            const currentCoins = userDoc.data().coins || 0;
+            const newCoins = currentCoins + amount;
+
+            // [Defensive Check] Prevent balance from going negative
+            if (newCoins < 0) {
+                throw new Error('Operation failed: Insufficient coins.');
+            }
+
+            transaction.update(userRef, { coins: newCoins });
         });
 
-        console.log(`✅ 코인 업데이트: ${amount > 0 ? '+' : ''}${amount}`);
+        console.log(`[Transaction] Coin update successful for ${userId}: ${amount > 0 ? '+' : ''}${amount}`);
     } catch (error) {
-        console.error('❌ 코인 업데이트 실패:', error);
-        throw error;
+        console.error('Coin update transaction failed:', error);
+        throw error; // Re-throw to be handled by the caller
     }
 }
 
 /**
  * 토큰 업데이트 (증감)
+ * @description Uses a transaction to safely update tokens, preventing negative balances.
  */
 export async function updateTokens(amount: number, uid?: string): Promise<void> {
     if (!isFirebaseConfigured || !db) {
-        console.warn('Firebase가 설정되지 않았습니다.');
+        console.warn('Firebase not configured. Skipping token update.');
         return;
     }
 
-    try {
-        const userId = uid || await getUserId();
-        const userRef = doc(db, 'users', userId, 'profile', 'data');
+    const userId = uid || await getUserId();
+    if (!userId) {
+        console.error('User ID not found for token update.');
+        return;
+    }
 
-        await updateDoc(userRef, {
-            tokens: increment(amount)
+    const userRef = doc(db, 'users', userId, 'profile', 'data');
+
+    try {
+        await runTransaction(db, async (transaction) => {
+            const userDoc = await transaction.get(userRef);
+            if (!userDoc.exists()) {
+                throw new Error(`User profile ${userId} not found.`);
+            }
+
+            const currentTokens = userDoc.data().tokens || 0;
+            const newTokens = currentTokens + amount;
+
+            // [Defensive Check] Prevent balance from going negative
+            if (newTokens < 0) {
+                throw new Error('Operation failed: Insufficient tokens.');
+            }
+
+            transaction.update(userRef, { tokens: newTokens });
         });
 
-        console.log(`✅ 토큰 업데이트: ${amount > 0 ? '+' : ''}${amount}`);
+        console.log(`[Transaction] Token update successful for ${userId}: ${amount > 0 ? '+' : ''}${amount}`);
     } catch (error) {
-        console.error('❌ 토큰 업데이트 실패:', error);
-        throw error;
+        console.error('Token update transaction failed:', error);
+        throw error; // Re-throw to be handled by the caller
     }
 }
 

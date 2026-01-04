@@ -179,7 +179,7 @@ export default function StarterPackModal() {
                                     <span className="shrink-0 mt-0.5">💡</span>
                                     <span>
                                         보급팩에는 <strong>일반, 희귀, 에픽, 전설, 유니크</strong> 등급의 유닛이 각 1장씩 포함되어 있습니다.
-                                        최고 등급인 <strong>군단장(Commander)</strong> 유닛은 AI 군단을 구독하여 획득할 수 있습니다.
+                                        최고 등급인 <strong>군단장</strong> 유닛은 AI 군단을 구독하여 획득할 수 있습니다.
                                     </span>
                                 </p>
                             </div>

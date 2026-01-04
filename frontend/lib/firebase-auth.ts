@@ -7,6 +7,7 @@ import {
     User
 } from 'firebase/auth';
 import { auth, isFirebaseConfigured } from './firebase';
+import { gameStorage } from './game-storage';
 
 /**
  * 구글 로그인
@@ -95,21 +96,36 @@ export async function getUserId(): Promise<string> {
 
 /**
  * 로그아웃
+ * @description
+ * This function orchestrates a clean and safe logout process.
+ * 1. Clears all local session data ('Nuclear Option') to prevent "Zombie Data".
+ * 2. Signs the user out from Firebase Authentication.
+ * 3. Forces a page reload to ensure all React contexts and states are reset.
  */
 export async function signOutUser(): Promise<void> {
     if (!auth) return;
+
     try {
-        // Firebase 로그아웃 전/후에 로컬 데이터 정리
-        const { gameStorage } = await import('./game-storage');
+        console.log('[Auth] Starting sign-out process...');
+
+        // 1. Clear all sensitive local data BEFORE logging out
+        // This prevents any chance of data bleeding into the next session.
+        console.log('[Auth] Clearing local session data...');
         gameStorage.clearAllSessionData();
 
+        // 2. Sign out from Firebase
+        console.log('[Auth] Signing out from Firebase...');
         await signOut(auth);
 
-        // 페이지 새로고침을 통해 모든 스토어와 상태 초기화 강제
+        // 3. Force a full page reload to reset application state
+        // This is a critical step to ensure UserContext and other states are cleared.
         if (typeof window !== 'undefined') {
+            console.log('[Auth] Reloading page to ensure clean state...');
             window.location.href = '/';
         }
+
     } catch (error) {
-        console.error('로그아웃 실패:', error);
+        console.error('Sign-out failed:', error);
+        // Optional: Add user-facing error notification
     }
 }

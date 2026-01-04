@@ -535,8 +535,8 @@ export function incrementGenerationCount(factionId: string, userId?: string): vo
         subscription.affinity = Math.min((subscription.affinity || 0) + 1, 100);
         saveSubscriptions(subscriptions, userId);
 
-        // [NEW] 전역 지휘관 숙련도(Mastery) 증가
-        // 어떤 군단을 사용하든 지휘관의 총괄 능력이 상승하여 모든 군단에 이점 제공
+        // [NEW] 전역 군단장 숙련도(Mastery) 증가
+        // 어떤 군단을 사용하든 군단장의 총괄 능력이 상승하여 모든 군단에 이점 제공
         const state = getGameState(userId);
 
         // 연구 보너스 적용 (리더십: 숙련도 획득 속도 증가)

@@ -104,7 +104,7 @@ export default function CommanderProfileModal({ isOpen, onClose }: CommanderProf
 
     // 아바타 선택 옵션 (카드 이미지 및 기본 포함)
     const avatarOptions = [
-        { id: 'default', src: '/assets/commander/default.png', name: '기본 지휘관' },
+        { id: 'default', src: '/assets/commander/default.png', name: '기본 군단장' },
         ...inventory.map(card => ({
             id: card.id,
             src: card.imageUrl,
@@ -202,7 +202,7 @@ export default function CommanderProfileModal({ isOpen, onClose }: CommanderProf
                         <ModalHeader className="flex flex-col gap-1 p-8 relative z-10">
                             <div className="flex items-center gap-3 mb-2">
                                 <div className="w-10 h-1 bg-cyan-600 rounded-full" />
-                                <span className="text-[10px] text-cyan-400 font-black uppercase tracking-[0.4em] orbitron">Commander Profile Terminal</span>
+                                <span className="text-[10px] text-cyan-400 font-black uppercase tracking-[0.4em] orbitron">Legion Commander Profile</span>
                             </div>
                             <div className="flex items-center justify-between w-full">
                                 {isEditingName ? (
@@ -211,7 +211,7 @@ export default function CommanderProfileModal({ isOpen, onClose }: CommanderProf
                                             value={editName}
                                             onChange={(e) => setEditName(e.target.value)}
                                             className="bg-black/50 border-cyan-500/50 text-2xl font-black orbitron h-12"
-                                            placeholder="Enter Commander Name"
+                                            placeholder="Enter Legion Commander Name"
                                             maxLength={12}
                                             autoFocus
                                         />
@@ -225,7 +225,7 @@ export default function CommanderProfileModal({ isOpen, onClose }: CommanderProf
                                 ) : (
                                     <div className="flex items-center gap-4 group">
                                         <h2 className="text-4xl font-black text-white orbitron tracking-tighter italic">
-                                            {profile?.nickname || 'COMMANDER'}
+                                            {profile?.nickname || 'LEGION COMMANDER'}
                                         </h2>
                                         <button
                                             onClick={() => setIsEditingName(true)}
@@ -250,7 +250,7 @@ export default function CommanderProfileModal({ isOpen, onClose }: CommanderProf
                                     >
                                         <img
                                             src={commanderAvatar}
-                                            alt="Commander"
+                                            alt="Legion Commander"
                                             className="w-full h-full object-cover transition-transform group-hover:scale-105"
                                             onError={(e) => {
                                                 (e.target as HTMLImageElement).src = '/assets/commander/default.png';

@@ -130,7 +130,7 @@ export const STARTER_FACTION = 'gemini';
 // ============================================
 
 /**
- * 지휘관 레벨에서 사용 가능한 슬롯 개수 계산
+ * 군단장 레벨에서 사용 가능한 슬롯 개수 계산
  */
 export function getAvailableSlots(level: number): number {
     let slots = 0;
@@ -143,7 +143,7 @@ export function getAvailableSlots(level: number): number {
 }
 
 /**
- * 지휘관 레벨에서 승인 가능한 군단 목록 반환
+ * 군단장 레벨에서 승인 가능한 군단 목록 반환
  */
 export function getApprovedFactions(level: number): string[] {
     const factions = [STARTER_FACTION]; // Gemini는 기본

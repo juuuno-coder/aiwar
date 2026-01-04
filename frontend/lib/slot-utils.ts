@@ -271,7 +271,7 @@ export async function collectCard(slotIndex: number): Promise<{ success: boolean
     // 실제 카드 생성 시스템 연동
     const { generateRandomCard } = await import('./card-generation-system');
 
-    // 지휘관의 통찰력/숙달 등 보너스를 가져옴
+    // 군단장의 통찰력/숙달 등 보너스를 가져옴
     const state = getGameState();
     const research = state.research?.stats;
     const researchBonuses = {

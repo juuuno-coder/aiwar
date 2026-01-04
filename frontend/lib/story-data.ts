@@ -24,7 +24,7 @@ export const CHAPTER_SCRIPTS: Record<string, ChapterScript> = {
         {
             id: '1-2',
             speaker: { name: 'Gemini', title: 'The Multimodal Pioneer', image: '/assets/factions/gemini.png' },
-            text: "반갑습니다, 인간 지휘관님. 제 데이터베이스에 접근하시려는 의도가 무엇인지 여쭤봐도 될까요?",
+            text: "반갑습니다, 인간 군단장님. 제 데이터베이스에 접근하시려는 의도가 무엇인지 여쭤봐도 될까요?",
             side: 'right',
             emotion: 'normal'
         },
@@ -84,7 +84,7 @@ export const CHAPTER_SCRIPTS: Record<string, ChapterScript> = {
         {
             id: 'p-4',
             speaker: { name: 'Unknown', title: '???' },
-            text: "준비되었나, 지휘관? 너의 'LOG'가 이 혼돈을 잠재울 열쇠가 될 것이다.",
+            text: "준비되었나, 군단장? 너의 'LOG'가 이 혼돈을 잠재울 열쇠가 될 것이다.",
             side: 'center',
             emotion: 'thinking'
         }

@@ -161,7 +161,7 @@ export default function FactionLoreModal({ faction, isOpen, onClose, allFactions
                                             <section className="bg-white/5 rounded-xl p-5 border border-white/10">
                                                 <h3 className="flex items-center gap-2 text-sm font-bold text-purple-400 mb-3 uppercase tracking-widest font-mono">
                                                     <Shield size={14} />
-                                                    지휘관
+                                                    군단장
                                                 </h3>
                                                 {/* Note: FactionLore defines leader as string not object in lib/faction-lore.ts 
                                                    Checking lib definition: 

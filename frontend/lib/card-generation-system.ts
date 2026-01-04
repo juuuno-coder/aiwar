@@ -42,7 +42,7 @@ export interface FactionEffects {
 function calculateRarityWeights(tier: string, affinity: number = 0, insightLevel: number = 0): Record<Rarity, number> {
     const bonus = TIER_BONUSES[tier] || TIER_BONUSES.free;
 
-    // 지휘관 숙련도(Mastery) 보너스 (친밀도 기반)
+    // 군단장 숙련도(Mastery) 보너스 (친밀도 기반)
     const masteryEpicBonus = (affinity / 100) * 5;
     const masteryLegendaryBonus = (affinity / 100) * 2;
 
