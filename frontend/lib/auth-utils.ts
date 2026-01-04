@@ -74,11 +74,17 @@ export function login(username: string, password: string): { success: boolean; m
     return { success: true, message: '로그인 성공!', session };
 }
 
+import { gameStorage } from './game-storage';
+
 /**
  * 로그아웃
  */
 export function logout(): void {
+    // Aggressively clear all session-related data from localStorage
+    gameStorage.clearAllSessionData();
+    // The auth-session key is also cleared by the above function, but we'll leave this for good measure.
     localStorage.removeItem('auth-session');
+    console.log("Logout successful and all session data cleared.");
 }
 
 /**

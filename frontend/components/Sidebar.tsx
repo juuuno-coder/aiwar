@@ -39,7 +39,7 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ isOpen, onToggle }: SidebarProps) {
-    const { coins, tokens, level, experience } = useUser();
+    const { coins, tokens, level, experience, handleSignOut } = useUser();
     // const [isOpen, setIsOpen] = useState(true); // Lifted to LayoutWrapper
     const router = useRouter();
     const pathname = usePathname();
@@ -226,15 +226,7 @@ export default function Sidebar({ isOpen, onToggle }: SidebarProps) {
                             fullWidth
                             variant="light"
                             color="danger"
-                            onPress={async () => {
-                                try {
-                                    const { signOutUser } = await import('@/lib/firebase-auth');
-                                    await signOutUser();
-                                    router.push('/login');
-                                } catch (error) {
-                                    console.error('Logout failed:', error);
-                                }
-                            }}
+                            onPress={handleSignOut}
                             className={`h-10 text-gray-400 hover:text-red-400 ${!isOpen ? "min-w-0 px-0 justify-center" : "!justify-start"}`}
                             startContent={<LogOut size={18} />}
                         >
